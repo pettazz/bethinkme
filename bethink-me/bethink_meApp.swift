@@ -1,3 +1,4 @@
+import SwiftData
 import SwiftUI
 
 @main
@@ -13,5 +14,6 @@ struct bethink_meApp: App {
                 }
             }
         }
+        .modelContainer(for: BethinkeryList.self)
     }
 }

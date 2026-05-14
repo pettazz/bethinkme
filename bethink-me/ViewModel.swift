@@ -1,70 +1,12 @@
 import EventKit
 
 
-struct BethinkeryList: Identifiable {
-    let id: String
-    var title: String
-    private let calendar: EKCalendar
-    
-    init(id: String, title: String, calendar: EKCalendar) {
-        self.id = id
-        self.title = title
-        self.calendar = calendar
-    }
-    
-    init(calendar: EKCalendar) {
-        self.init(
-            id: calendar.calendarIdentifier,
-            title: calendar.title,
-            calendar: calendar)
-    }
-    
-    func toCalendar() -> EKCalendar {
-        calendar.title = title
-        
-        return calendar
-    }
-}
-
-struct Bethinkery: Identifiable {
-    let id: String
-    let list: String
-    var title: String
-    var isCompleted: Bool
-    private let reminder: EKReminder
-    
-    init(id: String, list: String, title: String, isCompleted: Bool, reminder: EKReminder) {
-        self.id = id
-        self.list = list
-        self.title = title
-        self.isCompleted = isCompleted
-        self.reminder = reminder
-    }
-    
-    init(reminder: EKReminder) {
-        self.init(
-            id: reminder.calendarItemIdentifier,
-            list: reminder.calendar.calendarIdentifier,
-            title: reminder.title,
-            isCompleted: reminder.isCompleted,
-            reminder: reminder)
-    }
-    
-    func toReminder() -> EKReminder {
-        reminder.title = title
-        reminder.isCompleted = isCompleted
-        
-        return reminder
-    }
-}
-
 @MainActor
 @Observable class ViewModel {
     private let eventStore = EKEventStore()
     
     var hasAccess: Bool = false
     var bethinkeryLists: [BethinkeryList] = []
-    var bethinkeries: [Bethinkery] = []
     var availableSources: [EKSource] = []
     var selectedCalendar: EKCalendar?
     
@@ -73,29 +15,36 @@ struct Bethinkery: Identifiable {
         return hasAccess
     }
     
-    func loadLists() async {
+    func loadLists(includeCompleted: Bool = true) async {
         guard await checkPermissions() else {
             print("tried to load lists without permissions!")
             return
         }
         
         bethinkeryLists.removeAll()
-        bethinkeries.removeAll()
         
         let validSourceTypes = [EKSourceType.local, .exchange, .calDAV]
         let lists = eventStore
             .calendars(for: .reminder)
-            .filter({ validSourceTypes.contains($0.source.sourceType )})
+            .filter({ validSourceTypes.contains($0.source.sourceType) })
         
         for list in lists {
             let newList = BethinkeryList(calendar: list)
-            bethinkeryLists.append(newList)
             
-            let loadedReminders = await loadRemindersForList(list: list)
+            let loadedReminders = await loadRemindersForCalendar(calendar: list)
             for reminder in loadedReminders {
+                
+                // TODO: pass and use a filter set instead of bool param. I mean maybe not are there other filters even?
+                if !includeCompleted {
+                    if reminder.isCompleted {
+                        continue
+                    }
+                }
+                
                 let newReminder =  Bethinkery(reminder: reminder)
-                bethinkeries.append(newReminder)
+                newList.bethinkeries.append(newReminder)
             }
+            bethinkeryLists.append(newList)
             
         }
         availableSources = eventStore.sources
@@ -103,7 +52,8 @@ struct Bethinkery: Identifiable {
         selectedCalendar = eventStore.defaultCalendarForNewReminders() ?? lists.first
     }
     
-    func create(title: String, list: BethinkeryList) {
+    func create(title: String, listId: String) {
+        let list = getListById(id: listId)
         let reminder = EKReminder(eventStore: eventStore)
         reminder.title = title
         reminder.calendar = list.toCalendar()
@@ -114,13 +64,8 @@ struct Bethinkery: Identifiable {
             print("failed to save new!")
         }
         
-        let bethinkery = Bethinkery(reminder: reminder)
-        self.bethinkeries.append(bethinkery)
-    }
-    
-    func toggleComplete(for bethinkery: inout Bethinkery) {
-        bethinkery.isCompleted.toggle()
-        update(bethinkery: bethinkery)
+        let newBethinkery = Bethinkery(reminder: reminder)
+        list.bethinkeries.insert(newBethinkery, at: 0)
     }
     
     func update(bethinkery: Bethinkery) {
@@ -130,20 +75,35 @@ struct Bethinkery: Identifiable {
             print("failed to save toggle complete!")
         }
     }
-    
-    func delete(offsets: IndexSet){
-        for idx in offsets {
-            do {
-                let bethinkery = bethinkeries.remove(at: idx)
-                try eventStore.remove(bethinkery.toReminder(), commit: true)
-            } catch {
-                print("failed to delete!")
-            }
+
+    func delete(offsets: IndexSet, from listId: String){
+        guard offsets.count == 1 else {
+            print("invalid number of offsets sent to delete!")
+            return
         }
+        let idx: Int = offsets.first!
+        
+        let list = getListById(id: listId)
+        let bethinkery = list.bethinkeries.remove(at: idx)
+        do {
+            try eventStore.remove(bethinkery.toReminder(), commit: true)
+        } catch {
+            print("failed to delete!")
+        }
+        
     }
     
-    private func loadRemindersForList(list: EKCalendar) async -> [EKReminder] {
-        let predicate = eventStore.predicateForReminders(in: [list])
+    private func getListById(id: String) -> BethinkeryList {
+        guard let list = bethinkeryLists.first(where: { $0.id == id }) else {
+            // TODO: real error handling
+            print("bad list id!")
+            fatalError()
+        }
+        return list
+    }
+    
+    private func loadRemindersForCalendar(calendar: EKCalendar) async -> [EKReminder] {
+        let predicate = eventStore.predicateForReminders(in: [calendar])
         
         return await withCheckedContinuation { continuation in
             eventStore.fetchReminders(matching: predicate) { reminders in

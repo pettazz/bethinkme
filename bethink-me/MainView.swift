@@ -1,8 +1,16 @@
+import SwiftData
 import SwiftUI
 
+enum Route: Hashable {
+    case newList
+    case editList(list: BethinkeryList)
+}
+
 struct MainView: View {
-    @State private var model: ViewModel = ViewModel()
+    @Environment(\.scenePhase) private var scenePhase
+    @Bindable private var model: ViewModel = ViewModel()
     @State private var path = NavigationPath()
+    @State private var showCompleted: Bool = false
     
     var body: some View {
         NavigationStack(path: $path) {
@@ -40,18 +48,52 @@ struct MainView: View {
                 } else {
                     List {
                         ForEach($model.bethinkeryLists) { $list in
-                            BethinkeryListView(model: model, list: $list)
-                        }
-                        .onDelete { offsets in
-                            // TODO: confirmation dialog?
-                            model.delete(offsets: offsets)
+                            BethinkeryListView(model: model, list: $list, navPath: $path)
                         }
                     }
                 }
             }
             .navigationTitle("Lists")
-            .task {
-                await model.loadLists()
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        path.append(Route.newList)
+                    } label: {
+                        Image(systemName: "text.pad.header.badge.plus")
+                    }
+                }
+                ToolbarItem(placement: .secondaryAction) {
+                    Button {
+                        showCompleted.toggle()
+                        Task {
+                            await model.loadLists(includeCompleted: showCompleted)
+                        }
+                    } label: {
+                        if showCompleted {
+                            Image(systemName: "eye.slash.fill")
+                            Text("Hide completed")
+                        } else {
+                            Image(systemName: "eye.fill")
+                            Text("Show completed")
+                        }
+                    }
+                }
+            }
+            .onChange(of: scenePhase) {
+                if scenePhase == .active {
+                    Task {
+                        await model.loadLists(includeCompleted: showCompleted)
+                    }
+                }
+            }
+            .navigationDestination(for: Route.self) { route in
+                switch route {
+                case .editList(let list):
+                    ListDetail(model: model, list: list)
+                case .newList:
+                    ListDetail(model: model)
+                }
+                
             }
         }
     }
@@ -60,27 +102,39 @@ struct MainView: View {
 struct BethinkeryListView: View {
     @Bindable var model: ViewModel
     @Binding var list: BethinkeryList
+    @Binding var navPath: NavigationPath
     @State private var isAdding: Bool = false
     
     var body: some View {
         Section(content: {
-            ForEach($model.bethinkeries.filter({
-                $0.wrappedValue.list == list.id
-            })) { $bethinkery in
-                BethinkeryRow(model: model, bethinkery: $bethinkery)
-            }
             if isAdding {
                 AddingBethinkeryRow(model: model, list: $list, isVisible: $isAdding)
+            }
+            ForEach($list.bethinkeries) { $bethinkery in
+                BethinkeryRow(model: model, bethinkery: $bethinkery)
+            }
+            .onDelete { offsets in
+                // TODO: confirmation dialog? ensure multiselect isnt possible?
+                model.delete(offsets: offsets, from: list.id)
             }
             
         }, header: {
             HStack {
-                Text(list.title).font(.title2)
+                Text(list.title)
+                    .font(.headline)
+                    .foregroundColor(list.color)
                 Spacer()
+                Button {
+                    navPath.append(Route.editList(list: list))
+                } label: {
+                    Image(systemName: "info.circle.fill")
+                        .foregroundColor(list.color)
+                }
                 Button {
                     isAdding = true
                 } label: {
                     Image(systemName: "plus.circle.fill")
+                        .foregroundColor(list.color)
                 }
             }
         })
@@ -90,26 +144,85 @@ struct BethinkeryListView: View {
 struct BethinkeryRow: View {
     @Bindable var model: ViewModel
     @Binding var bethinkery: Bethinkery
+    @FocusState private var editFocus: Bool
+    @State private var isEditing: Bool = false
+    @State private var editedTitle: String = ""
     
     var body: some View {
         HStack(spacing: 12) {
-            Button {
-                withAnimation {
-                    model.toggleComplete(for: &bethinkery)
-                }
-            } label: {
-                Image(systemName: bethinkery.isCompleted ? "checkmark.circle.fill" : "circle")
+            if isEditing {
+                Image(systemName: "pencil.line")
                     .font(.title2)
-                    .foregroundColor(bethinkery.isCompleted ? .green : .gray)
+                    .foregroundColor(.gray)
+            } else {
+                Button {
+                    withAnimation {
+                        bethinkery.isCompleted.toggle()
+                        model.update(bethinkery: bethinkery)
+                    }
+                } label: {
+                    Image(systemName: bethinkery.isCompleted ? "checkmark.circle.fill" : "circle")
+                        .font(.title2)
+                        .foregroundColor(bethinkery.isCompleted ? .green : .gray)
+                }
             }
             
-            Text(bethinkery.title)
-                .strikethrough(bethinkery.isCompleted)
-                .foregroundColor(bethinkery.isCompleted ? .gray : .primary)
-            
+            if isEditing {
+                TextField(bethinkery.title, text: $editedTitle)
+                    .focused($editFocus)
+                    .onAppear {
+                        DispatchQueue.main.async() {
+                          self.editFocus = true
+                        }
+                    }
+                    .toolbar {
+                        ToolbarItem(placement: .keyboard) {
+                            Button("Cancel") {
+                                cancelEdit()
+                            }
+                        }
+                        ToolbarItem(placement: .keyboard) {
+                            Spacer()
+                        }
+                        ToolbarItem(placement: .keyboard) {
+                            Button("Done") {
+                                saveEdit()
+                            }
+                        }
+                    }
+                    .onSubmit {
+                        saveEdit()
+                    }
+                    .onChange(of: editFocus) {
+                        if !editFocus {
+                            saveEdit()
+                        }
+                    }
+                
+            } else {
+                Text(bethinkery.title)
+                    .strikethrough(bethinkery.isCompleted)
+                    .foregroundColor(bethinkery.isCompleted ? .gray : .primary)
+                    .onTapGesture {
+                        editedTitle = bethinkery.title
+                        isEditing = true
+                    }
+            }
             Spacer()
         }
         .padding(.vertical, 4)
+    }
+    
+    private func cancelEdit() {
+        editedTitle = ""
+        isEditing = false
+    }
+    
+    private func saveEdit() {
+        bethinkery.title = editedTitle
+        model.update(bethinkery: bethinkery)
+        
+        cancelEdit()
     }
 }
 
@@ -130,9 +243,18 @@ struct AddingBethinkeryRow: View {
                 }
             }
             .toolbar {
-                ToolbarItem(placement: .primaryAction) {
+                ToolbarItem(placement: .keyboard) {
+                    Button("Cancel") {
+                        close()
+                    }
+                }
+                ToolbarItem(placement: .keyboard) {
+                    Spacer()
+                }
+                ToolbarItem(placement: .keyboard) {
                     Button("Done") {
-                        saveNew(andClose: true)
+                        saveNew()
+                        close()
                     }
                 }
             }
@@ -140,24 +262,54 @@ struct AddingBethinkeryRow: View {
             .onSubmit {
                 saveNew()
             }
+            .onChange(of: addInFocus) {
+                if !addInFocus {
+                    close()
+                }
+            }
+            
     }
     
-    private func saveNew(andClose: Bool = false) {
+    private func saveNew() {
         let newTitle = newBethinkery.trimmingCharacters(in: .whitespaces)
-        if (!newTitle.isEmpty) {
-            model.create(title: newTitle, list: list)
-            self.newBethinkery = ""
-        }
+        guard !newTitle.isEmpty else { return }
         
-        if (andClose) {
-            self.addInFocus = false
-            self.isVisible = false
-        } else {
-            self.addInFocus = true
-        }
+        model.create(title: newTitle, listId: list.id)
+        
+        self.newBethinkery = ""
+        self.addInFocus = true
+    }
+    
+    private func close() {
+        self.newBethinkery = ""
+        self.addInFocus = false
+        self.isVisible = false
     }
 }
 
-#Preview {
-    MainView()
+struct ListDetail: View {
+    @Bindable var model: ViewModel
+    var list: BethinkeryList?
+    
+    var body: some View {
+//        let isNew = list == nil;
+//        
+//        var title: String = list.title ?? ""
+//        
+//        VStack {
+//            Form {
+//                Section(header: Text("Details")) {
+//                    TextField(text: $title, label: { Text("Name") })
+//                }
+//            }
+//        }
+//        .navigationTitle(isNew ? "New List" : list!.title)
+//        .toolbar {
+//            ToolbarItem(placement: .primaryAction) {
+//                Button("Save") {
+//                    //
+//                }
+//            }
+//        }
+    }
 }
