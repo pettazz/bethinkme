@@ -4,18 +4,26 @@ import SwiftUI
 
 
 @Model
-class BethinkeryList: Equatable, Hashable, Identifiable {
+final class BethinkeryList: Equatable, Identifiable {
+    @Attribute(.unique)
     var id: String
-    var title: String
+    @Relationship(deleteRule: .cascade, inverse: \Bethinkery.list)
     var bethinkeries: [Bethinkery] = []
-    var color: Color
-    private var calendar: EKCalendar
+    var ordinal: Int = -1
+    var title: String
+    var hexColor: String
+    @Transient
+    private var calendar: EKCalendar?
+    
+    var hasCalendar: Bool {
+        return self.calendar != nil
+    }
     
     
-    init(id: String, title: String, color: Color, calendar: EKCalendar) {
+    init(id: String, title: String, hexColor: String, calendar: EKCalendar) {
         self.id = id
         self.title = title
-        self.color = color
+        self.hexColor = hexColor
         self.calendar = calendar
     }
     
@@ -23,36 +31,48 @@ class BethinkeryList: Equatable, Hashable, Identifiable {
         self.init(
             id: calendar.calendarIdentifier,
             title: calendar.title,
-            color: Color(cgColor: calendar.cgColor),
+            hexColor: Color(cgColor: calendar.cgColor).toHex(),
             calendar: calendar)
     }
+    
     
     static func == (lhs: BethinkeryList, rhs: BethinkeryList) -> Bool {
         return lhs.id == rhs.id
     }
     
-    func hash(into hasher: inout Hasher) {
-        hasher.combine(id)
+    func update(from calendar: EKCalendar) {
+        self.id = calendar.calendarIdentifier
+        self.title = calendar.title
+        self.hexColor = Color(cgColor: calendar.cgColor).toHex()
+        self.calendar = calendar
     }
     
-    func toCalendar() -> EKCalendar {
-        calendar.title = title
-        calendar.cgColor = color.cgColor
+    func toCalendar() throws -> EKCalendar {
+        guard self.hasCalendar else { throw RuntimeError(message: "calendar access before set") }
+        self.calendar!.title = title
+        self.calendar!.cgColor = Color(hex: hexColor).cgColor
         
-        return calendar
+        return self.calendar!
     }
 }
 
 @Model
-class Bethinkery: Equatable, Hashable, Identifiable {
+final class Bethinkery: Equatable, Identifiable {
+    @Attribute(.unique)
     var id: String
-    var list: String
+    var list: BethinkeryList
+    var ordinal: Int = -1
     var title: String
     var isCompleted: Bool
-    private var reminder: EKReminder
+    @Transient
+    var reminder: EKReminder?
+    
+    var hasReminder: Bool {
+        return self.reminder != nil
+    }
     
     
-    init(id: String, list: String, title: String, isCompleted: Bool, reminder: EKReminder) {
+    init(id: String, list: BethinkeryList, title: String, isCompleted: Bool, reminder: EKReminder) {
         self.id = id
         self.list = list
         self.title = title
@@ -60,27 +80,32 @@ class Bethinkery: Equatable, Hashable, Identifiable {
         self.reminder = reminder
     }
     
-    convenience init(reminder: EKReminder) {
+    convenience init(reminder: EKReminder, list: BethinkeryList) {
         self.init(
             id: reminder.calendarItemIdentifier,
-            list: reminder.calendar.calendarIdentifier,
+            list: list,
             title: reminder.title,
             isCompleted: reminder.isCompleted,
             reminder: reminder)
     }
     
+    
     static func == (lhs: Bethinkery, rhs: Bethinkery) -> Bool {
-        return lhs.id == rhs.id
+        return lhs.id == rhs.id && lhs.list == rhs.list
     }
     
-    func hash(into hasher: inout Hasher) {
-        hasher.combine(id)
+    func update(from reminder: EKReminder) {
+        self.id = reminder.calendarItemIdentifier
+        self.title = reminder.title
+        self.isCompleted = reminder.isCompleted
+        self.reminder = reminder
     }
     
-    func toReminder() -> EKReminder {
-        reminder.title = title
-        reminder.isCompleted = isCompleted
+    func toReminder() throws -> EKReminder {
+        guard self.hasReminder else { throw RuntimeError(message: "reminder access before set") }
+        self.reminder!.title = title
+        self.reminder!.isCompleted = isCompleted
         
-        return reminder
+        return self.reminder!
     }
 }

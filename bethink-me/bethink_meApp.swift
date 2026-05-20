@@ -14,6 +14,6 @@ struct bethink_meApp: App {
                 }
             }
         }
-        .modelContainer(for: BethinkeryList.self)
+        .modelContainer(for: [Bethinkery.self, BethinkeryList.self])
     }
 }
