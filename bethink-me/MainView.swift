@@ -1,21 +1,15 @@
 import SwiftData
 import SwiftUI
 
-enum Route: Hashable {
-    case newList
-    case editList(list: BethinkeryList)
-}
-
 struct MainView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.scenePhase) private var scenePhase
     
     @State private var model: ViewModel?
-    @State private var path = NavigationPath()
     @State private var listEditMode: EditMode = .inactive
     
     var body: some View {
-        NavigationStack(path: $path) {
+        NavigationStack {
             VStack {
                 if model == nil {
                     ProgressView()
@@ -55,7 +49,7 @@ struct MainView: View {
                     } else {
                         List {
                             ForEach(model!.bethinkeryLists) { list in
-                                BethinkeryListView(navPath: $path, model: model!, list: list)
+                                BethinkeryListView(model: model!, list: list)
                             }
                             .onMove { from, to in
                                 model!.moveList(from: from, to: to)
@@ -80,7 +74,7 @@ struct MainView: View {
                     if listEditMode != .active {
                         ToolbarItem(placement: .primaryAction) {
                             Button {
-                                path.append(Route.newList)
+//                                path.append(Route.newList)
                             } label: {
                                 Image(systemName: "rectangle.stack.fill.badge.plus")
                             }
@@ -127,15 +121,6 @@ struct MainView: View {
                     }
                 }
             }
-            .navigationDestination(for: Route.self) { route in
-                switch route {
-                case .editList(let list):
-                    ListDetail(model: model, list: list)
-                case .newList:
-                    ListDetail(model: model)
-                }
-                
-            }
         }
         .task {
             guard model == nil else { return }
@@ -149,7 +134,6 @@ struct BethinkeryListView: View {
     
     @FocusState private var addInFocus: Bool
     
-    @Binding var navPath: NavigationPath
     @State var model: ViewModel
     @State var list: BethinkeryList
     @State private var isAdding: Bool = false
@@ -223,7 +207,7 @@ struct BethinkeryListView: View {
                         .foregroundColor(Color(hex: list.hexColor))
                     Spacer()
                     Button {
-                        navPath.append(Route.editList(list: list))
+//                        navPath.append(Route.editList(list: list))
                     } label: {
                         Image(systemName: "info.circle.fill")
                             .font(.title)
