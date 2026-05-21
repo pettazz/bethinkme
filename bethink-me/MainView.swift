@@ -147,10 +147,13 @@ struct MainView: View {
 struct BethinkeryListView: View {
     @Environment(\.editMode) private var editMode
     
+    @FocusState private var addInFocus: Bool
+    
     @Binding var navPath: NavigationPath
     @State var model: ViewModel
     @State var list: BethinkeryList
     @State private var isAdding: Bool = false
+    @State private var newTitle: String = ""
     
     var body: some View {
         if editMode?.wrappedValue.isEditing == true {
@@ -159,13 +162,43 @@ struct BethinkeryListView: View {
                 .foregroundColor(Color(hex: list.hexColor))
         } else {
             Section(content: {
-                let orderedBethinkeries = list.bethinkeries
+                if isAdding {
+                    HStack(spacing: 12) {
+                        Image(systemName: "plus.circle.fill")
+                            .font(.title2)
+                            .foregroundColor(.gray)
+                        TextField("", text: $newTitle)
+                            .textFieldStyle(.plain)
+                            .focused($addInFocus)
+                            .onAppear {
+                                addInFocus = true
+                            }
+                            .toolbar {
+                                ToolbarItem(placement: .cancellationAction) {
+                                    Button("Cancel") {
+                                        closeAdding()
+                                    }
+                                }
+                                ToolbarItem(placement: .keyboard) {
+                                    Spacer()
+                                }
+                                ToolbarItem(placement: .keyboard) {
+                                    Button("Done") {
+                                        saveNew()
+                                        closeAdding()
+                                    }
+                                }
+                            }
+                            .submitLabel(.next)
+                            .onSubmit {
+                                saveNew()
+                            }
+                    }
+                }
+            
+                let orderedBethinkeries = model.bethinkeries.filter({ $0.list.id == list.id })
                     .sorted(by: { $0.ordinal <= $1.ordinal })
                     .filter({ model.showCompleted || !$0.isCompleted })
-                
-                if isAdding {
-                    AddingBethinkeryRow(isVisible: $isAdding, model: model, list: list)
-                }
                 
                 ForEach(orderedBethinkeries) { bethinkery in
                     BethinkeryRow(model: model, bethinkery: bethinkery)
@@ -207,7 +240,27 @@ struct BethinkeryListView: View {
                     }
                 }
             })
+            .onChange(of: addInFocus) {
+                if !addInFocus && isAdding {
+                    closeAdding()
+                }
+            }
         }
+    }
+    
+    private func saveNew() {
+        let cleanTitle = newTitle.trimmingCharacters(in: .whitespaces)
+        guard !cleanTitle.isEmpty else { return }
+        
+        model.create(title: cleanTitle, list: list)
+        newTitle = ""
+        addInFocus = true
+    }
+    
+    private func closeAdding() {
+        newTitle = ""
+        isAdding = false
+        addInFocus = false
     }
 }
 
@@ -240,12 +293,10 @@ struct BethinkeryRow: View {
                 TextField(bethinkery.title, text: $editedTitle)
                     .focused($editFocus)
                     .onAppear {
-                        DispatchQueue.main.async() {
-                          self.editFocus = true
-                        }
+                        editFocus = true
                     }
                     .toolbar {
-                        ToolbarItem(placement: .keyboard) {
+                        ToolbarItem(placement: .cancellationAction) {
                             Button("Cancel") {
                                 cancelEdit()
                             }
@@ -294,96 +345,27 @@ struct BethinkeryRow: View {
     }
 }
 
-struct AddingBethinkeryRow: View {
-    @FocusState private var addInFocus: Bool
-    @Binding var isVisible: Bool
-    @State var model: ViewModel
-    @State var list: BethinkeryList
-    @State private var newBethinkery: String = ""
-    
-    var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: "plus.circle.fill")
-                .font(.title2)
-                .foregroundColor(.gray)
-            TextField("", text: $newBethinkery)
-                .textFieldStyle(.plain)
-                .focused($addInFocus)
-                .onAppear {
-                    DispatchQueue.main.async() {
-                        self.addInFocus = true
-                    }
-                }
-                .toolbar {
-                    ToolbarItem(placement: .keyboard) {
-                        Button("Cancel") {
-                            close()
-                        }
-                    }
-                    ToolbarItem(placement: .keyboard) {
-                        Spacer()
-                    }
-                    ToolbarItem(placement: .keyboard) {
-                        Button("Done") {
-                            saveNew()
-                            close()
-                        }
-                    }
-                }
-                .submitLabel(.next)
-                .onSubmit {
-                    saveNew()
-                }
-                .onChange(of: addInFocus) {
-                    if !addInFocus {
-                        close()
-                    }
-                }
-        }
-    }
-    
-    private func saveNew() {
-        let newTitle = newBethinkery.trimmingCharacters(in: .whitespaces)
-        guard !newTitle.isEmpty else { return }
-        
-        model.create(title: newTitle, list: list)
-        
-        self.newBethinkery = ""
-        self.addInFocus = true
-    }
-    
-    private func close() {
-        self.newBethinkery = ""
-        self.addInFocus = false
-        withAnimation {
-            self.isVisible = false
-        }
-    }
-}
-
 struct ListDetail: View {
     @State var model: ViewModel?
     var list: BethinkeryList?
     
     var body: some View {
-//        let isNew = list == nil;
-//        
-//        var title: String = list.title ?? ""
-//        
-//        VStack {
-//            Form {
-//                Section(header: Text("Details")) {
+        let isNew = list == nil;
+                
+        VStack {
+            Form {
+                Section {
 //                    TextField(text: $title, label: { Text("Name") })
-//                }
-//            }
-//        }
-//        .navigationTitle(isNew ? "New List" : list!.title)
-//        .toolbar {
-//            ToolbarItem(placement: .primaryAction) {
-//                Button("Save") {
-//                    //
-//                }
-//            }
-//        }
+                }
+            }
+        }
+        .navigationTitle(isNew ? "New List" : list!.title)
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button("Save") {
+                    //
+                }
+            }
+        }
     }
 }

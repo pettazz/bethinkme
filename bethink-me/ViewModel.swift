@@ -146,6 +146,7 @@ import SwiftUI
             let newBethinkery = Bethinkery(reminder: reminder, list: list)
             
             modelContext.insert(newBethinkery)
+            list.bethinkeries.insert(newBethinkery, at: 0)
             resetOrdinals()
         } catch {
             print("failed to save new!")
