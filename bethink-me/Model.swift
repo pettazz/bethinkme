@@ -40,7 +40,7 @@ final class BethinkeryList: Equatable, Identifiable {
         return lhs.id == rhs.id
     }
     
-    func update(from calendar: EKCalendar) {
+    func load(from calendar: EKCalendar) {
         self.id = calendar.calendarIdentifier
         self.title = calendar.title
         self.hexColor = Color(cgColor: calendar.cgColor).toHex()
@@ -50,6 +50,8 @@ final class BethinkeryList: Equatable, Identifiable {
     func toCalendar() throws -> EKCalendar {
         guard self.hasCalendar else { throw RuntimeError(message: "calendar access before set") }
         self.calendar!.title = title
+        // yes we are constantly going back and forth between Color and cgColor and String,
+        // but SwiftData doesn't want to save Color/UIColor so okay whatever man 
         self.calendar!.cgColor = Color(hex: hexColor).cgColor
         
         return self.calendar!
@@ -94,7 +96,7 @@ final class Bethinkery: Equatable, Identifiable {
         return lhs.id == rhs.id && lhs.list == rhs.list
     }
     
-    func update(from reminder: EKReminder) {
+    func load(from reminder: EKReminder) {
         self.id = reminder.calendarItemIdentifier
         self.title = reminder.title
         self.isCompleted = reminder.isCompleted

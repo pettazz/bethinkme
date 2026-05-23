@@ -1,3 +1,4 @@
+import EventKit
 import SwiftData
 import SwiftUI
 
@@ -7,6 +8,7 @@ struct MainView: View {
     
     @State private var model: ViewModel?
     @State private var listEditMode: EditMode = .inactive
+    @State private var shouldPresentNewListSheet = false
     
     var body: some View {
         NavigationStack {
@@ -74,10 +76,13 @@ struct MainView: View {
                     if listEditMode != .active {
                         ToolbarItem(placement: .primaryAction) {
                             Button {
-//                                path.append(Route.newList)
+                                shouldPresentNewListSheet.toggle()
                             } label: {
                                 Image(systemName: "rectangle.stack.fill.badge.plus")
                             }
+                            .sheet(isPresented: $shouldPresentNewListSheet, content: {
+                                ListDetailView(model: model!)
+                            })
                         }
                     }
                     ToolbarItem(placement: .primaryAction) {
@@ -101,10 +106,8 @@ struct MainView: View {
                             } label: {
                                 if model!.showCompleted {
                                     Image(systemName: "eye.slash.fill")
-                                    // Text("Hide completed")
                                 } else {
                                     Image(systemName: "eye.fill")
-                                    // Text("Show completed")
                                 }
                             }
                         }
@@ -138,6 +141,7 @@ struct BethinkeryListView: View {
     @State var list: BethinkeryList
     @State private var isAdding: Bool = false
     @State private var newTitle: String = ""
+    @State private var shouldPresentEditListSheet = false
     
     var body: some View {
         if editMode?.wrappedValue.isEditing == true {
@@ -185,7 +189,7 @@ struct BethinkeryListView: View {
                     .filter({ model.showCompleted || !$0.isCompleted })
                 
                 ForEach(orderedBethinkeries) { bethinkery in
-                    BethinkeryRow(model: model, bethinkery: bethinkery)
+                    BethinkeryRowView(model: model, bethinkery: bethinkery)
                 }
                 .onMove { from, to in
                     model.moveBethinkery(from: from, to: to, list: list)
@@ -207,12 +211,15 @@ struct BethinkeryListView: View {
                         .foregroundColor(Color(hex: list.hexColor))
                     Spacer()
                     Button {
-//                        navPath.append(Route.editList(list: list))
+                        shouldPresentEditListSheet.toggle()
                     } label: {
                         Image(systemName: "info.circle.fill")
                             .font(.title)
                             .foregroundColor(Color(hex: list.hexColor))
                     }
+                    .sheet(isPresented: $shouldPresentEditListSheet, content: {
+                        ListDetailView(model: model, list: list)
+                    })
                     Button {
                         withAnimation {
                             isAdding = true
@@ -236,7 +243,8 @@ struct BethinkeryListView: View {
         let cleanTitle = newTitle.trimmingCharacters(in: .whitespaces)
         guard !cleanTitle.isEmpty else { return }
         
-        model.create(title: cleanTitle, list: list)
+        let newBethinkery = EditBethinkery(title: cleanTitle, isCompleted: false)
+        model.create(from: newBethinkery, list: list)
         newTitle = ""
         addInFocus = true
     }
@@ -248,8 +256,9 @@ struct BethinkeryListView: View {
     }
 }
 
-struct BethinkeryRow: View {
+struct BethinkeryRowView: View {
     @FocusState private var editFocus: Bool
+    
     @State var model: ViewModel
     @State var bethinkery: Bethinkery
     @State private var isEditing: Bool = false
@@ -264,7 +273,7 @@ struct BethinkeryRow: View {
             } else {
                 Button {
                     withAnimation {
-                        model.update(bethinkery: bethinkery, title: nil, isCompleted: !bethinkery.isCompleted)
+                        model.toggleCompleted(bethinkery: bethinkery)
                     }
                 } label: {
                     Image(systemName: bethinkery.isCompleted ? "checkmark.circle.fill" : "circle")
@@ -323,33 +332,125 @@ struct BethinkeryRow: View {
     }
     
     private func saveEdit() {
-        model.update(bethinkery: bethinkery, title: editedTitle, isCompleted: nil)
+        var updater = EditBethinkery.fromBethinkery(bethinkery: bethinkery)
+        updater.title = editedTitle
+        model.update(bethinkery: bethinkery, with: updater)
         
         cancelEdit()
     }
 }
 
-struct ListDetail: View {
-    @State var model: ViewModel?
+struct ListDetailView: View {
+    @Environment(\.dismiss) private var dismiss
+    
+    @State var model: ViewModel
+    @State private var title: String = ""
+    @State private var newTitle: String = ""
+    @State private var newColor: Color = Color.accentColor
+    @State private var newSourceId: String = ""
+    
     var list: BethinkeryList?
+
+    private var isNew: Bool { list == nil }
+    
+    private var selectedSource: EKSource? {
+        model.availableSources.first(where: {
+            $0.sourceIdentifier == newSourceId
+        })
+    }
     
     var body: some View {
-        let isNew = list == nil;
+        if !model.availableSources.isEmpty {
+            NavigationView {
+                VStack {
+                    Text(newTitle.isEmpty ? "New List" : newTitle)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .foregroundColor(newColor)
+                        .font(.largeTitle)
+                        .bold()
+                        .padding(20)
+                    Form {
+                        Section {
+                            TextField(title, text: $newTitle)
+                            ColorPicker("List color", selection: $newColor)
+                            if isNew {
+                                Picker("Save to", selection: $newSourceId) {
+                                    ForEach(model.availableSources, id: \.sourceIdentifier) { source in
+                                        Text(source.title).tag(source.sourceIdentifier)
+                                    }
+                                }
+                            }
+                            
+                        }
+                    }
+                }
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Save") {
+                            withAnimation{
+                                if isNew {
+                                    let creator = EditBethinkeryList(title: newTitle, hexColor: newColor.toHex())
+                                    guard selectedSource != nil else {
+                                        print("Tried to create a List on a nonexistent Source!")
+                                        return
+                                    }
+                                    model.createList(from: creator, source: selectedSource!)
+                                } else {
+                                    var updater = EditBethinkeryList.fromBethinkeryList(bethinkeryList: list!)
+                                    updater.title = newTitle
+                                    updater.hexColor = newColor.toHex()
+                                    model.update(bethinkeryList: list!, with: updater)
+                                }
+                            }
+                            dismiss()
+                        }
+                    }
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Cancel") {
+                            dismiss()
+                        }
+                    }
+                }
                 
-        VStack {
-            Form {
-                Section {
-//                    TextField(text: $title, label: { Text("Name") })
+            }
+            .task {
+                if isNew {
+                    title = "New List"
+                    newSourceId = model.defaultSource?.sourceIdentifier ??
+                        model.availableSources.first?.sourceIdentifier ??
+                        ""
+                } else {
+                    title = list!.title
+                    newTitle = list!.title
+                    newColor = Color(hex: list!.hexColor)
                 }
             }
-        }
-        .navigationTitle(isNew ? "New List" : list!.title)
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button("Save") {
-                    //
+        } else {
+            NavigationStack {
+                VStack {
+                    Spacer()
+                    Image(systemName: "text.badge.xmark")
+                        .font(.system(size: 60))
+                        .foregroundColor(.gray)
+                    Text("No Sources")
+                        .font(.title2)
+                        .foregroundColor(.gray)
+                    Text("You have nowhere to save Reminders!")
+                        .font(.subheadline)
+                        .foregroundColor(.gray)
+                    Link("Add an account in Settings!",
+                         destination: URL(string: UIApplication.openSettingsURLString)!)
+                    Spacer()
+                }
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Close") {
+                            dismiss()
+                        }
+                    }
                 }
             }
+            
         }
     }
 }

@@ -10,7 +10,7 @@ import SwiftUI
     
     var hasAccess: Bool = false
     var availableSources: [EKSource] = []
-    var selectedCalendar: EKCalendar?
+    var defaultSource: EKSource?
     
     var showCompleted: Bool = false
     
@@ -72,7 +72,7 @@ import SwiftUI
                 // = yes reminder, yes storage
                 // make sure fields are in sync
                 currentList = existingLists.first!
-                currentList.update(from: ekcal)
+                currentList.load(from: ekcal)
             } else if existingLists.count == 0 {
                 // | yes reminder, no storage
                 // add it
@@ -91,7 +91,7 @@ import SwiftUI
                     // = yes reminder, yes storage
                     // make sure fields are in sync
                     let existingBethinkery = existingBethinkeries.first!
-                    existingBethinkery.update(from: ekrem)
+                    existingBethinkery.load(from: ekrem)
                 } else if existingBethinkeries.count == 0 {
                     // | yes reminder, no storage
                     // add it
@@ -132,14 +132,37 @@ import SwiftUI
         
         availableSources = eventStore.sources
             .filter({ validSourceTypes.contains($0.sourceType )})
-        selectedCalendar = eventStore.defaultCalendarForNewReminders() ?? calendars.first
+        if !calendars.isEmpty {
+            let defaultCal = eventStore.defaultCalendarForNewReminders() ?? calendars.first!
+            defaultSource = defaultCal.source
+        }
+        
     }
     
-    func create(title: String, list: BethinkeryList) {
+    func createList(from createCommand: EditBethinkeryList, source: EKSource) {
+        do {
+            let newCalendar = EKCalendar(for: .reminder, eventStore: eventStore)
+            newCalendar.source = source
+            newCalendar.title = createCommand.title
+            newCalendar.cgColor = Color(hex: createCommand.hexColor).cgColor
+            
+            try eventStore.saveCalendar(newCalendar, commit: true)
+            
+            let newBethinkeryList = BethinkeryList(calendar: newCalendar)
+            
+            modelContext.insert(newBethinkeryList)
+            resetOrdinals()
+        } catch {
+            print("failed to save new list!")
+        }
+    }
+    
+    func create(from createCommand: EditBethinkery, list: BethinkeryList) {
         do {
             let reminder = EKReminder(eventStore: eventStore)
-            reminder.title = title
-            reminder.calendar = try? list.toCalendar()
+            reminder.title = createCommand.title
+            reminder.isCompleted = createCommand.isCompleted
+            reminder.calendar = try list.toCalendar()
             
             try eventStore.save(reminder, commit: true)
             
@@ -153,20 +176,32 @@ import SwiftUI
         }
     }
     
-    func update(bethinkery: Bethinkery, title: String?, isCompleted: Bool?) {
-        // theres gotta be a cleaner way
-        if title != nil {
-            bethinkery.title = title!
+    func update(bethinkeryList: BethinkeryList, with updateCommand: EditBethinkeryList) {
+        bethinkeryList.title = updateCommand.title
+        bethinkeryList.hexColor = updateCommand.hexColor
+        
+        do {
+            try eventStore.saveCalendar(bethinkeryList.toCalendar(), commit: true)
+        } catch {
+            print("failed to save list update!")
         }
-        if isCompleted != nil {
-            bethinkery.isCompleted = isCompleted!
-        }
+    }
+    
+    func update(bethinkery: Bethinkery, with updateCommand: EditBethinkery) {
+        bethinkery.title = updateCommand.title
+        bethinkery.isCompleted = updateCommand.isCompleted
         
         do {
             try eventStore.save(bethinkery.toReminder(), commit: true)
         } catch {
             print("failed to save update!")
         }
+    }
+    
+    func toggleCompleted(bethinkery: Bethinkery) {
+        var updatedBethinkery = EditBethinkery.fromBethinkery(bethinkery: bethinkery)
+        updatedBethinkery.isCompleted.toggle()
+        update(bethinkery: bethinkery, with: updatedBethinkery)
     }
 
     func delete(bethinkeryList: BethinkeryList){

@@ -10,7 +10,20 @@ struct bethink_meApp: App {
                     MainView()
                 }
                 Tab("Settings", systemImage: "gear") {
-                    Text("Settings!")
+                    VStack {
+                        Spacer()
+                        Image(systemName: "figure.equestrian.sports")
+                            .font(.system(size: 60))
+                            .foregroundColor(.gray)
+                        Text(Bundle.main.identifier)
+                            .font(.title2)
+                            .foregroundColor(.gray)
+                        Text("Ver: \(Bundle.main.appVersionLong)")
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
+                        Spacer()
+                        Text("There's nothing to set yet")
+                    }
                 }
             }
         }
