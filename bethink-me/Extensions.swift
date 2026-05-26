@@ -52,5 +52,7 @@ extension Bundle {
     public var appVersionLong: String    { getInfo("CFBundleShortVersionString") }
     //public var appVersionShort: String { getInfo("CFBundleShortVersion") }
     
+    public var appGitReleaseVersion: String { getInfo("GitReleaseVersion") }
+    
     fileprivate func getInfo(_ str: String) -> String { infoDictionary?[str] as? String ?? "⚠️" }
 }

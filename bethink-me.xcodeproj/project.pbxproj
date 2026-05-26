@@ -10,9 +10,22 @@
 		F0D9DA512FA1300C0013F018 /* bethink-me.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "bethink-me.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		F08C16A52FC65D93003CF778 /* Exceptions for "bethink-me" folder in "bethink-me" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = F0D9DA502FA1300C0013F018 /* bethink-me */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		F0D9DA532FA1300C0013F018 /* bethink-me */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				F08C16A52FC65D93003CF778 /* Exceptions for "bethink-me" folder in "bethink-me" target */,
+			);
 			path = "bethink-me";
 			sourceTree = "<group>";
 		};
@@ -133,7 +146,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "GIT=`xcrun -find git`\nGIT_RELEASE_VERSION=$(cd ${SRCROOT} && ${GIT} describe --tags --always --dirty=-nasty)\nLATEST_TAG=`${GIT} describe --tags --always --abbrev=0`\nCOMMITS=$(cd ${SRCROOT} && ${GIT} rev-list ${LATEST_TAG}..HEAD | wc -l)\nCOMMITS=$(($COMMITS))\n/usr/libexec/PlistBuddy -c \"Set :CFBundleShortVersionString ${GIT_RELEASE_VERSION#*v}\" \"${BUILT_PRODUCTS_DIR}/${INFOPLIST_PATH}\"\n/usr/libexec/PlistBuddy -c \"Set :CFBundleVersion ${COMMITS}\" \"${BUILT_PRODUCTS_DIR}/${INFOPLIST_PATH}\"\n";
+			shellScript = "GIT=`xcrun -find git`\nGIT_RELEASE_VERSION=$(cd ${SRCROOT} && ${GIT} describe --tags --always --dirty=-nasty)\nLATEST_TAG=`${GIT} describe --tags --always --abbrev=0`\nCOMMITS=$(cd ${SRCROOT} && ${GIT} rev-list ${LATEST_TAG}..HEAD | wc -l)\nCOMMITS=$(($COMMITS))\nPLIST=\"${BUILT_PRODUCTS_DIR}/${INFOPLIST_PATH}\"\n\n\necho \"using plist: $PLIST\"\n/usr/libexec/PlistBuddy -c \"Set :CFBundleShortVersionString ${LATEST_TAG#*v}\" $PLIST\necho \"Set :CFBundleShortVersionString ${LATEST_TAG#*v}\"\n/usr/libexec/PlistBuddy -c \"Set :CFBundleVersion ${COMMITS}\" $PLIST\necho \"Set :CFBundleVersion ${COMMITS}\"\n/usr/libexec/PlistBuddy -c \"Set :GitReleaseVersion ${GIT_RELEASE_VERSION}\" $PLIST\necho \"Set :GitReleaseVersion ${GIT_RELEASE_VERSION}\"\n\n/usr/libexec/PlistBuddy -c \"Print :GitReleaseVersion\" $PLIST\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -282,6 +295,7 @@
 				DEVELOPMENT_TEAM = 62G6DHB59R;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "bethink-me/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Bethink Me";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSRemindersFullAccessUsageDescription = "The whole point of this is managing Reminders so yeah we need to be able to manage Reminders";
@@ -319,6 +333,7 @@
 				DEVELOPMENT_TEAM = 62G6DHB59R;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "bethink-me/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Bethink Me";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSRemindersFullAccessUsageDescription = "The whole point of this is managing Reminders so yeah we need to be able to manage Reminders";

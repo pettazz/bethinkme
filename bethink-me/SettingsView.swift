@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 enum SettingsKey: String {
     case enableAutocorrect = "settings.enableAutocorrect"
@@ -11,6 +12,8 @@ struct SettingsView: View {
     
     @AppStorage(SettingsKey.maxCompletedAgeDays.rawValue)
     private var maxCompletedAgeDays: Int = 30
+    
+    @State private var shouldShowVersionCopiedPopover: Bool = false
     
     var body: some View {
         NavigationStack {
@@ -41,6 +44,23 @@ struct SettingsView: View {
                         .font(.title2)
                     Text("Version: \(Bundle.main.appVersionLong) (\(Bundle.main.appBuild))")
                         .font(.subheadline)
+                    Text(Bundle.main.appGitReleaseVersion)
+                        .font(.subheadline)
+                        .monospaced()
+                        .onTapGesture {
+                            let clipboard = UIPasteboard.general
+                            clipboard.setValue(Bundle.main.appGitReleaseVersion,
+                                               forPasteboardType: UTType.plainText.identifier)
+                            shouldShowVersionCopiedPopover = true
+                        }
+                        .popover(isPresented: $shouldShowVersionCopiedPopover,
+                                 attachmentAnchor: .point(.center),
+                                 arrowEdge: .top,
+                                 content: {
+                            Text("Copied!")
+                                .padding()
+                                .presentationCompactAdaptation(.none)
+                        })
                 }
                 .frame(maxWidth: .infinity, alignment: .center)
             }
@@ -48,4 +68,8 @@ struct SettingsView: View {
             .navigationBarTitle("Settings")
         }
     }
+}
+
+#Preview {
+    SettingsView()
 }
