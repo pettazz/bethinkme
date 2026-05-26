@@ -18,7 +18,7 @@ struct bethink_meApp: App {
                         Text(Bundle.main.identifier)
                             .font(.title2)
                             .foregroundColor(.gray)
-                        Text("Ver: \(Bundle.main.appVersionLong)")
+                        Text("Ver: \(Bundle.main.appVersionLong) (\(Bundle.main.appBuild))")
                             .font(.subheadline)
                             .foregroundColor(.gray)
                         Spacer()

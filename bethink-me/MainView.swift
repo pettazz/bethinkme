@@ -8,6 +8,7 @@ struct MainView: View {
     
     @State private var model: ViewModel?
     @State private var listEditMode: EditMode = .inactive
+    @State private var listsLoading: Bool = false
     @State private var shouldPresentNewListSheet = false
     
     var body: some View {
@@ -120,7 +121,9 @@ struct MainView: View {
                         guard model != nil else {
                             throw RuntimeError(message: "no view model!")
                         }
+                        listsLoading = true
                         await model!.loadLists()
+                        listsLoading = false
                     }
                 }
             }

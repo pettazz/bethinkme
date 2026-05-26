@@ -6,7 +6,7 @@ import SwiftUI
 @MainActor
 @Observable class ViewModel {
     private let modelContext: ModelContext
-    private let eventStore = EKEventStore()
+    private nonisolated final let eventStore = EKEventStore()
     
     var hasAccess: Bool = false
     var availableSources: [EKSource] = []
@@ -258,12 +258,28 @@ import SwiftUI
     
     
     private func loadRemindersForCalendar(calendar: EKCalendar) async -> [EKReminder] {
-        let predicate = eventStore.predicateForReminders(in: [calendar])
+        var ageLimitDateComponents = DateComponents()
+        ageLimitDateComponents.day = -7 // TODO: make this a setting!
+        let ageLimitDate = Calendar.current.date(byAdding: ageLimitDateComponents, to: Date.now, wrappingComponents: false)
         
-        return await withCheckedContinuation { continuation in
-            eventStore.fetchReminders(matching: predicate) { reminders in
-                continuation.resume(returning: reminders ?? [])
+        async let completeds = withCheckedContinuation { continuation in
+            eventStore.fetchReminders(matching: eventStore.predicateForCompletedReminders(
+                withCompletionDateStarting: ageLimitDate,
+                ending: Date.now,
+                calendars: [calendar])) { reminders in
+                    continuation.resume(returning: reminders ?? [])
             }
         }
+        async let incompleteds = withCheckedContinuation { continuation in
+            eventStore.fetchReminders(matching: eventStore.predicateForIncompleteReminders(
+                withDueDateStarting: nil,
+                ending: nil,
+                calendars: [calendar])) { reminders in
+                    continuation.resume(returning: reminders ?? [])
+            }
+        }
+        
+        let (fetchedCompleteds, fetchedIncompleteds) = await (completeds, incompleteds)
+        return fetchedCompleteds + fetchedIncompleteds
     }
 }
