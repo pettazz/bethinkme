@@ -5,6 +5,10 @@ import SwiftUI
 
 @MainActor
 @Observable class ViewModel {
+    @ObservationIgnored
+    @AppStorage(SettingsKey.maxCompletedAgeDays.rawValue)
+    private var maxCompletedAgeDaysSetting: Int = 7
+    
     private let modelContext: ModelContext
     private nonisolated final let eventStore = EKEventStore()
     
@@ -47,6 +51,7 @@ import SwiftUI
     }
     
     func loadLists() async {
+        try! await Task.sleep(for: .seconds(3))
         guard await checkPermissions() else {
             print("tried to load lists without permissions!")
             return
@@ -259,7 +264,7 @@ import SwiftUI
     
     private func loadRemindersForCalendar(calendar: EKCalendar) async -> [EKReminder] {
         var ageLimitDateComponents = DateComponents()
-        ageLimitDateComponents.day = -7 // TODO: make this a setting!
+        ageLimitDateComponents.day = -1 * maxCompletedAgeDaysSetting
         let ageLimitDate = Calendar.current.date(byAdding: ageLimitDateComponents, to: Date.now, wrappingComponents: false)
         
         async let completeds = withCheckedContinuation { continuation in

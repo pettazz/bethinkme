@@ -3,6 +3,9 @@ import SwiftData
 import SwiftUI
 
 struct MainView: View {
+    @AppStorage(SettingsKey.maxCompletedAgeDays.rawValue)
+    private var maxCompletedAgeDaysSetting: Int = 7
+    
     @Environment(\.modelContext) private var modelContext
     @Environment(\.scenePhase) private var scenePhase
     
@@ -114,13 +117,25 @@ struct MainView: View {
                         }
                     }
                 }
-            }
-            .onChange(of: scenePhase) {
-                if scenePhase == .active {
+                .onChange(of: scenePhase) {
+                    if scenePhase == .active {
+                        Task {
+                            guard model != nil else {
+                                throw RuntimeError(message: "no view model!")
+                            }
+                            print("reloading due to app switch...")
+                            listsLoading = true
+                            await model!.loadLists()
+                            listsLoading = false
+                        }
+                    }
+                }
+                .onChange(of: maxCompletedAgeDaysSetting) {
                     Task {
                         guard model != nil else {
                             throw RuntimeError(message: "no view model!")
                         }
+                        print("reloading due to settings change...")
                         listsLoading = true
                         await model!.loadLists()
                         listsLoading = false
@@ -136,6 +151,9 @@ struct MainView: View {
 }
 
 struct BethinkeryListView: View {
+    @AppStorage(SettingsKey.enableAutocorrect.rawValue)
+    private var enableAutocorrectSetting: Bool = true
+    
     @Environment(\.editMode) private var editMode
     
     @FocusState private var addInFocus: Bool
@@ -159,6 +177,7 @@ struct BethinkeryListView: View {
                             .font(.title2)
                             .foregroundColor(.gray)
                         TextField("", text: $newTitle)
+                            .autocorrectionDisabled(!enableAutocorrectSetting)
                             .textFieldStyle(.plain)
                             .focused($addInFocus)
                             .onAppear {
@@ -260,6 +279,9 @@ struct BethinkeryListView: View {
 }
 
 struct BethinkeryRowView: View {
+    @AppStorage(SettingsKey.enableAutocorrect.rawValue)
+    private var enableAutocorrectSetting: Bool = true
+    
     @FocusState private var editFocus: Bool
     
     @State var model: ViewModel
@@ -287,6 +309,7 @@ struct BethinkeryRowView: View {
             
             if isEditing {
                 TextField(bethinkery.title, text: $editedTitle)
+                    .autocorrectionDisabled(!enableAutocorrectSetting)
                     .focused($editFocus)
                     .onAppear {
                         editFocus = true
@@ -344,6 +367,9 @@ struct BethinkeryRowView: View {
 }
 
 struct ListDetailView: View {
+    @AppStorage(SettingsKey.enableAutocorrect.rawValue)
+    private var enableAutocorrectSetting: Bool = true
+    
     @Environment(\.dismiss) private var dismiss
     
     @State var model: ViewModel
@@ -375,6 +401,7 @@ struct ListDetailView: View {
                     Form {
                         Section {
                             TextField(title, text: $newTitle)
+                                .autocorrectionDisabled(!enableAutocorrectSetting)
                             ColorPicker("List color", selection: $newColor)
                             if isNew {
                                 Picker("Save to", selection: $newSourceId) {
