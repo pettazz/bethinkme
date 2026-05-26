@@ -51,7 +51,7 @@ import SwiftUI
     }
     
     func loadLists() async {
-        try! await Task.sleep(for: .seconds(3))
+//        try! await Task.sleep(for: .seconds(3))
         guard await checkPermissions() else {
             print("tried to load lists without permissions!")
             return
