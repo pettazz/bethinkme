@@ -16,103 +16,104 @@ struct MainView: View {
     
     var body: some View {
         NavigationStack {
-            VStack {
-                if model == nil {
-                    ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle(tint: .blue))
-                        .scaleEffect(2.0, anchor: .center)
-                } else {
-                    if !model!.hasAccess {
-                        VStack {
-                            Spacer()
-                            Image(systemName: "hand.raised.square.on.square")
-                                .font(.system(size: 60))
-                                .foregroundColor(.gray)
-                            Text("No Permission")
-                                .font(.title2)
-                                .foregroundColor(.gray)
-                            Text("u gotta let me look at them toedeos")
-                                .font(.subheadline)
-                                .foregroundColor(.gray)
-                            Link("Enable me in settings!",
-                                 destination: URL(string: UIApplication.openSettingsURLString)!)
-                            Spacer()
-                        }
-                    } else if (model!.bethinkeryLists.isEmpty) {
-                        VStack {
-                            Spacer()
-                            Image(systemName: "checklist")
-                                .font(.system(size: 60))
-                                .foregroundColor(.gray)
-                            Text("oh no")
-                                .font(.title2)
-                                .foregroundColor(.gray)
-                            Text("no toedeos?")
-                                .font(.subheadline)
-                                .foregroundColor(.gray)
-                            Spacer()
-                        }
-                    } else {
-                        List {
-                            ForEach(model!.bethinkeryLists) { list in
-                                BethinkeryListView(model: model!, list: list)
+            ZStack {
+                VStack {
+                    if model != nil {
+                        if !model!.hasAccess {
+                            VStack {
+                                Spacer()
+                                Image(systemName: "hand.raised.square.on.square")
+                                    .font(.system(size: 60))
+                                    .foregroundColor(.gray)
+                                Text("No Permission")
+                                    .font(.title2)
+                                    .foregroundColor(.gray)
+                                Text("u gotta let me look at them toedeos")
+                                    .font(.subheadline)
+                                    .foregroundColor(.gray)
+                                Link("Enable me in settings!",
+                                     destination: URL(string: UIApplication.openSettingsURLString)!)
+                                Spacer()
                             }
-                            .onMove { from, to in
-                                model!.moveList(from: from, to: to)
+                        } else if (model!.bethinkeryLists.isEmpty) {
+                            VStack {
+                                Spacer()
+                                Image(systemName: "checklist")
+                                    .font(.system(size: 60))
+                                    .foregroundColor(.gray)
+                                Text("oh no")
+                                    .font(.title2)
+                                    .foregroundColor(.gray)
+                                Text("no toedeos?")
+                                    .font(.subheadline)
+                                    .foregroundColor(.gray)
+                                Spacer()
                             }
-                            .onDelete { offsets in
-                                // TODO: confirmation dialog
-                                guard offsets.count == 1 else {
-                                    // impossible on iOS!
-                                    print("invalid number of offsets sent to delete list!")
-                                    return
+                        } else {
+                            List {
+                                ForEach(model!.bethinkeryLists) { list in
+                                    BethinkeryListView(model: model!, list: list)
                                 }
-                                model!.delete(bethinkeryList: model!.bethinkeryLists[offsets.first!])
+                                .onMove { from, to in
+                                    model!.moveList(from: from, to: to)
+                                }
+                                .onDelete { offsets in
+                                    // TODO: confirmation dialog
+                                    guard offsets.count == 1 else {
+                                        // impossible on iOS!
+                                        print("invalid number of offsets sent to delete list!")
+                                        return
+                                    }
+                                    model!.delete(bethinkeryList: model!.bethinkeryLists[offsets.first!])
+                                }
                             }
+                            .environment(\.editMode, $listEditMode)
                         }
-                        .environment(\.editMode, $listEditMode)
                     }
                 }
-            }
-            .navigationTitle("Lists")
-            .toolbar {
-                if model != nil {
-                    if listEditMode != .active {
-                        ToolbarItem(placement: .primaryAction) {
-                            Button {
-                                shouldPresentNewListSheet.toggle()
-                            } label: {
-                                Image(systemName: "rectangle.stack.fill.badge.plus")
+                .navigationTitle("Lists")
+                .toolbar {
+                    if model != nil {
+                        if listEditMode != .active {
+                            ToolbarItem(placement: .primaryAction) {
+                                Button {
+                                    shouldPresentNewListSheet.toggle()
+                                } label: {
+                                    Image(systemName: "rectangle.stack.fill.badge.plus")
+                                }
+                                .sheet(isPresented: $shouldPresentNewListSheet, content: {
+                                    ListDetailView(model: model!)
+                                })
+                                .disabled(listsLoading)
                             }
-                            .sheet(isPresented: $shouldPresentNewListSheet, content: {
-                                ListDetailView(model: model!)
-                            })
                         }
-                    }
-                    ToolbarItem(placement: .primaryAction) {
-                        Button {
-                            withAnimation {
-                                listEditMode = listEditMode.isEditing ? .inactive : .active
-                            }
-                        } label: {
-                            Image(systemName: listEditMode == .active
-                                  ? "checkmark.circle.fill"
-                                  : "arrow.up.arrow.down.square.fill")
-                        }
-                    }
-                    if listEditMode != .active {
                         ToolbarItem(placement: .primaryAction) {
                             Button {
                                 withAnimation {
-                                    model!.showCompleted.toggle()
+                                    listEditMode = listEditMode.isEditing ? .inactive : .active
                                 }
-                                model!.resetOrdinals()
                             } label: {
-                                if model!.showCompleted {
-                                    Image(systemName: "eye.slash.fill")
-                                } else {
-                                    Image(systemName: "eye.fill")
+                                Image(systemName: listEditMode == .active
+                                      ? "checkmark.circle.fill"
+                                      : "arrow.up.arrow.down.square.fill")
+                            }
+                            .disabled(listsLoading)
+                        }
+                        if listEditMode != .active {
+                            ToolbarItem(placement: .primaryAction) {
+                                Button {
+                                    withAnimation {
+                                        model!.showCompleted.toggle()
+                                    }
+                                    model!.resetOrdinals()
+                                } label: {
+                                    if model!.showCompleted {
+                                        Image(systemName: "eye.slash.fill")
+                                    } else {
+                                        Image(systemName: "eye.fill")
+                                    }
                                 }
+                                .disabled(listsLoading)
                             }
                         }
                     }
@@ -140,6 +141,22 @@ struct MainView: View {
                         await model!.loadLists()
                         listsLoading = false
                     }
+                }
+                if listsLoading {
+                    Color.black.opacity(0.2)
+                        .ignoresSafeArea()
+                    
+                    VStack {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle())
+                            .tint(.accentColor)
+                            .scaleEffect(2.0, anchor: .center)
+                            .padding()
+                        Text("Loading Bethinkeries...")
+                            .padding()
+                    }
+                    .padding()
+                    .glassEffect(in: .rect(cornerRadius: 16.0))
                 }
             }
         }
