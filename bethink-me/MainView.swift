@@ -333,6 +333,7 @@ struct BethinkeryRowView: View {
                         .font(.title2)
                         .foregroundColor(bethinkery.isCompleted ? .green : .gray)
                 }
+                .sensoryFeedback(.success, trigger: bethinkery.isCompleted)
             }
             
             if isEditing {
