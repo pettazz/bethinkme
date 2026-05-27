@@ -1,6 +1,8 @@
+import Combine
 import EventKit
 import SwiftData
 import SwiftUI
+
 
 struct MainView: View {
     @AppStorage(SettingsKey.maxCompletedAgeDays.rawValue)
@@ -11,8 +13,12 @@ struct MainView: View {
     
     @State private var model: ViewModel?
     @State private var listEditMode: EditMode = .inactive
-    @State private var listsLoading: Bool = false
     @State private var shouldPresentNewListSheet = false
+    
+    @State private var listsLoading: Bool = false
+    @State private var listsLoadingTime: Int = 0
+    
+    private var clock = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     
     var body: some View {
         NavigationStack {
@@ -128,6 +134,7 @@ struct MainView: View {
                             listsLoading = true
                             await model!.loadLists()
                             listsLoading = false
+                            listsLoadingTime = 0
                         }
                     }
                 }
@@ -140,10 +147,11 @@ struct MainView: View {
                         listsLoading = true
                         await model!.loadLists()
                         listsLoading = false
+                        listsLoadingTime = 0
                     }
                 }
-                if listsLoading {
-                    Color.black.opacity(0.2)
+                if listsLoading && listsLoadingTime >= 1 {
+                    Color.black.opacity(0.3)
                         .ignoresSafeArea()
                     
                     VStack {
@@ -157,6 +165,11 @@ struct MainView: View {
                     }
                     .padding()
                     .glassEffect(in: .rect(cornerRadius: 16.0))
+                }
+            }
+            .onReceive(clock) { _ in
+                if listsLoading {
+                    listsLoadingTime += 1
                 }
             }
         }
