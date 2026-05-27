@@ -237,8 +237,6 @@ struct BethinkeryListView: View {
                 }
             
                 let orderedBethinkeries = model.bethinkeries.filter({ $0.list.id == list.id })
-                    .sorted(by: { $0.ordinal <= $1.ordinal })
-                    .filter({ model.showCompleted || !$0.isCompleted })
                 
                 ForEach(orderedBethinkeries) { bethinkery in
                     BethinkeryRowView(model: model, bethinkery: bethinkery)
