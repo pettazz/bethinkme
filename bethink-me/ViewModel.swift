@@ -32,7 +32,7 @@ import SwiftUI
     var bethinkeries: [Bethinkery] {
         (try? modelContext.fetch(FetchDescriptor(
             predicate: #Predicate<Bethinkery> { bethinkery in
-                return showCompleted || !bethinkery.isCompleted
+                return (showCompleted || !bethinkery.isCompleted) || bethinkery.freshlyCompleted
             },
             sortBy: [.init(\Bethinkery.ordinal)])))
         ?? []
@@ -195,6 +195,7 @@ import SwiftUI
     func update(bethinkery: Bethinkery, with updateCommand: EditBethinkery) {
         bethinkery.title = updateCommand.title
         bethinkery.isCompleted = updateCommand.isCompleted
+        bethinkery.freshlyCompleted = updateCommand.freshlyCompleted
         
         do {
             try eventStore.save(bethinkery.toReminder(), commit: true)
@@ -206,6 +207,7 @@ import SwiftUI
     func toggleCompleted(bethinkery: Bethinkery) {
         var updatedBethinkery = EditBethinkery.fromBethinkery(bethinkery: bethinkery)
         updatedBethinkery.isCompleted.toggle()
+        updatedBethinkery.freshlyCompleted = updatedBethinkery.isCompleted
         update(bethinkery: bethinkery, with: updatedBethinkery)
     }
 
@@ -257,6 +259,7 @@ import SwiftUI
             for (idx, bethinkery) in unfilteredBethinkeries.enumerated()
                 .filter({ $0.1.list.id == list.id }) {
                 bethinkery.ordinal = idx
+                bethinkery.freshlyCompleted = false // hehehehe side effects
             }
         }
     }

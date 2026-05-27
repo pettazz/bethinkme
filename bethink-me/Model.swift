@@ -66,6 +66,7 @@ final class Bethinkery: Equatable, Identifiable {
     var ordinal: Int = -1
     var title: String
     var isCompleted: Bool
+    var freshlyCompleted: Bool = false
     @Transient
     var reminder: EKReminder?
     
@@ -100,6 +101,7 @@ final class Bethinkery: Equatable, Identifiable {
         self.id = reminder.calendarItemIdentifier
         self.title = reminder.title
         self.isCompleted = reminder.isCompleted
+        self.freshlyCompleted = false
         self.reminder = reminder
     }
     

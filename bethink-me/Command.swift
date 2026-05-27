@@ -17,10 +17,12 @@ struct EditBethinkeryList {
 struct EditBethinkery {
     var title: String
     var isCompleted: Bool
+    var freshlyCompleted: Bool = false
     
     static func fromBethinkery(bethinkery: Bethinkery) -> EditBethinkery {
         return EditBethinkery(
             title: bethinkery.title,
-            isCompleted: bethinkery.isCompleted)
+            isCompleted: bethinkery.isCompleted,
+            freshlyCompleted: bethinkery.freshlyCompleted)
     }
 }
