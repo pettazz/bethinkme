@@ -141,18 +141,15 @@ struct MainView: View {
                         Color.black.opacity(0.3)
                             .ignoresSafeArea()
                         
-                        VStack {
-                            ProgressView()
-                                .progressViewStyle(CircularProgressViewStyle())
-                                .tint(.accentColor)
-                                .scaleEffect(2.0, anchor: .center)
-                                .padding()
-                            Text("Loading Bethinkeries...")
-                                .padding()
+                        if #available(iOS 26.0, *) {
+                            LoadingSpinnerView()
+                                .glassEffect(in: .rect(cornerRadius: 16.0))
+                        } else {
+                            LoadingSpinnerView()
+                                .background(RoundedRectangle(cornerRadius: 16.0)
+                                    .fill(Color.white))
+                            
                         }
-                        .padding()
-                        .glassEffect(in: .rect(cornerRadius: 16.0))
-                        .transition(.blurReplace)
                     }
                 }.animation(.snappy, value: listsLoading)
                 
@@ -177,6 +174,22 @@ struct MainView: View {
         listsLoading = true
         await model!.loadLists()
         listsLoading = false
+    }
+}
+
+struct LoadingSpinnerView: View {
+    var body: some View {
+        VStack {
+            ProgressView()
+                .progressViewStyle(CircularProgressViewStyle())
+                .tint(.accentColor)
+                .scaleEffect(2.0, anchor: .center)
+                .padding()
+            Text("Loading Bethinkeries...")
+                .padding()
+        }
+        .padding()
+        .transition(.blurReplace)
     }
 }
 
@@ -269,6 +282,7 @@ struct BethinkeryListView: View {
                     }
                     .sheet(isPresented: $shouldPresentEditListSheet, content: {
                         ListDetailView(model: model, list: list)
+                            .textCase(.none)
                     })
                     Button {
                         withAnimation {
