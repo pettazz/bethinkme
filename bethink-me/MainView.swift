@@ -127,49 +127,39 @@ struct MainView: View {
                 .onChange(of: scenePhase) {
                     if scenePhase == .active {
                         Task {
-                            guard model != nil else {
-                                throw RuntimeError(message: "no view model!")
-                            }
-                            print("reloading due to app switch...")
-                            listsLoading = true
-                            await model!.loadLists()
-                            listsLoading = false
-                            listsLoadingTime = 0
+                            try await reloadLists()
                         }
                     }
                 }
                 .onChange(of: maxCompletedAgeDaysSetting) {
                     Task {
-                        guard model != nil else {
-                            throw RuntimeError(message: "no view model!")
+                        try await reloadLists()
+                    }
+                }
+                ZStack {
+                    if listsLoadingTime >= 1 && listsLoading {
+                        Color.black.opacity(0.3)
+                            .ignoresSafeArea()
+                        
+                        VStack {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle())
+                                .tint(.accentColor)
+                                .scaleEffect(2.0, anchor: .center)
+                                .padding()
+                            Text("Loading Bethinkeries...")
+                                .padding()
                         }
-                        print("reloading due to settings change...")
-                        listsLoading = true
-                        await model!.loadLists()
-                        listsLoading = false
-                        listsLoadingTime = 0
+                        .padding()
+                        .glassEffect(in: .rect(cornerRadius: 16.0))
+                        .transition(.blurReplace)
                     }
-                }
-                if listsLoading && listsLoadingTime >= 1 {
-                    Color.black.opacity(0.3)
-                        .ignoresSafeArea()
-                    
-                    VStack {
-                        ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle())
-                            .tint(.accentColor)
-                            .scaleEffect(2.0, anchor: .center)
-                            .padding()
-                        Text("Loading Bethinkeries...")
-                            .padding()
-                    }
-                    .padding()
-                    .glassEffect(in: .rect(cornerRadius: 16.0))
-                }
+                }.animation(.snappy, value: listsLoading)
+                
             }
             .onReceive(clock) { _ in
-                if listsLoading {
-                    listsLoadingTime += 1
+                withAnimation(.snappy) {
+                    listsLoadingTime = listsLoading ? listsLoadingTime + 1 : 0
                 }
             }
         }
@@ -177,6 +167,16 @@ struct MainView: View {
             guard model == nil else { return }
             model = await ViewModel(modelContext: modelContext)
         }
+    }
+    
+    func reloadLists() async throws {
+        guard model != nil else {
+            throw RuntimeError(message: "no view model!")
+        }
+        
+        listsLoading = true
+        await model!.loadLists()
+        listsLoading = false
     }
 }
 
