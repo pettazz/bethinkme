@@ -7,7 +7,7 @@ struct EditBethinkeryList {
     var title: String
     var hexColor: String
     
-    static func fromBethinkeryList(bethinkeryList: BethinkeryList) -> EditBethinkeryList {
+    static func fromBethinkeryList(_ bethinkeryList: BethinkeryList) -> EditBethinkeryList {
         return EditBethinkeryList(
             title: bethinkeryList.title,
             hexColor: bethinkeryList.hexColor)
@@ -19,7 +19,7 @@ struct EditBethinkery {
     var isCompleted: Bool
     var freshlyCompleted: Bool = false
     
-    static func fromBethinkery(bethinkery: Bethinkery) -> EditBethinkery {
+    static func fromBethinkery(_ bethinkery: Bethinkery) -> EditBethinkery {
         return EditBethinkery(
             title: bethinkery.title,
             isCompleted: bethinkery.isCompleted,

@@ -88,7 +88,7 @@ import SwiftUI
                 continue
             }
             
-            let loadedReminders = await loadRemindersForCalendar(calendar: ekcal)
+            let loadedReminders = await loadRemindersForCalendar(ekcal)
             for ekrem in loadedReminders {
                 let existingBethinkeries = currentList.bethinkeries.filter({ $0.id == ekrem.calendarItemIdentifier })
 
@@ -181,7 +181,7 @@ import SwiftUI
         }
     }
     
-    func update(bethinkeryList: BethinkeryList, with updateCommand: EditBethinkeryList) {
+    func update(_ bethinkeryList: BethinkeryList, with updateCommand: EditBethinkeryList) {
         bethinkeryList.title = updateCommand.title
         bethinkeryList.hexColor = updateCommand.hexColor
         
@@ -192,7 +192,7 @@ import SwiftUI
         }
     }
     
-    func update(bethinkery: Bethinkery, with updateCommand: EditBethinkery) {
+    func update(_ bethinkery: Bethinkery, with updateCommand: EditBethinkery) {
         bethinkery.title = updateCommand.title
         bethinkery.isCompleted = updateCommand.isCompleted
         bethinkery.freshlyCompleted = updateCommand.freshlyCompleted
@@ -204,14 +204,14 @@ import SwiftUI
         }
     }
     
-    func toggleCompleted(bethinkery: Bethinkery) {
-        var updatedBethinkery = EditBethinkery.fromBethinkery(bethinkery: bethinkery)
+    func toggleCompleted(_ bethinkery: Bethinkery) {
+        var updatedBethinkery = EditBethinkery.fromBethinkery(bethinkery)
         updatedBethinkery.isCompleted.toggle()
         updatedBethinkery.freshlyCompleted = updatedBethinkery.isCompleted
-        update(bethinkery: bethinkery, with: updatedBethinkery)
+        update(bethinkery, with: updatedBethinkery)
     }
 
-    func delete(bethinkeryList: BethinkeryList){
+    func delete(_ bethinkeryList: BethinkeryList){
         do {
             try eventStore.removeCalendar(bethinkeryList.toCalendar(), commit: true)
             modelContext.delete(bethinkeryList)
@@ -220,7 +220,7 @@ import SwiftUI
         }
     }
 
-    func delete(bethinkery: Bethinkery){
+    func delete(_ bethinkery: Bethinkery){
         do {
             try eventStore.remove(bethinkery.toReminder(), commit: true)
             modelContext.delete(bethinkery)
@@ -229,7 +229,7 @@ import SwiftUI
         }
     }
     
-    func moveList(from: IndexSet, to: Int) {
+    func moveListPosition(from: IndexSet, to: Int) {
         var tmpLists = bethinkeryLists
         tmpLists.move(fromOffsets: from, toOffset: to)
         
@@ -238,7 +238,7 @@ import SwiftUI
         }
     }
     
-    func moveBethinkery(from: IndexSet, to: Int, list: BethinkeryList) {
+    func moveBethinkeryPosition(from: IndexSet, to: Int, list: BethinkeryList) {
         guard from.count == 1 else {
             print("invalid number of items sent to move!")
             return
@@ -265,7 +265,7 @@ import SwiftUI
     }
     
     
-    private func loadRemindersForCalendar(calendar: EKCalendar) async -> [EKReminder] {
+    private func loadRemindersForCalendar(_ calendar: EKCalendar) async -> [EKReminder] {
         var ageLimitDateComponents = DateComponents()
         ageLimitDateComponents.day = -1 * maxCompletedAgeDaysSetting
         let ageLimitDate = Calendar.current.date(byAdding: ageLimitDateComponents, to: Date.now, wrappingComponents: false)

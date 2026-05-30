@@ -61,7 +61,7 @@ struct MainView: View {
                                     BethinkeryListView(model: model!, list: list)
                                 }
                                 .onMove { from, to in
-                                    model!.moveList(from: from, to: to)
+                                    model!.moveListPosition(from: from, to: to)
                                 }
                                 .onDelete { offsets in
                                     // TODO: confirmation dialog
@@ -70,7 +70,7 @@ struct MainView: View {
                                         print("invalid number of offsets sent to delete list!")
                                         return
                                     }
-                                    model!.delete(bethinkeryList: model!.bethinkeryLists[offsets.first!])
+                                    model!.delete(model!.bethinkeryLists[offsets.first!])
                                 }
                             }
                             .environment(\.editMode, $listEditMode)
@@ -255,7 +255,7 @@ struct BethinkeryListView: View {
                     BethinkeryRowView(model: model, bethinkery: bethinkery)
                 }
                 .onMove { from, to in
-                    model.moveBethinkery(from: from, to: to, list: list)
+                    model.moveBethinkeryPosition(from: from, to: to, list: list)
                 }
                 .onDelete { offsets in
                     // TODO: confirmation dialog
@@ -264,7 +264,7 @@ struct BethinkeryListView: View {
                         print("invalid number of offsets sent to delete item!")
                         return
                     }
-                    model.delete(bethinkery: orderedBethinkeries[offsets.first!])
+                    model.delete(orderedBethinkeries[offsets.first!])
                 }
                 
             }, header: {
@@ -340,7 +340,7 @@ struct BethinkeryRowView: View {
             } else {
                 Button {
                     withAnimation {
-                        model.toggleCompleted(bethinkery: bethinkery)
+                        model.toggleCompleted(bethinkery)
                     }
                 } label: {
                     Image(systemName: bethinkery.isCompleted ? "checkmark.circle.fill" : "circle")
@@ -401,9 +401,9 @@ struct BethinkeryRowView: View {
     }
     
     private func saveEdit() {
-        var updater = EditBethinkery.fromBethinkery(bethinkery: bethinkery)
+        var updater = EditBethinkery.fromBethinkery(bethinkery)
         updater.title = editedTitle
-        model.update(bethinkery: bethinkery, with: updater)
+        model.update(bethinkery, with: updater)
         
         cancelEdit()
     }
@@ -469,10 +469,10 @@ struct ListDetailView: View {
                                     }
                                     model.createList(from: creator, source: selectedSource!)
                                 } else {
-                                    var updater = EditBethinkeryList.fromBethinkeryList(bethinkeryList: list!)
+                                    var updater = EditBethinkeryList.fromBethinkeryList(list!)
                                     updater.title = newTitle
                                     updater.hexColor = newColor.toHex()
-                                    model.update(bethinkeryList: list!, with: updater)
+                                    model.update(list!, with: updater)
                                 }
                             }
                             dismiss()
