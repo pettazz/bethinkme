@@ -253,18 +253,38 @@ struct BethinkeryListView: View {
                 
                 ForEach(orderedBethinkeries) { bethinkery in
                     BethinkeryRowView(model: model, bethinkery: bethinkery)
+                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                            Button(role: .destructive) {
+                                model.delete(bethinkery)
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                            
+                            Menu {
+                                Section("Destination List") {
+                                    ForEach(model.bethinkeryLists) { moveMenuList in
+                                        if moveMenuList != list {
+                                            Button {
+                                                withAnimation {
+                                                    model.moveBethinkery(bethinkery, to: moveMenuList)
+                                                }
+                                            } label: {
+                                                HStack(spacing: 12) {
+                                                    Image(systemName: "list.bullet.circle.fill")
+                                                        .foregroundStyle(.white, .secondary, Color(hex: moveMenuList.hexColor))
+                                                    Text(moveMenuList.title)
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            } label: {
+                                Label("Move", systemImage: "arrow.left.arrow.right.square")
+                            }
+                        }
                 }
                 .onMove { from, to in
                     model.moveBethinkeryPosition(from: from, to: to, list: list)
-                }
-                .onDelete { offsets in
-                    // TODO: confirmation dialog
-                    guard offsets.count == 1 else {
-                        // impossible on iOS!
-                        print("invalid number of offsets sent to delete item!")
-                        return
-                    }
-                    model.delete(orderedBethinkeries[offsets.first!])
                 }
                 
             }, header: {

@@ -252,6 +252,16 @@ import SwiftUI
         }
     }
     
+    func moveBethinkery(_ bethinkery: Bethinkery, to: BethinkeryList) {
+        let currentList = bethinkery.list
+        guard currentList != to else { return }
+        
+        // TODO: ensure we strip existing list-applied rules like location/time alerts, add new ones
+        let clonedBethinkery = EditBethinkery.fromBethinkery(bethinkery)
+        delete(bethinkery)
+        create(from: clonedBethinkery, list: to)
+    }
+    
     func resetOrdinals() {
         for (idx, list) in bethinkeryLists.enumerated() {
             list.ordinal = idx
