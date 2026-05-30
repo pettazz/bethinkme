@@ -25,13 +25,20 @@ struct SettingsView: View {
                 }
                 
                 Section {
-                    Picker("Hide reminders older than", selection: $maxCompletedAgeDays) {
+                    Picker(selection: $maxCompletedAgeDays) {
                         Text("1 year").tag(365)
                         Text("6 months").tag(180)
                         Text("60 days").tag(60)
                         Text("30 days").tag(30)
                         Text("7 days").tag(7)
                         Text("1 day").tag(1) //TODO: remove dumb options for release
+                    } label: {
+                        VStack(alignment: .leading) {
+                            Text("Max completed age")
+                            Text("Ignore any existing completed reminders older than this age")
+                                .font(.caption)
+                        }
+                        .containerRelativeFrame(.horizontal, count: 4, span: 2, spacing: 0)
                     }
                 } header: {
                     Text("Viewing")
