@@ -49,7 +49,7 @@ struct SettingsView: View {
                         .font(.system(size: 60))
                     Text(Bundle.main.identifier)
                         .font(.title2)
-                    Text("Version: \(Bundle.main.appVersionLong) (\(Bundle.main.appBuild))")
+                    Text("Version: \(Bundle.main.appVersionLong) (\(Bundle.main.appBuild)) - \(Bundle.env.rawValue)")
                         .font(.subheadline)
                     Text(Bundle.main.appGitReleaseVersion)
                         .font(.subheadline)

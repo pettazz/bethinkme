@@ -40,6 +40,12 @@ extension Color {
     }
 }
 
+enum Env: String {
+    case debug
+    case testFlight
+    case appStore
+}
+
 extension Bundle {
     // ty https://stackoverflow.com/a/68912269/431223
     public var appName: String           { getInfo("CFBundleName") }
@@ -55,4 +61,25 @@ extension Bundle {
     public var appGitReleaseVersion: String { getInfo("GitReleaseVersion") }
     
     fileprivate func getInfo(_ str: String) -> String { infoDictionary?[str] as? String ?? "⚠️" }
+    
+    
+    private static let isTestFlight = Bundle.main.appStoreReceiptURL?.lastPathComponent == "sandboxReceipt"
+
+    private static var isDebug: Bool {
+        #if DEBUG
+        return true
+        #else
+        return false
+        #endif
+    }
+
+    static var env: Env {
+        if isDebug {
+            return .debug
+        } else if isTestFlight {
+            return .testFlight
+        } else {
+            return .appStore
+        }
+    }
 }
