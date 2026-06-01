@@ -2,11 +2,6 @@ import Foundation
 import SwiftUI
 
 
-struct RuntimeError: LocalizedError {
-    let message: String
-    var errorDescription: String? { message }
-}
-
 extension Color {
     // via https://blog.eidinger.info/from-hex-to-color-and-back-in-swiftui
     // made slightly dumber by me

@@ -48,7 +48,7 @@ final class BethinkeryList: Equatable, Identifiable {
     }
     
     func toCalendar() throws -> EKCalendar {
-        guard self.hasCalendar else { throw RuntimeError(message: "calendar access before set") }
+        guard self.hasCalendar else { throw BethinkMeError("tried to access EKCalendar before it was set") }
         self.calendar!.title = title
         // yes we are constantly going back and forth between Color and cgColor and String,
         // but SwiftData doesn't want to save Color/UIColor so okay whatever man 
@@ -106,7 +106,7 @@ final class Bethinkery: Equatable, Identifiable {
     }
     
     func toReminder() throws -> EKReminder {
-        guard self.hasReminder else { throw RuntimeError(message: "reminder access before set") }
+        guard self.hasReminder else { throw BethinkMeError("tried to access EKReminder before it was set") }
         self.reminder!.title = title
         self.reminder!.isCompleted = isCompleted
         

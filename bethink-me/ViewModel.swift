@@ -50,11 +50,10 @@ import SwiftUI
         return hasAccess
     }
     
-    func loadLists() async {
+    func loadLists() async throws {
 //        try! await Task.sleep(for: .milliseconds(1500))
         guard await checkPermissions() else {
-            print("tried to load lists without permissions!")
-            return
+            throw BethinkMeError("tried to loadLists without permissions")
         }
         
         let validSourceTypes = [EKSourceType.local, .exchange, .calDAV]
@@ -84,8 +83,7 @@ import SwiftUI
                 currentList = BethinkeryList(calendar: ekcal)
                 modelContext.insert(currentList)
             } else {
-                print("found multiple matching cal ids for \(ekcal.calendarIdentifier)!")
-                continue
+                throw BethinkMeError("found multiple matching cal ids for \(ekcal.calendarIdentifier)")
             }
             
             let loadedReminders = await loadRemindersForCalendar(ekcal)
@@ -104,8 +102,7 @@ import SwiftUI
                     currentList.bethinkeries.append(newReminder)
                     modelContext.insert(newReminder)
                 } else {
-                    print("found multiple matching rem ids for \(ekrem.calendarItemIdentifier)!")
-                    continue
+                    throw BethinkMeError("found multiple matching rem ids for \(ekrem.calendarItemIdentifier)!")
                 }
             }
             

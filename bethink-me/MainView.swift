@@ -66,8 +66,8 @@ struct MainView: View {
                                 .onDelete { offsets in
                                     // TODO: confirmation dialog
                                     guard offsets.count == 1 else {
-                                        // impossible on iOS!
-                                        print("invalid number of offsets sent to delete list!")
+//                                        errorReporting.presentedError = BethinkMeError("tried to delete multiple list offsets: \(offsets)")
+//                                        errorReporting.shouldPresentErrorReporting = true
                                         return
                                     }
                                     model!.delete(model!.bethinkeryLists[offsets.first!])
@@ -124,18 +124,7 @@ struct MainView: View {
                         }
                     }
                 }
-                .onChange(of: scenePhase) {
-                    if scenePhase == .active {
-                        Task {
-                            try await reloadLists()
-                        }
-                    }
-                }
-                .onChange(of: maxCompletedAgeDaysSetting) {
-                    Task {
-                        try await reloadLists()
-                    }
-                }
+                
                 ZStack {
                     if listsLoadingTime >= 1 && listsLoading {
                         Color.black.opacity(0.3)
@@ -160,6 +149,12 @@ struct MainView: View {
                 }
             }
         }
+        
+        .task(id: scenePhase) {
+            if scenePhase == .active {
+                await tryTask(Task { try await reloadLists() })
+            }
+        }
         .task {
             guard model == nil else { return }
             model = await ViewModel(modelContext: modelContext)
@@ -168,11 +163,11 @@ struct MainView: View {
     
     func reloadLists() async throws {
         guard model != nil else {
-            throw RuntimeError(message: "no view model!")
+            throw BethinkMeError("tried to reloadLists with no viewModel instantiated!")
         }
         
         listsLoading = true
-        await model!.loadLists()
+        try await model!.loadLists()
         listsLoading = false
     }
 }
@@ -543,7 +538,6 @@ struct ListDetailView: View {
                     }
                 }
             }
-            
         }
     }
 }
