@@ -64,13 +64,13 @@ struct MainView: View {
                                     model!.moveListPosition(from: from, to: to)
                                 }
                                 .onDelete { offsets in
-                                    // TODO: confirmation dialog
-                                    guard offsets.count == 1 else {
-//                                        errorReporting.presentedError = BethinkMeError("tried to delete multiple list offsets: \(offsets)")
-//                                        errorReporting.shouldPresentErrorReporting = true
-                                        return
+                                    withErrorReporter {
+                                        // TODO: confirmation dialog?
+                                        guard offsets.count == 1 else {
+                                            throw BethinkMeError("tried to delete multiple list offsets: \(offsets)")
+                                        }
+                                        try model!.delete(model!.bethinkeryLists[offsets.first!])
                                     }
-                                    model!.delete(model!.bethinkeryLists[offsets.first!])
                                 }
                             }
                             .environment(\.editMode, $listEditMode)
@@ -163,7 +163,7 @@ struct MainView: View {
     
     func reloadLists() async throws {
         guard model != nil else {
-            throw BethinkMeError("tried to reloadLists with no viewModel instantiated!")
+            throw BethinkMeError("tried to reloadLists with no viewModel instantiated")
         }
         
         listsLoading = true
@@ -250,7 +250,9 @@ struct BethinkeryListView: View {
                     BethinkeryRowView(model: model, bethinkery: bethinkery)
                         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                             Button(role: .destructive) {
-                                model.delete(bethinkery)
+                                withErrorReporter {
+                                    try model.delete(bethinkery)
+                                }
                             } label: {
                                 Label("Delete", systemImage: "trash")
                             }
@@ -261,7 +263,9 @@ struct BethinkeryListView: View {
                                         if moveMenuList != list {
                                             Button {
                                                 withAnimation {
-                                                    model.moveBethinkery(bethinkery, to: moveMenuList)
+                                                    withErrorReporter {
+                                                        try model.moveBethinkery(bethinkery, to: moveMenuList)
+                                                    }
                                                 }
                                             } label: {
                                                 HStack(spacing: 12) {
@@ -279,7 +283,9 @@ struct BethinkeryListView: View {
                         }
                 }
                 .onMove { from, to in
-                    model.moveBethinkeryPosition(from: from, to: to, list: list)
+                    withErrorReporter {
+                        try model.moveBethinkeryPosition(from: from, to: to, list: list)
+                    }
                 }
                 
             }, header: {
@@ -319,11 +325,13 @@ struct BethinkeryListView: View {
     }
     
     private func saveNew() {
-        let cleanTitle = newTitle.trimmingCharacters(in: .whitespaces)
-        guard !cleanTitle.isEmpty else { return }
-        
-        let newBethinkery = EditBethinkery(title: cleanTitle, isCompleted: false)
-        model.create(from: newBethinkery, list: list)
+        withErrorReporter {
+            let cleanTitle = newTitle.trimmingCharacters(in: .whitespaces)
+            guard !cleanTitle.isEmpty else { return }
+            
+            let newBethinkery = EditBethinkery(title: cleanTitle, isCompleted: false)
+            try model.create(from: newBethinkery, list: list)
+        }
         newTitle = ""
         addInFocus = true
     }
@@ -355,7 +363,9 @@ struct BethinkeryRowView: View {
             } else {
                 Button {
                     withAnimation {
-                        model.toggleCompleted(bethinkery)
+                        withErrorReporter {
+                            try model.toggleCompleted(bethinkery)
+                        }
                     }
                 } label: {
                     Image(systemName: bethinkery.isCompleted ? "checkmark.circle.fill" : "circle")
@@ -416,9 +426,11 @@ struct BethinkeryRowView: View {
     }
     
     private func saveEdit() {
-        var updater = EditBethinkery.fromBethinkery(bethinkery)
-        updater.title = editedTitle
-        model.update(bethinkery, with: updater)
+        withErrorReporter {
+            var updater = EditBethinkery.fromBethinkery(bethinkery)
+            updater.title = editedTitle
+            try model.update(bethinkery, with: updater)
+        }
         
         cancelEdit()
     }
@@ -475,19 +487,20 @@ struct ListDetailView: View {
                 .toolbar {
                     ToolbarItem(placement: .confirmationAction) {
                         Button("Save") {
-                            withAnimation{
-                                if isNew {
-                                    let creator = EditBethinkeryList(title: newTitle, hexColor: newColor.toHex())
-                                    guard selectedSource != nil else {
-                                        print("Tried to create a List on a nonexistent Source!")
-                                        return
+                            withAnimation {
+                                withErrorReporter {
+                                    if isNew {
+                                        let creator = EditBethinkeryList(title: newTitle, hexColor: newColor.toHex())
+                                        guard selectedSource != nil else {
+                                            throw BethinkMeError("tried to create a List on a nonexistent Source")
+                                        }
+                                        try model.createList(from: creator, source: selectedSource!)
+                                    } else {
+                                        var updater = EditBethinkeryList.fromBethinkeryList(list!)
+                                        updater.title = newTitle
+                                        updater.hexColor = newColor.toHex()
+                                        try model.update(list!, with: updater)
                                     }
-                                    model.createList(from: creator, source: selectedSource!)
-                                } else {
-                                    var updater = EditBethinkeryList.fromBethinkeryList(list!)
-                                    updater.title = newTitle
-                                    updater.hexColor = newColor.toHex()
-                                    model.update(list!, with: updater)
                                 }
                             }
                             dismiss()

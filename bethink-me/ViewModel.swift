@@ -141,7 +141,7 @@ import SwiftUI
         
     }
     
-    func createList(from createCommand: EditBethinkeryList, source: EKSource) {
+    func createList(from createCommand: EditBethinkeryList, source: EKSource) throws {
         do {
             let newCalendar = EKCalendar(for: .reminder, eventStore: eventStore)
             newCalendar.source = source
@@ -155,11 +155,11 @@ import SwiftUI
             modelContext.insert(newBethinkeryList)
             resetOrdinals()
         } catch {
-            print("failed to save new list!")
+            throw BethinkMeError("failed to save new List", from: error as NSError)
         }
     }
     
-    func create(from createCommand: EditBethinkery, list: BethinkeryList) {
+    func create(from createCommand: EditBethinkery, list: BethinkeryList) throws {
         do {
             let reminder = EKReminder(eventStore: eventStore)
             reminder.title = createCommand.title
@@ -174,22 +174,22 @@ import SwiftUI
             list.bethinkeries.insert(newBethinkery, at: 0)
             resetOrdinals()
         } catch {
-            print("failed to save new!")
+            throw BethinkMeError("failed to create new Bethinkery", from: error as NSError)
         }
     }
     
-    func update(_ bethinkeryList: BethinkeryList, with updateCommand: EditBethinkeryList) {
+    func update(_ bethinkeryList: BethinkeryList, with updateCommand: EditBethinkeryList) throws {
         bethinkeryList.title = updateCommand.title
         bethinkeryList.hexColor = updateCommand.hexColor
         
         do {
             try eventStore.saveCalendar(bethinkeryList.toCalendar(), commit: true)
         } catch {
-            print("failed to save list update!")
+            throw BethinkMeError("failed to commit List update", from: error as NSError)
         }
     }
     
-    func update(_ bethinkery: Bethinkery, with updateCommand: EditBethinkery) {
+    func update(_ bethinkery: Bethinkery, with updateCommand: EditBethinkery) throws {
         bethinkery.title = updateCommand.title
         bethinkery.isCompleted = updateCommand.isCompleted
         bethinkery.freshlyCompleted = updateCommand.freshlyCompleted
@@ -197,32 +197,37 @@ import SwiftUI
         do {
             try eventStore.save(bethinkery.toReminder(), commit: true)
         } catch {
-            print("failed to save update!")
+            throw BethinkMeError("failed to commit Bethinkery update", from: error as NSError)
         }
     }
     
-    func toggleCompleted(_ bethinkery: Bethinkery) {
+    func toggleCompleted(_ bethinkery: Bethinkery) throws {
         var updatedBethinkery = EditBethinkery.fromBethinkery(bethinkery)
         updatedBethinkery.isCompleted.toggle()
         updatedBethinkery.freshlyCompleted = updatedBethinkery.isCompleted
-        update(bethinkery, with: updatedBethinkery)
+        
+        do {
+            try update(bethinkery, with: updatedBethinkery)
+        } catch {
+            throw BethinkMeError("failed to toggle complete", from: error as NSError)
+        }
     }
 
-    func delete(_ bethinkeryList: BethinkeryList){
+    func delete(_ bethinkeryList: BethinkeryList) throws {
         do {
             try eventStore.removeCalendar(bethinkeryList.toCalendar(), commit: true)
             modelContext.delete(bethinkeryList)
         } catch {
-            print("failed to delete list!")
+            throw BethinkMeError("failed to delete List", from: error as NSError)
         }
     }
 
-    func delete(_ bethinkery: Bethinkery){
+    func delete(_ bethinkery: Bethinkery) throws {
         do {
             try eventStore.remove(bethinkery.toReminder(), commit: true)
             modelContext.delete(bethinkery)
         } catch {
-            print("failed to delete bethinkery!")
+            throw BethinkMeError("failed to delete Bethinkery", from: error as NSError)
         }
     }
     
@@ -235,10 +240,9 @@ import SwiftUI
         }
     }
     
-    func moveBethinkeryPosition(from: IndexSet, to: Int, list: BethinkeryList) {
+    func moveBethinkeryPosition(from: IndexSet, to: Int, list: BethinkeryList) throws {
         guard from.count == 1 else {
-            print("invalid number of items sent to move!")
-            return
+            throw BethinkMeError("invalid number of items sent to move: \(from.count)")
         }
         var tmpBethinkeries = bethinkeries.filter({ $0.list.id == list.id })
         tmpBethinkeries.move(fromOffsets: from, toOffset: to)
@@ -249,14 +253,18 @@ import SwiftUI
         }
     }
     
-    func moveBethinkery(_ bethinkery: Bethinkery, to: BethinkeryList) {
+    func moveBethinkery(_ bethinkery: Bethinkery, to: BethinkeryList) throws {
         let currentList = bethinkery.list
         guard currentList != to else { return }
         
-        // TODO: ensure we strip existing list-applied rules like location/time alerts, add new ones
-        let clonedBethinkery = EditBethinkery.fromBethinkery(bethinkery)
-        delete(bethinkery)
-        create(from: clonedBethinkery, list: to)
+        do {
+            // TODO: ensure we strip existing list-applied rules like location/time alerts, add new ones
+            let clonedBethinkery = EditBethinkery.fromBethinkery(bethinkery)
+            try delete(bethinkery)
+            try create(from: clonedBethinkery, list: to)
+        } catch {
+            throw BethinkMeError("failed to move Bethinkery", from: error as NSError)
+        }
     }
     
     func resetOrdinals() {

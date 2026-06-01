@@ -3,17 +3,29 @@ import SwiftUI
 struct BethinkMeError: LocalizedError {
     let message: String
     var errorDescription: String? { message }
-    let from: (any Error)? = nil
+    var from: NSError? = nil
     let callStack: [String] = Thread.callStackSymbols
-    var file: String = #fileID
-    var function: String = #function
-    var line: Int = #line
+    var file: String
+    var function: String
+    var line: Int
     
     init(_ message: String,
          file: String = #fileID,
          function: String = #function,
          line: Int = #line) {
         self.message = message
+        self.file = file
+        self.function = function
+        self.line = line
+    }
+    
+    init(_ message: String,
+         from: NSError,
+         file: String = #fileID,
+         function: String = #function,
+         line: Int = #line) {
+        self.message = message
+        self.from = from
         self.file = file
         self.function = function
         self.line = line
@@ -71,6 +83,18 @@ extension View {
         
         return result
     }
+    
+    func withErrorReporter<ResultType>(_ perform: () throws -> ResultType) -> ResultType? {
+        var result: ResultType?
+        
+        do {
+            result = try perform()
+        } catch {
+            ErrorReporter().present(error)
+        }
+        
+        return result
+    }
 }
 
 public struct ErrorReporterKey: EnvironmentKey {
@@ -102,6 +126,9 @@ struct ErrorDetailView: View {
                 ScrollView {
                     ErrorDetailViewRow(title: "msg", content: error.localizedDescription)
                     ErrorDetailViewRow(title: "loc", content: "\(error.function) \(error.file):\(error.line)")
+                    if error.from != nil {
+                        ErrorDetailViewRow(title: "frmdbg", content: error.from!.debugDescription)
+                    }
                     ErrorDetailViewRow(title: "build", content: Bundle.main.appGitReleaseVersion)
                     ErrorDetailViewRow(title: "stack", content: [error.callStack[1], error.callStack[2]].joined(separator: "\n"))
                     
