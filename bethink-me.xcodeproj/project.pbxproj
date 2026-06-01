@@ -298,7 +298,8 @@
 				INFOPLIST_FILE = "bethink-me/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Bethink Me";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
-				INFOPLIST_KEY_NSRemindersFullAccessUsageDescription = "The whole point of this is managing Reminders so yeah we need to be able to manage Reminders";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "When adding a location-based reminder, this is used to optionally provide your current location as the default starting location.";
+				INFOPLIST_KEY_NSRemindersFullAccessUsageDescription = "Bethink Me saves changes to and reads updates from Reminders, keeping your accounts in sync.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -337,7 +338,8 @@
 				INFOPLIST_FILE = "bethink-me/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Bethink Me";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
-				INFOPLIST_KEY_NSRemindersFullAccessUsageDescription = "The whole point of this is managing Reminders so yeah we need to be able to manage Reminders";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "When adding a location-based reminder, this is used to optionally provide your current location as the default starting location.";
+				INFOPLIST_KEY_NSRemindersFullAccessUsageDescription = "Bethink Me saves changes to and reads updates from Reminders, keeping your accounts in sync.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
