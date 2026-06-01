@@ -44,6 +44,19 @@ struct SettingsView: View {
                     Text("Viewing")
                 }
                 
+                Section {
+                    Button("Trigger the error reporter") {
+                        withErrorReporter {
+                            throw BethinkMeError("hahaha, oh wow", from: NSError(
+                                domain: "Demozone",
+                                code: 1701,
+                                userInfo: ["key": "value", "NSLocalizedDescripton": "i made it up!"]))
+                        }
+                    }
+                } header: {
+                    Text("Devtools")
+                }
+                
                 VStack {
                     Image(systemName: "figure.equestrian.sports")
                         .font(.system(size: 60))
