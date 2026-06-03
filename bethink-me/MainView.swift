@@ -1,3 +1,4 @@
+// swiftlint:disable type_contents_order
 import Combine
 import EventKit
 import SwiftData
@@ -7,7 +8,7 @@ import SwiftUI
 struct MainView: View {
     @AppStorage(SettingsKey.maxCompletedAgeDays.rawValue)
     private var maxCompletedAgeDaysSetting: Int = 7
-    
+
     @Environment(\.modelContext)
     private var modelContext
     @Environment(\.scenePhase)
@@ -20,9 +21,9 @@ struct MainView: View {
 
     @State private var listsLoading: Bool = false
     @State private var listsLoadingTime: Int = 0
-    
+
     private var clock = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
-    
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -146,12 +147,12 @@ struct MainView: View {
                         }
                     }
                 }
-                
+
                 ZStack {
                     if listsLoadingTime >= 1 && listsLoading {
                         Color.black.opacity(0.3)
                             .ignoresSafeArea()
-                        
+
                         if #available(iOS 26.0, *) {
                             LoadingSpinnerView()
                                 .glassEffect(in: .rect(cornerRadius: 16.0))
@@ -159,11 +160,11 @@ struct MainView: View {
                             LoadingSpinnerView()
                                 .background(RoundedRectangle(cornerRadius: 16.0)
                                     .fill(Color.white))
-                            
+
                         }
                     }
                 }.animation(.snappy, value: listsLoading)
-                
+
             }
             .onReceive(clock) { _ in
                 withAnimation(.snappy) {
@@ -171,7 +172,7 @@ struct MainView: View {
                 }
             }
         }
-        
+
         .task(id: scenePhase) {
             if scenePhase == .active {
                 await tryTask(Task { try await reloadLists() })
@@ -182,12 +183,12 @@ struct MainView: View {
             model = await ViewModel(modelContext: modelContext)
         }
     }
-    
+
     func reloadLists() async throws {
         guard model != nil else {
             throw BethinkMeError("tried to reloadLists with no viewModel instantiated")
         }
-        
+
         listsLoading = true
         try await model!.loadLists()
         listsLoading = false
@@ -213,12 +214,12 @@ struct LoadingSpinnerView: View {
 struct BethinkeryListView: View {
     @AppStorage(SettingsKey.enableAutocorrect.rawValue)
     private var enableAutocorrectSetting: Bool = true
-    
+
     @Environment(\.editMode)
     private var editMode
 
     @FocusState private var addInFocus: Bool
-    
+
     @State var model: ViewModel
     @State var list: BethinkeryList
     @State private var isAdding: Bool = false
@@ -268,9 +269,9 @@ struct BethinkeryListView: View {
                             }
                     }
                 }
-            
+
                 let orderedBethinkeries = model.bethinkeries.filter({ $0.list.id == list.id })
-                
+
                 ForEach(orderedBethinkeries) { bethinkery in
                     BethinkeryRowView(model: model, bethinkery: bethinkery)
                         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
@@ -281,7 +282,7 @@ struct BethinkeryListView: View {
                             } label: {
                                 Label("Delete", systemImage: "trash")
                             }
-                            
+
                             Button {
                                 selectedBethinkeryForEdit = bethinkery
                             } label: {
@@ -323,7 +324,6 @@ struct BethinkeryListView: View {
                         try model.moveBethinkeryPosition(from: from, to: to, list: list)
                     }
                 }
-                
             }, header: {
                 HStack {
                     Text(list.title)
@@ -361,19 +361,19 @@ struct BethinkeryListView: View {
             }
         }
     }
-    
+
     private func saveNew() {
         withErrorReporter {
             let cleanTitle = newTitle.trimmingCharacters(in: .whitespaces)
             guard !cleanTitle.isEmpty else { return }
-            
+
             let newBethinkery = EditBethinkery(title: cleanTitle, isCompleted: false)
             try model.create(from: newBethinkery, list: list)
         }
         newTitle = ""
         addInFocus = true
     }
-    
+
     private func closeAdding() {
         newTitle = ""
         isAdding = false
@@ -388,14 +388,14 @@ struct BethinkeryRowView: View {
     private var displayNotes: Bool = false
     @AppStorage(SettingsKey.displayURLs.rawValue)
     private var displayURLs: Bool = false
-    
+
     @FocusState private var editFocus: Bool
-    
+
     @State var model: ViewModel
     @State var bethinkery: Bethinkery
     @State private var isEditing: Bool = false
     @State private var editedTitle: String = ""
-    
+
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             if isEditing {
@@ -420,7 +420,7 @@ struct BethinkeryRowView: View {
                 }
                 .sensoryFeedback(.success, trigger: bethinkery.isCompleted)
             }
-            
+
             if isEditing {
                 TextField(bethinkery.title, text: $editedTitle)
                     .autocorrectionDisabled(!enableAutocorrectSetting)
@@ -451,7 +451,7 @@ struct BethinkeryRowView: View {
                             saveEdit()
                         }
                     }
-                
+
             } else {
                 VStack(alignment: .leading, spacing: 10) {
                     Text(bethinkery.title)
@@ -480,19 +480,19 @@ struct BethinkeryRowView: View {
         }
         .padding(.vertical, 4)
     }
-    
+
     private func cancelEdit() {
         editedTitle = ""
         isEditing = false
     }
-    
+
     private func saveEdit() {
         withErrorReporter {
             var updater = EditBethinkery.fromBethinkery(bethinkery)
             updater.title = editedTitle
             try model.update(bethinkery, with: updater)
         }
-        
+
         cancelEdit()
     }
 }
@@ -500,7 +500,7 @@ struct BethinkeryRowView: View {
 struct ListDetailView: View {
     @AppStorage(SettingsKey.enableAutocorrect.rawValue)
     private var enableAutocorrectSetting: Bool = true
-    
+
     @Environment(\.dismiss)
     private var dismiss
 
@@ -509,15 +509,15 @@ struct ListDetailView: View {
     @State private var newTitle: String = ""
     @State private var newColor: Color = Color.accentColor
     @State private var newSourceId: String = ""
-    
+
     var list: BethinkeryList?
 
     private var isNew: Bool { list == nil }
-    
+
     private var selectedSource: EKSource? {
         model.availableSources.first(where: { $0.sourceIdentifier == newSourceId })
     }
-    
+
     var body: some View {
         if !model.availableSources.isEmpty {
             // TODO: make this less ugly, see also BethinkeryDetailView
@@ -541,7 +541,6 @@ struct ListDetailView: View {
                                     }
                                 }
                             }
-                            
                         }
                     }
                 }
@@ -573,7 +572,6 @@ struct ListDetailView: View {
                         }
                     }
                 }
-                
             }
             .task {
                 if isNew {
@@ -620,7 +618,7 @@ struct ListDetailView: View {
 struct BethinkeryDetailView: View {
     @AppStorage(SettingsKey.enableAutocorrect.rawValue)
     private var enableAutocorrectSetting: Bool = true
-    
+
     @Environment(\.dismiss)
     private var dismiss
 

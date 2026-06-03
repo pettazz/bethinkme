@@ -17,9 +17,9 @@ struct SettingsView: View {
     private var displayNotes: Bool = false
     @AppStorage(SettingsKey.displayURLs.rawValue)
     private var displayURLs: Bool = false
-    
+
     @State private var shouldShowVersionCopiedPopover: Bool = false
-    
+
     var body: some View {
         NavigationStack {
             Form {
@@ -28,7 +28,7 @@ struct SettingsView: View {
                 } header: {
                     Text("Editing")
                 }
-                
+
                 Section {
                     Picker(selection: $maxCompletedAgeDays) {
                         Text("1 year").tag(365)
@@ -50,7 +50,7 @@ struct SettingsView: View {
                 } header: {
                     Text("Viewing")
                 }
-                
+
                 Section {
                     Button("Trigger the error reporter") {
                         withErrorReporter {
@@ -63,7 +63,7 @@ struct SettingsView: View {
                 } header: {
                     Text("Devtools")
                 }
-                
+
                 VStack {
                     Image(systemName: "figure.equestrian.sports")
                         .font(.system(size: 60))
@@ -93,7 +93,6 @@ struct SettingsView: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .center)
             }
-            
             .navigationBarTitle("Settings")
         }
     }
