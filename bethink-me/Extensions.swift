@@ -41,8 +41,10 @@ enum Env: String {
     case appStore
 }
 
+
 extension Bundle {
     // ty https://stackoverflow.com/a/68912269/431223
+    // swiftlint:disable all
     public var appName: String           { getInfo("CFBundleName") }
     public var displayName: String       { getInfo("CFBundleDisplayName") }
     public var language: String          { getInfo("CFBundleDevelopmentRegion") }
@@ -56,8 +58,8 @@ extension Bundle {
     public var appGitReleaseVersion: String { getInfo("GitReleaseVersion") }
     
     fileprivate func getInfo(_ str: String) -> String { infoDictionary?[str] as? String ?? "⚠️" }
-    
-    
+    // swiftlint:enable all
+
     private static let isTestFlight = Bundle.main.appStoreReceiptURL?.lastPathComponent == "sandboxReceipt"
 
     private static var isDebug: Bool {

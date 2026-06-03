@@ -12,12 +12,9 @@ final class BethinkeryList: Equatable, Identifiable {
     var ordinal: Int = -1
     var title: String
     var hexColor: String
-    @Transient
-    private var calendar: EKCalendar?
-    
-    var hasCalendar: Bool {
-        return self.calendar != nil
-    }
+    @Transient private var calendar: EKCalendar?
+
+    var hasCalendar: Bool { return self.calendar != nil }
     
     
     init(id: String, title: String, hexColor: String, calendar: EKCalendar) {
@@ -67,15 +64,16 @@ final class Bethinkery: Equatable, Identifiable {
     var title: String
     var isCompleted: Bool
     var freshlyCompleted: Bool = false
-    @Transient
-    var reminder: EKReminder?
-    
-    var hasReminder: Bool {
-        return self.reminder != nil
-    }
+    @Transient var reminder: EKReminder?
+
+    var hasReminder: Bool { return self.reminder != nil }
     
     
-    init(id: String, list: BethinkeryList, title: String, isCompleted: Bool, reminder: EKReminder) {
+    init(id: String,
+         list: BethinkeryList,
+         title: String,
+         isCompleted: Bool,
+         reminder: EKReminder) {
         self.id = id
         self.list = list
         self.title = title

@@ -2,7 +2,7 @@ import SwiftData
 import SwiftUI
 
 @main
-struct bethink_meApp: App {
+struct bethink_meApp: App { // swiftlint:disable:this type_name
     var body: some Scene {
         WindowGroup {
             TabView {
@@ -14,6 +14,11 @@ struct bethink_meApp: App {
                 }
             }
         }
-        .modelContainer(for: [Bethinkery.self, BethinkeryList.self])
+        .modelContainer(for: [
+            Bethinkery.self,
+            BethinkeryList.self
+//          BethinkeryProximityAlarm.self,
+//          BethinkeryTimeAlarm.self
+        ])
     }
 }

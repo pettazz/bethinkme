@@ -9,7 +9,6 @@ enum SettingsKey: String {
 struct SettingsView: View {
     @AppStorage(SettingsKey.enableAutocorrect.rawValue)
     private var enableAutocorrect: Bool = true
-    
     @AppStorage(SettingsKey.maxCompletedAgeDays.rawValue)
     private var maxCompletedAgeDays: Int = 30
     
@@ -31,7 +30,7 @@ struct SettingsView: View {
                         Text("60 days").tag(60)
                         Text("30 days").tag(30)
                         Text("7 days").tag(7)
-                        Text("1 day").tag(1) //TODO: remove dumb options for release
+                        Text("1 day").tag(1) // TODO: remove dumb options for release
                     } label: {
                         VStack(alignment: .leading) {
                             Text("Max completed age")
@@ -60,6 +59,7 @@ struct SettingsView: View {
                 VStack {
                     Image(systemName: "figure.equestrian.sports")
                         .font(.system(size: 60))
+                        .accessibilityHidden(true)
                     Text(Bundle.main.identifier)
                         .font(.title2)
                     Text("Version: \(Bundle.main.appVersionLong) (\(Bundle.main.appBuild)) - \(Bundle.env.rawValue)")
@@ -73,13 +73,14 @@ struct SettingsView: View {
                                                forPasteboardType: UTType.plainText.identifier)
                             shouldShowVersionCopiedPopover = true
                         }
+                        .accessibilityAddTraits(.isButton)
                         .popover(isPresented: $shouldShowVersionCopiedPopover,
                                  attachmentAnchor: .point(.center),
                                  arrowEdge: .top,
                                  content: {
-                            Text("Copied!")
-                                .padding()
-                                .presentationCompactAdaptation(.none)
+                                    Text("Copied!")
+                                        .padding()
+                                        .presentationCompactAdaptation(.none)
                         })
                 }
                 .frame(maxWidth: .infinity, alignment: .center)

@@ -8,9 +8,11 @@ struct MainView: View {
     @AppStorage(SettingsKey.maxCompletedAgeDays.rawValue)
     private var maxCompletedAgeDaysSetting: Int = 7
     
-    @Environment(\.modelContext) private var modelContext
-    @Environment(\.scenePhase) private var scenePhase
-    
+    @Environment(\.modelContext)
+    private var modelContext
+    @Environment(\.scenePhase)
+    private var scenePhase
+
     @State private var model: ViewModel?
     @State private var listEditMode: EditMode = .inactive
     @State private var shouldPresentNewListSheet = false
@@ -31,6 +33,7 @@ struct MainView: View {
                                 Image(systemName: "hand.raised.square.on.square")
                                     .font(.system(size: 60))
                                     .foregroundColor(.gray)
+                                    .accessibilityHidden(true)
                                 Text("No Permission")
                                     .font(.title2)
                                     .foregroundColor(.gray)
@@ -41,12 +44,13 @@ struct MainView: View {
                                      destination: URL(string: UIApplication.openSettingsURLString)!)
                                 Spacer()
                             }
-                        } else if (model!.bethinkeryLists.isEmpty) {
+                        } else if model!.bethinkeryLists.isEmpty {
                             VStack {
                                 Spacer()
                                 Image(systemName: "checklist")
                                     .font(.system(size: 60))
                                     .foregroundColor(.gray)
+                                    .accessibilityHidden(true)
                                 Text("oh no")
                                     .font(.title2)
                                     .foregroundColor(.gray)
@@ -86,6 +90,7 @@ struct MainView: View {
                                     shouldPresentNewListSheet.toggle()
                                 } label: {
                                     Image(systemName: "rectangle.stack.fill.badge.plus")
+                                        .accessibilityLabel(Text("Add a new list"))
                                 }
                                 .sheet(isPresented: $shouldPresentNewListSheet, content: {
                                     ListDetailView(model: model!)
@@ -102,6 +107,9 @@ struct MainView: View {
                                 Image(systemName: listEditMode == .active
                                       ? "checkmark.circle.fill"
                                       : "arrow.up.arrow.down.square.fill")
+                                    .accessibilityLabel(Text(listEditMode == .active
+                                                             ? "Done editing lists"
+                                                             : "Edit lists"))
                             }
                             .disabled(listsLoading)
                         }
@@ -115,8 +123,10 @@ struct MainView: View {
                                 } label: {
                                     if model!.showCompleted {
                                         Image(systemName: "eye.slash.fill")
+                                            .accessibilityLabel(Text("Hide completed Bethinkeries"))
                                     } else {
                                         Image(systemName: "eye.fill")
+                                            .accessibilityLabel(Text("Show completed Bethinkeries"))
                                     }
                                 }
                                 .disabled(listsLoading)
@@ -192,8 +202,9 @@ struct BethinkeryListView: View {
     @AppStorage(SettingsKey.enableAutocorrect.rawValue)
     private var enableAutocorrectSetting: Bool = true
     
-    @Environment(\.editMode) private var editMode
-    
+    @Environment(\.editMode)
+    private var editMode
+
     @FocusState private var addInFocus: Bool
     
     @State var model: ViewModel
@@ -214,6 +225,7 @@ struct BethinkeryListView: View {
                         Image(systemName: "plus.circle.fill")
                             .font(.title2)
                             .foregroundColor(.gray)
+                            .accessibilityHidden(true)
                         TextField("", text: $newTitle)
                             .autocorrectionDisabled(!enableAutocorrectSetting)
                             .textFieldStyle(.plain)
@@ -256,7 +268,7 @@ struct BethinkeryListView: View {
                             } label: {
                                 Label("Delete", systemImage: "trash")
                             }
-                            
+
                             Menu {
                                 Section("Destination List") {
                                     ForEach(model.bethinkeryLists) { moveMenuList in
@@ -270,7 +282,11 @@ struct BethinkeryListView: View {
                                             } label: {
                                                 HStack(spacing: 12) {
                                                     Image(systemName: "list.bullet.circle.fill")
-                                                        .foregroundStyle(.white, .secondary, Color(hex: moveMenuList.hexColor))
+                                                        .accessibilityHidden(true)
+                                                        .foregroundStyle(
+                                                                .white,
+                                                                .secondary,
+                                                                Color(hex: moveMenuList.hexColor))
                                                     Text(moveMenuList.title)
                                                 }
                                             }
@@ -300,6 +316,7 @@ struct BethinkeryListView: View {
                         Image(systemName: "info.circle.fill")
                             .font(.title)
                             .foregroundColor(Color(hex: list.hexColor))
+                            .accessibilityLabel(Text("Edit the \(list.title) list"))
                     }
                     .sheet(isPresented: $shouldPresentEditListSheet, content: {
                         ListDetailView(model: model, list: list)
@@ -313,6 +330,7 @@ struct BethinkeryListView: View {
                         Image(systemName: "plus.circle.fill")
                             .font(.title)
                             .foregroundColor(Color(hex: list.hexColor))
+                            .accessibilityLabel(Text("Add a new Bethinkery to the \(list.title) list"))
                     }
                 }
             })
@@ -360,6 +378,7 @@ struct BethinkeryRowView: View {
                 Image(systemName: "pencil.line")
                     .font(.title2)
                     .foregroundColor(.gray)
+                    .accessibilityHidden(true)
             } else {
                 Button {
                     withAnimation {
@@ -371,6 +390,9 @@ struct BethinkeryRowView: View {
                     Image(systemName: bethinkery.isCompleted ? "checkmark.circle.fill" : "circle")
                         .font(.title2)
                         .foregroundColor(bethinkery.isCompleted ? .green : .gray)
+                        .accessibilityLabel(Text(bethinkery.isCompleted
+                                                 ? "Completed"
+                                                 : "Not completed"))
                 }
                 .sensoryFeedback(.success, trigger: bethinkery.isCompleted)
             }
@@ -440,8 +462,9 @@ struct ListDetailView: View {
     @AppStorage(SettingsKey.enableAutocorrect.rawValue)
     private var enableAutocorrectSetting: Bool = true
     
-    @Environment(\.dismiss) private var dismiss
-    
+    @Environment(\.dismiss)
+    private var dismiss
+
     @State var model: ViewModel
     @State private var title: String = ""
     @State private var newTitle: String = ""
@@ -453,9 +476,7 @@ struct ListDetailView: View {
     private var isNew: Bool { list == nil }
     
     private var selectedSource: EKSource? {
-        model.availableSources.first(where: {
-            $0.sourceIdentifier == newSourceId
-        })
+        model.availableSources.first(where: { $0.sourceIdentifier == newSourceId })
     }
     
     var body: some View {
@@ -533,6 +554,7 @@ struct ListDetailView: View {
                     Image(systemName: "text.badge.xmark")
                         .font(.system(size: 60))
                         .foregroundColor(.gray)
+                        .accessibilityHidden(true)
                     Text("No Sources")
                         .font(.title2)
                         .foregroundColor(.gray)

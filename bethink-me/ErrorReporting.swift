@@ -3,12 +3,12 @@ import SwiftUI
 struct BethinkMeError: LocalizedError {
     let message: String
     var errorDescription: String? { message }
-    var from: NSError? = nil
+    var from: NSError?
     let callStack: [String] = Thread.callStackSymbols
     var file: String
     var function: String
     var line: Int
-    
+
     init(_ message: String,
          file: String = #fileID,
          function: String = #function,
@@ -18,7 +18,7 @@ struct BethinkMeError: LocalizedError {
         self.function = function
         self.line = line
     }
-    
+
     init(_ message: String,
          from: NSError,
          file: String = #fileID,
@@ -46,53 +46,53 @@ public struct ErrorReporter {
         .map { $0 as? UIWindowScene }
         .compactMap { $0 }
         .first?.windows
-        .filter { $0.isKeyWindow }.first
+        .first(where: { $0.isKeyWindow })
     }
 
     var rootViewController: UIViewController? {
         keyWindow?.rootViewController
     }
-    
-    
+
+
     func present(_ error: any Error) {
         if Bundle.env == Env.debug || Bundle.env == Env.testFlight {
             let castError = error as? BethinkMeError ?? BethinkMeError("failed to retrieve error details")
-            
+
             let viewController = rootViewController?.topmostPresentedViewController
             let contentViewController = UIHostingController(rootView: ErrorDetailView(error: castError))
-            
+
             viewController?.present(contentViewController, animated: true)
         }
     }
-    
+
     func dismiss() {
         rootViewController?.dismiss(animated: true)
     }
-    
+
 }
 
 extension View {
     func tryTask<ResultType>(_ task: Task<ResultType, Error>) async -> ResultType? {
         var result: ResultType?
-        
+
         do {
             result = try await task.value
         } catch {
             ErrorReporter().present(error)
         }
-        
+
         return result
     }
-    
+
     func withErrorReporter<ResultType>(_ perform: () throws -> ResultType) -> ResultType? {
         var result: ResultType?
-        
+
         do {
             result = try perform()
         } catch {
             ErrorReporter().present(error)
         }
-        
+
         return result
     }
 }
@@ -106,10 +106,11 @@ public extension EnvironmentValues {
 }
 
 struct ErrorDetailView: View {
-    @Environment(\.dismiss) private var dismiss
-    
+    @Environment(\.dismiss)
+    private var dismiss
+
     var error: BethinkMeError
-    
+
     var body: some View {
         NavigationStack {
             VStack {
@@ -117,12 +118,14 @@ struct ErrorDetailView: View {
                 Image(systemName: "ladybug")
                     .font(.system(size: 60))
                     .foregroundColor(.red)
+                    .accessibilityHidden(true)
                 Text("Oh look! A bug!")
                     .font(.title2)
+                // swiftlint:disable:next all
                 Text("You're seeing this message because you are using a build type of either `testFlight` or `debug`. \nPlease report it by **taking a screenshot**, opening the **\(Image(systemName: "square.and.arrow.up")) share menu**, then tapping the **\(Image(systemName: "square.and.pencil")) Share beta feedback** button.")
                     .font(.caption)
                 Spacer()
-                
+
                 ScrollView {
                     ErrorDetailViewRow(title: "msg", content: error.localizedDescription)
                     ErrorDetailViewRow(title: "loc", content: "\(error.function) \(error.file):\(error.line)")
@@ -130,12 +133,17 @@ struct ErrorDetailView: View {
                         ErrorDetailViewRow(title: "frmdbg", content: error.from!.debugDescription)
                     }
                     ErrorDetailViewRow(title: "build", content: Bundle.main.appGitReleaseVersion)
-                    ErrorDetailViewRow(title: "stack", content: [error.callStack[1], error.callStack[2]].joined(separator: "\n"))
-                    
+                    ErrorDetailViewRow(
+                        title: "stack",
+                        content: [
+                            error.callStack[1],
+                            error.callStack[2]
+                        ].joined(separator: "\n"))
+
                 }
                 .background(Color.indigo)
                 .cornerRadius(16.0)
-                
+
                 Spacer()
                 Text("The app may be in a broken state now, please try quitting with the button above.")
                     .font(.caption)
@@ -163,9 +171,9 @@ struct ErrorDetailView: View {
 struct ErrorDetailViewRow: View {
     var title: String
     var content: String
-    
+
     private let spacing = 10.0
-    
+
     var body: some View {
         VStack {
             HStack {
@@ -182,8 +190,4 @@ struct ErrorDetailViewRow: View {
         }
         .padding(.top, spacing)
     }
-}
-
-#Preview {
-    ErrorDetailView(error: BethinkMeError("aaaaah ogh gof nopd!!! The error is too mjchf ior me i think gonna die now! woe! fuck! etc,,,"))
 }

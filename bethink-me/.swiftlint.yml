@@ -1,0 +1,54 @@
+disabled_rules:
+ - trailing_whitespace
+ - vertical_whitespace
+ - identifier_name
+ - function_body_length
+ - todo
+ - file_length
+
+opt_in_rules:
+ - yoda_condition
+ - vertical_parameter_alignment_on_call
+ - variable_shadowing
+ - unneeded_parentheses_in_closure_argument
+ - type_contents_order
+ - toggle_bool
+ - static_operator
+ - sorted_imports
+ - sorted_first_last
+ - shorthand_argument
+ - override_in_extension
+ - operator_usage_whitespace
+ - multiline_parameters
+ - multiline_literal_brackets
+ - multiline_function_chains
+ - multiline_call_arguments
+ - modifier_order
+ - literal_expression_end_indentation
+ - last_where
+ - joined_default_parameter
+ - identical_operands
+ - first_where
+ - empty_string
+ - empty_count
+ - empty_collection_literal
+ - discouraged_optional_collection
+ - discouraged_optional_boolean
+ - discouraged_none_name
+ - discarded_notification_center_observer
+ - contains_over_range_nil_comparison
+ - contains_over_first_not_nil
+ - contains_over_filter_is_empty
+ - contains_over_filter_count
+ - comma_inheritance
+ - collection_alignment
+ - closure_spacing
+ - closure_end_indentation
+ - attributes
+ - async_without_await
+ - anonymous_argument_in_multiline_closure
+ - accessibility_trait_for_button
+ - accessibility_label_for_image
+
+
+strict: true

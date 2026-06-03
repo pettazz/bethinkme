@@ -4,25 +4,20 @@ import SwiftUI
 
 
 @MainActor
-@Observable class ViewModel {
-    @ObservationIgnored
+@Observable
+class ViewModel {
     @AppStorage(SettingsKey.maxCompletedAgeDays.rawValue)
-    private var maxCompletedAgeDaysSetting: Int = 7
-    
+    @ObservationIgnored private var maxCompletedAgeDaysSetting: Int = 7
+
     private let modelContext: ModelContext
-    private nonisolated final let eventStore = EKEventStore()
+    nonisolated private final let eventStore = EKEventStore()
     
     var hasAccess: Bool = false
     var availableSources: [EKSource] = []
     var defaultSource: EKSource?
     
     var showCompleted: Bool = false
-    
-    init(modelContext: ModelContext) async {
-        self.modelContext = modelContext
-        self.hasAccess = await checkPermissions()
-    }
-    
+
     var bethinkeryLists: [BethinkeryList] {
         (try? modelContext.fetch(FetchDescriptor(
             sortBy: [.init(\BethinkeryList.ordinal)])))
@@ -44,7 +39,13 @@ import SwiftUI
         ?? []
     }
 
-    
+
+    init(modelContext: ModelContext) async {
+        self.modelContext = modelContext
+        self.hasAccess = await checkPermissions()
+    }
+
+
     func checkPermissions() async -> Bool {
         hasAccess = (try? await eventStore.requestFullAccessToReminders()) ?? false
         return hasAccess
@@ -77,7 +78,7 @@ import SwiftUI
                 // make sure fields are in sync
                 currentList = existingLists.first!
                 currentList.load(from: ekcal)
-            } else if existingLists.count == 0 {
+            } else if existingLists.isEmpty {
                 // | yes reminder, no storage
                 // add it
                 currentList = BethinkeryList(calendar: ekcal)
@@ -95,10 +96,10 @@ import SwiftUI
                     // make sure fields are in sync
                     let existingBethinkery = existingBethinkeries.first!
                     existingBethinkery.load(from: ekrem)
-                } else if existingBethinkeries.count == 0 {
+                } else if existingBethinkeries.isEmpty {
                     // | yes reminder, no storage
                     // add it
-                    let newReminder =  Bethinkery(reminder: ekrem, list: currentList)
+                    let newReminder = Bethinkery(reminder: ekrem, list: currentList)
                     currentList.bethinkeries.append(newReminder)
                     modelContext.insert(newReminder)
                 } else {
@@ -133,7 +134,7 @@ import SwiftUI
         resetOrdinals()
         
         availableSources = eventStore.sources
-            .filter({ validSourceTypes.contains($0.sourceType )})
+            .filter({ validSourceTypes.contains($0.sourceType) })
         if !calendars.isEmpty {
             let defaultCal = eventStore.defaultCalendarForNewReminders() ?? calendars.first!
             defaultSource = defaultCal.source
@@ -271,9 +272,9 @@ import SwiftUI
         for (idx, list) in bethinkeryLists.enumerated() {
             list.ordinal = idx
             
-            for (idx, bethinkery) in unfilteredBethinkeries.enumerated()
+            for (iidx, bethinkery) in unfilteredBethinkeries.enumerated()
                 .filter({ $0.1.list.id == list.id }) {
-                bethinkery.ordinal = idx
+                bethinkery.ordinal = iidx
                 bethinkery.freshlyCompleted = false // hehehehe side effects
             }
         }
@@ -283,8 +284,12 @@ import SwiftUI
     private func loadRemindersForCalendar(_ calendar: EKCalendar) async -> [EKReminder] {
         var ageLimitDateComponents = DateComponents()
         ageLimitDateComponents.day = -1 * maxCompletedAgeDaysSetting
-        let ageLimitDate = Calendar.current.date(byAdding: ageLimitDateComponents, to: Date.now, wrappingComponents: false)
-        
+        let ageLimitDate = Calendar.current.date(
+            byAdding: ageLimitDateComponents,
+            to: Date.now,
+            wrappingComponents: false
+        )
+
         async let completeds = withCheckedContinuation { continuation in
             eventStore.fetchReminders(matching: eventStore.predicateForCompletedReminders(
                 withCompletionDateStarting: ageLimitDate,
