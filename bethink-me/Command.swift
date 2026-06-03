@@ -20,11 +20,15 @@ struct EditBethinkery {
     var title: String
     var isCompleted: Bool
     var freshlyCompleted: Bool = false
+    var notes: String?
+    var url: URL?
 
     static func fromBethinkery(_ bethinkery: Bethinkery) -> EditBethinkery {
         return EditBethinkery(
             title: bethinkery.title,
             isCompleted: bethinkery.isCompleted,
-            freshlyCompleted: bethinkery.freshlyCompleted)
+            freshlyCompleted: bethinkery.freshlyCompleted,
+            notes: bethinkery.notes,
+            url: bethinkery.url)
     }
 }

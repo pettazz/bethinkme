@@ -64,8 +64,12 @@ final class Bethinkery: Equatable, Identifiable {
     var title: String
     var isCompleted: Bool
     var freshlyCompleted: Bool = false
+    var notes: String?
+    var url: URL?
     @Transient var reminder: EKReminder?
 
+    var hasNotes: Bool { return self.notes != nil && !self.notes!.isEmpty }
+    var hasUrl: Bool { return self.url != nil }
     var hasReminder: Bool { return self.reminder != nil }
     
     
@@ -73,11 +77,15 @@ final class Bethinkery: Equatable, Identifiable {
          list: BethinkeryList,
          title: String,
          isCompleted: Bool,
+         notes: String?,
+         url: URL?,
          reminder: EKReminder) {
         self.id = id
         self.list = list
         self.title = title
         self.isCompleted = isCompleted
+        self.notes = notes
+        self.url = url
         self.reminder = reminder
     }
     
@@ -87,6 +95,8 @@ final class Bethinkery: Equatable, Identifiable {
             list: list,
             title: reminder.title,
             isCompleted: reminder.isCompleted,
+            notes: reminder.notes,
+            url: reminder.url,
             reminder: reminder)
     }
     
@@ -100,6 +110,8 @@ final class Bethinkery: Equatable, Identifiable {
         self.title = reminder.title
         self.isCompleted = reminder.isCompleted
         self.freshlyCompleted = false
+        self.notes = reminder.notes
+        self.url = reminder.url
         self.reminder = reminder
     }
     
@@ -107,6 +119,8 @@ final class Bethinkery: Equatable, Identifiable {
         guard self.hasReminder else { throw BethinkMeError("tried to access EKReminder before it was set") }
         self.reminder!.title = title
         self.reminder!.isCompleted = isCompleted
+        self.reminder!.notes = notes
+        self.reminder!.url = url
         
         return self.reminder!
     }

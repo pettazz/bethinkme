@@ -194,7 +194,9 @@ class ViewModel {
         bethinkery.title = updateCommand.title
         bethinkery.isCompleted = updateCommand.isCompleted
         bethinkery.freshlyCompleted = updateCommand.freshlyCompleted
-        
+        bethinkery.notes = updateCommand.notes
+        bethinkery.url = updateCommand.url
+
         do {
             try eventStore.save(bethinkery.toReminder(), commit: true)
         } catch {

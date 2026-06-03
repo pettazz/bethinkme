@@ -4,6 +4,8 @@ import UniformTypeIdentifiers
 enum SettingsKey: String {
     case enableAutocorrect = "settings.enableAutocorrect"
     case maxCompletedAgeDays = "settings.maxCompletedAgeDays"
+    case displayNotes = "settings.displayNotes"
+    case displayURLs = "settings.displayURLs"
 }
 
 struct SettingsView: View {
@@ -11,6 +13,10 @@ struct SettingsView: View {
     private var enableAutocorrect: Bool = true
     @AppStorage(SettingsKey.maxCompletedAgeDays.rawValue)
     private var maxCompletedAgeDays: Int = 30
+    @AppStorage(SettingsKey.displayNotes.rawValue)
+    private var displayNotes: Bool = false
+    @AppStorage(SettingsKey.displayURLs.rawValue)
+    private var displayURLs: Bool = false
     
     @State private var shouldShowVersionCopiedPopover: Bool = false
     
@@ -39,6 +45,8 @@ struct SettingsView: View {
                         }
                         .containerRelativeFrame(.horizontal, count: 4, span: 2, spacing: 0)
                     }
+                    Toggle("Show Notes", isOn: $displayNotes)
+                    Toggle("Show URLs", isOn: $displayURLs)
                 } header: {
                     Text("Viewing")
                 }

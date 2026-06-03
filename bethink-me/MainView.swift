@@ -16,7 +16,8 @@ struct MainView: View {
     @State private var model: ViewModel?
     @State private var listEditMode: EditMode = .inactive
     @State private var shouldPresentNewListSheet = false
-    
+    @State private var selectedBethinkeryForEdit: Bethinkery?
+
     @State private var listsLoading: Bool = false
     @State private var listsLoadingTime: Int = 0
     
@@ -62,7 +63,11 @@ struct MainView: View {
                         } else {
                             List {
                                 ForEach(model!.bethinkeryLists) { list in
-                                    BethinkeryListView(model: model!, list: list)
+                                    BethinkeryListView(
+                                        model: model!,
+                                        list: list,
+                                        selectedBethinkeryForEdit: $selectedBethinkeryForEdit
+                                    )
                                 }
                                 .onMove { from, to in
                                     model!.moveListPosition(from: from, to: to)
@@ -76,6 +81,13 @@ struct MainView: View {
                                         try model!.delete(model!.bethinkeryLists[offsets.first!])
                                     }
                                 }
+                            }
+                            .sheet(item: $selectedBethinkeryForEdit) { item in
+                                BethinkeryDetailView(
+                                    model: model!,
+                                    bethinkery: item
+                                )
+                                .textCase(.none)
                             }
                             .environment(\.editMode, $listEditMode)
                         }
@@ -212,7 +224,8 @@ struct BethinkeryListView: View {
     @State private var isAdding: Bool = false
     @State private var newTitle: String = ""
     @State private var shouldPresentEditListSheet = false
-    
+    @Binding var selectedBethinkeryForEdit: Bethinkery?
+
     var body: some View {
         if editMode?.wrappedValue.isEditing == true {
             Text(list.title)
@@ -268,6 +281,13 @@ struct BethinkeryListView: View {
                             } label: {
                                 Label("Delete", systemImage: "trash")
                             }
+                            
+                            Button {
+                                selectedBethinkeryForEdit = bethinkery
+                            } label: {
+                                Label("Edit", systemImage: "square.and.pencil")
+                            }
+                            .tint(.orange)
 
                             Menu {
                                 Section("Destination List") {
@@ -364,6 +384,10 @@ struct BethinkeryListView: View {
 struct BethinkeryRowView: View {
     @AppStorage(SettingsKey.enableAutocorrect.rawValue)
     private var enableAutocorrectSetting: Bool = true
+    @AppStorage(SettingsKey.displayNotes.rawValue)
+    private var displayNotes: Bool = false
+    @AppStorage(SettingsKey.displayURLs.rawValue)
+    private var displayURLs: Bool = false
     
     @FocusState private var editFocus: Bool
     
@@ -373,7 +397,7 @@ struct BethinkeryRowView: View {
     @State private var editedTitle: String = ""
     
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(alignment: .top, spacing: 12) {
             if isEditing {
                 Image(systemName: "pencil.line")
                     .font(.title2)
@@ -429,13 +453,28 @@ struct BethinkeryRowView: View {
                     }
                 
             } else {
-                Text(bethinkery.title)
-                    .strikethrough(bethinkery.isCompleted)
-                    .foregroundColor(bethinkery.isCompleted ? .gray : .primary)
-                    .onTapGesture {
-                        editedTitle = bethinkery.title
-                        isEditing = true
+                VStack(alignment: .leading, spacing: 10) {
+                    Text(bethinkery.title)
+                        .strikethrough(bethinkery.isCompleted)
+                        .foregroundColor(bethinkery.isCompleted ? .gray : .primary)
+                        .onTapGesture {
+                            editedTitle = bethinkery.title
+                            isEditing = true
+                        }
+                        .accessibilityAddTraits(.isButton)
+                    if !bethinkery.isCompleted {
+                        if displayNotes && bethinkery.hasNotes {
+                            Text(bethinkery.notes!)
+                                .font(.footnote)
+                                .foregroundColor(.secondary)
+                        }
+                        if displayURLs && bethinkery.hasUrl {
+                            Link(bethinkery.url!.absoluteString, destination: bethinkery.url!)
+                                .font(.footnote)
+                                .foregroundColor(.blue)
+                        }
                     }
+                }
             }
             Spacer()
         }
@@ -481,6 +520,7 @@ struct ListDetailView: View {
     
     var body: some View {
         if !model.availableSources.isEmpty {
+            // TODO: make this less ugly, see also BethinkeryDetailView
             NavigationView {
                 VStack {
                     Text(newTitle.isEmpty ? "New List" : newTitle)
@@ -570,6 +610,105 @@ struct ListDetailView: View {
                         Button("Close") {
                             dismiss()
                         }
+                    }
+                }
+            }
+        }
+    }
+}
+
+struct BethinkeryDetailView: View {
+    @AppStorage(SettingsKey.enableAutocorrect.rawValue)
+    private var enableAutocorrectSetting: Bool = true
+    
+    @Environment(\.dismiss)
+    private var dismiss
+
+    @State var model: ViewModel
+    @State var editBethinkeryCommand: EditBethinkery
+
+    var bethinkery: Bethinkery
+
+    var notesBinding: Binding<String> {
+        Binding<String>(
+            get: {
+                return editBethinkeryCommand.notes ?? ""
+            },
+            set: { newString in
+                let cleanedString = newString.trimmingCharacters(in: .whitespacesAndNewlines)
+                editBethinkeryCommand.notes = cleanedString.isEmpty ? nil : cleanedString
+            }
+        )
+    }
+    var urlBinding: Binding<String> {
+        Binding<String>(
+            get: {
+                return editBethinkeryCommand.url?.absoluteString ?? ""
+            },
+            set: { newString in
+                let cleanedString = newString.trimmingCharacters(in: .whitespacesAndNewlines)
+                editBethinkeryCommand.url = cleanedString.isEmpty ? nil : URL(string: newString)
+            }
+        )
+    }
+
+    init(model: ViewModel, bethinkery: Bethinkery) {
+        self.model = model
+        self.bethinkery = bethinkery
+        self.editBethinkeryCommand = EditBethinkery.fromBethinkery(bethinkery)
+    }
+
+    var body: some View {
+        NavigationView {
+            VStack {
+                // TODO: make this less ugly, see also ListDetailView
+                Text(editBethinkeryCommand.title)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .foregroundColor(Color(hex: bethinkery.list.hexColor))
+                    .font(.largeTitle)
+                    .bold()
+                    .padding(20)
+                Form {
+                    Section {
+                        TextField(
+                            editBethinkeryCommand.title,
+                            text: $editBethinkeryCommand.title,
+                            prompt: Text("Title")
+                        )
+                        .autocorrectionDisabled(!enableAutocorrectSetting)
+
+                        TextField(
+                            editBethinkeryCommand.notes ?? "",
+                            text: notesBinding,
+                            prompt: Text("Notes"),
+                            axis: .vertical
+                        )
+
+                        TextField(
+                            editBethinkeryCommand.url?.absoluteString ?? "",
+                            text: urlBinding,
+                            prompt: Text("URL")
+
+                        )
+                        .autocorrectionDisabled(true)
+                        .textInputAutocapitalization(.never)
+                    }
+                }
+            }
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        withAnimation {
+                            withErrorReporter {
+                                try model.update(bethinkery, with: editBethinkeryCommand)
+                            }
+                        }
+                        dismiss()
+                    }
+                }
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        dismiss()
                     }
                 }
             }
