@@ -397,93 +397,119 @@ struct BethinkeryRowView: View {
     @State private var editedTitle: String = ""
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            if isEditing {
-                Image(systemName: "pencil.line")
-                    .font(.title2)
-                    .foregroundColor(.gray)
-                    .accessibilityHidden(true)
-            } else {
-                Button {
-                    withAnimation {
-                        withErrorReporter {
-                            try model.toggleCompleted(bethinkery)
-                        }
-                    }
-                } label: {
-                    Image(systemName: bethinkery.isCompleted ? "checkmark.circle.fill" : "circle")
-                        .font(.title2)
-                        .foregroundColor(bethinkery.isCompleted ? .green : .gray)
-                        .accessibilityLabel(Text(bethinkery.isCompleted
-                                                 ? "Completed"
-                                                 : "Not completed"))
-                }
-                .sensoryFeedback(.success, trigger: bethinkery.isCompleted)
-            }
-
-            if isEditing {
-                TextField(bethinkery.title, text: $editedTitle)
-                    .autocorrectionDisabled(!enableAutocorrectSetting)
-                    .focused($editFocus)
-                    .onAppear {
-                        editFocus = true
-                    }
-                    .toolbar {
-                        ToolbarItem(placement: .cancellationAction) {
-                            Button("Cancel") {
-                                cancelEdit()
+        VStack(alignment: .trailing) {
+            HStack {
+                Group {
+                    if isEditing {
+                        Image(systemName: "pencil.line")
+                            .font(.title2)
+                            .foregroundColor(.gray)
+                            .accessibilityHidden(true)
+                    } else {
+                        Button {
+                            withAnimation {
+                                withErrorReporter {
+                                    try model.toggleCompleted(bethinkery)
+                                }
                             }
+                        } label: {
+                            Image(systemName: bethinkery.isCompleted ? "checkmark.circle.fill" : "circle")
+                                .font(.title2)
+                                .foregroundColor(bethinkery.isCompleted ? .green : .gray)
+                                .accessibilityLabel(Text(bethinkery.isCompleted
+                                                         ? "Completed"
+                                                         : "Not completed"))
                         }
-                        ToolbarItem(placement: .keyboard) {
-                            Spacer()
-                        }
-                        ToolbarItem(placement: .keyboard) {
-                            Button("Done") {
+                        .sensoryFeedback(.success, trigger: bethinkery.isCompleted)
+                    }
+                }
+                .containerRelativeFrame(.horizontal, count: 10, span: 1, spacing: 5, alignment: .leading)
+
+                Group {
+                    if isEditing {
+                        TextField(bethinkery.title, text: $editedTitle)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .autocorrectionDisabled(!enableAutocorrectSetting)
+                            .focused($editFocus)
+                            .onAppear {
+                                editFocus = true
+                            }
+                            .toolbar {
+                                ToolbarItem(placement: .cancellationAction) {
+                                    Button("Cancel") {
+                                        cancelEdit()
+                                    }
+                                    .sensoryFeedback(.stop, trigger: isEditing)
+                                }
+                                ToolbarItem(placement: .keyboard) {
+                                    Spacer()
+                                }
+                                ToolbarItem(placement: .keyboard) {
+                                    Button("Done") {
+                                        saveEdit()
+                                    }
+                                    .sensoryFeedback(.stop, trigger: isEditing)
+                                }
+                            }
+                            .onSubmit {
                                 saveEdit()
                             }
-                        }
-                    }
-                    .onSubmit {
-                        saveEdit()
-                    }
-                    .onChange(of: editFocus) {
-                        if !editFocus {
-                            saveEdit()
-                        }
-                    }
+                            .onChange(of: editFocus) {
+                                if !editFocus {
+                                    saveEdit()
+                                }
+                            }
 
-            } else {
-                VStack(alignment: .leading, spacing: 10) {
-                    Text(bethinkery.title)
-                        .strikethrough(bethinkery.isCompleted)
-                        .foregroundColor(bethinkery.isCompleted ? .gray : .primary)
-                        .onTapGesture {
-                            editedTitle = bethinkery.title
-                            isEditing = true
+                    } else {
+                        Text(bethinkery.title)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .strikethrough(bethinkery.isCompleted)
+                            .foregroundColor(bethinkery.isCompleted ? .gray : .primary)
+                            .onTapGesture {
+                                editedTitle = bethinkery.title
+
+                                withAnimation(.snappy) {
+                                    isEditing = true
+                                }
+                            }
+                            .sensoryFeedback(.start, trigger: isEditing)
+                            .accessibilityAddTraits(.isButton)
+                    }
+                }
+                .containerRelativeFrame(.horizontal, count: 10, span: 8, spacing: 5, alignment: .trailing)
+            }
+
+
+            if !bethinkery.isCompleted && !isEditing {
+                if (displayNotes && bethinkery.hasNotes) || displayURLs && bethinkery.hasUrl {
+                    HStack {
+                        VStack {
+                            if displayNotes && bethinkery.hasNotes {
+                                Text(bethinkery.notes!)
+                                    .font(.footnote)
+                                    .foregroundColor(.secondary)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                            if displayURLs && bethinkery.hasUrl {
+                                Link(bethinkery.url!.absoluteString, destination: bethinkery.url!)
+                                    .font(.footnote)
+                                    .foregroundColor(.blue)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
                         }
-                        .accessibilityAddTraits(.isButton)
-                    if !bethinkery.isCompleted {
-                        if displayNotes && bethinkery.hasNotes {
-                            Text(bethinkery.notes!)
-                                .font(.footnote)
-                                .foregroundColor(.secondary)
-                        }
-                        if displayURLs && bethinkery.hasUrl {
-                            Link(bethinkery.url!.absoluteString, destination: bethinkery.url!)
-                                .font(.footnote)
-                                .foregroundColor(.blue)
-                        }
+                        .containerRelativeFrame(.horizontal, count: 10, span: 8, spacing: 5, alignment: .trailing)
+                        .padding(.top, 1)
                     }
                 }
             }
-            Spacer()
         }
-        .padding(.vertical, 4)
     }
 
     private func cancelEdit() {
         editedTitle = ""
-        isEditing = false
+        withAnimation {
+            isEditing = false
+        }
     }
 
     private func saveEdit() {

@@ -270,7 +270,7 @@ class ViewModel {
     func resetOrdinals() {
         for (idx, list) in bethinkeryLists.enumerated() {
             list.ordinal = idx
-            
+
             for (iidx, bethinkery) in unfilteredBethinkeries.enumerated()
                 .filter({ $0.1.list.id == list.id }) {
                 bethinkery.ordinal = iidx
