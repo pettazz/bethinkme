@@ -12,7 +12,7 @@ enum AvailableAlarmTypes {
 
 // because you basically can't put any non-model complex types into SwifData 
 enum AlarmProximityType: Int, Codable {
-    case none = 0
+    case nothing = 0
     case enter = 1
     case leave = 2
 }

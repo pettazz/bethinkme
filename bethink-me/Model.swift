@@ -277,7 +277,7 @@ final class BethinkeryProximityAlarm: BethinkeryAlarm {
             location: LatLng(
                 lat: loc.geoLocation!.coordinate.latitude,
                 lng: loc.geoLocation!.coordinate.longitude),
-            type: AlarmProximityType(rawValue: alarm.proximity.rawValue) ?? AlarmProximityType.none,
+            type: AlarmProximityType(rawValue: alarm.proximity.rawValue) ?? AlarmProximityType.nothing,
             baseAlarm: alarm
         )
     }
