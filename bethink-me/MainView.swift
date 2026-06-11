@@ -152,16 +152,8 @@ struct MainView: View {
                     if listsLoadingTime >= 1 && listsLoading {
                         Color.black.opacity(0.3)
                             .ignoresSafeArea()
-
-                        if #available(iOS 26.0, *) {
-                            LoadingSpinnerView()
-                                .glassEffect(in: .rect(cornerRadius: 16.0))
-                        } else {
-                            LoadingSpinnerView()
-                                .background(RoundedRectangle(cornerRadius: 16.0)
-                                    .fill(Color.white))
-
-                        }
+                        LoadingSpinnerView()
+                            .glassEffect(in: .rect(cornerRadius: 16.0))
                     }
                 }.animation(.snappy, value: listsLoading)
 
@@ -651,6 +643,9 @@ struct BethinkeryDetailView: View {
     @State var model: ViewModel
     @State var editBethinkeryCommand: EditBethinkery
 
+    @State var dueDateEnabled: Bool
+    @State var dueDateEditorVisible: Bool = false
+
     var bethinkery: Bethinkery
 
     var notesBinding: Binding<String> {
@@ -671,11 +666,27 @@ struct BethinkeryDetailView: View {
             }
         )
     }
+    var dueDateBinding: Binding<Date> {
+        Binding<Date>(
+            get: { return editBethinkeryCommand.dueDate ?? Date.now },
+            set: { editBethinkeryCommand.dueDate = $0 }
+        )
+    }
+
+    var dateFormatter: DateFormatter {
+        let it = DateFormatter()
+        it.dateFormat = "MMM d"
+        it.dateStyle = .medium
+        it.doesRelativeDateFormatting = true
+
+        return it
+    }
 
     init(model: ViewModel, bethinkery: Bethinkery) {
         self.model = model
         self.bethinkery = bethinkery
         self.editBethinkeryCommand = EditBethinkery.fromBethinkery(bethinkery)
+        self.dueDateEnabled = bethinkery.dueDate != nil
     }
 
 
@@ -714,6 +725,50 @@ struct BethinkeryDetailView: View {
                         .autocorrectionDisabled(true)
                         .textInputAutocapitalization(.never)
                     }
+
+                    Section {
+                        Toggle(isOn: $dueDateEnabled) {
+                            Group {
+                                Text("Due Date").bold()
+                                if dueDateEnabled && editBethinkeryCommand.dueDate != nil {
+                                    Text(dateFormatter.string(from: editBethinkeryCommand.dueDate!))
+                                }
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                withAnimation {
+                                    dueDateEditorVisible.toggle()
+                                }
+                            }
+                            .accessibilityAddTraits(.isButton)
+                        }
+                        .onChange(of: dueDateEnabled, {
+                            if dueDateEnabled {
+                                dueDateBinding.wrappedValue = editBethinkeryCommand.dueDate ?? Date.now
+                            }
+                            withAnimation {
+                                dueDateEditorVisible = dueDateEnabled
+                            }
+                        })
+
+                        if dueDateEnabled && dueDateEditorVisible {
+                            DatePicker("hey whats up", selection: dueDateBinding, displayedComponents: [.date])
+                                .datePickerStyle(.graphical)
+                        }
+                    }
+
+                    if bethinkery.hasAlarms {
+                        Section {
+                            List {
+                                ForEach(bethinkery.alarms) { alarm in
+                                    BethinkeryAlarmView(alarm: alarm)
+                                }
+                            }
+                        } header: {
+                            Text("Alarms")
+                        }
+                    }
                 }
             }
             .toolbar {
@@ -734,5 +789,25 @@ struct BethinkeryDetailView: View {
                 }
             }
         }
+    }
+}
+
+struct BethinkeryAlarmView: View {
+    var alarm: BethinkeryAlarm
+
+    var body: some View {
+        VStack(alignment: .leading) {
+            Text("id: \(alarm.id)")
+            if let timeAlarm = alarm as? BethinkeryTimeAlarm {
+                Text("type: time")
+                Text("trigger: \(timeAlarm.time.ISO8601Format())")
+            } else if let proxAlarm = alarm as? BethinkeryProximityAlarm {
+                Text("type: prox")
+                Text("trigger: \(proxAlarm.title)")
+            } else {
+                Text("type: wat da fuk")
+            }
+        }
+
     }
 }

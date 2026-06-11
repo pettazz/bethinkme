@@ -15,6 +15,7 @@ class ViewModel {
     var hasAccess: Bool = false
     var availableSources: [EKSource] = []
     var defaultSource: EKSource?
+    var defaultAlarmOffset: TimeInterval? = 0
 
     var showCompleted: Bool = false
 
@@ -95,11 +96,11 @@ class ViewModel {
                     // = yes reminder, yes storage
                     // make sure fields are in sync
                     let existingBethinkery = existingBethinkeries.first!
-                    existingBethinkery.load(from: ekrem)
+                    try existingBethinkery.load(from: ekrem)
                 } else if existingBethinkeries.isEmpty {
                     // | yes reminder, no storage
                     // add it
-                    let newReminder = Bethinkery(reminder: ekrem, list: currentList)
+                    let newReminder = try Bethinkery(reminder: ekrem, list: currentList)
                     currentList.bethinkeries.append(newReminder)
                     modelContext.insert(newReminder)
                 } else {
@@ -167,7 +168,7 @@ class ViewModel {
 
             try eventStore.save(reminder, commit: true)
 
-            let newBethinkery = Bethinkery(reminder: reminder, list: list)
+            let newBethinkery = try Bethinkery(reminder: reminder, list: list)
             modelContext.insert(newBethinkery)
             list.bethinkeries.insert(newBethinkery, at: 0)
             resetOrdinals()
@@ -193,6 +194,7 @@ class ViewModel {
         bethinkery.freshlyCompleted = updateCommand.freshlyCompleted
         bethinkery.notes = updateCommand.notes
         bethinkery.url = updateCommand.url
+        bethinkery.dueDate = updateCommand.dueDate
 
         do {
             try eventStore.save(bethinkery.toReminder(), commit: true)
@@ -277,6 +279,10 @@ class ViewModel {
                 bethinkery.freshlyCompleted = false // hehehehe side effects
             }
         }
+    }
+
+    func addAlarm(_ newAlarm: BethinkeryAlarm, to bethinkery: Bethinkery) {
+        bethinkery.alarms.append(newAlarm)
     }
 
 

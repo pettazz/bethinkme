@@ -22,6 +22,7 @@ struct EditBethinkery {
     var freshlyCompleted: Bool = false
     var notes: String?
     var url: URL?
+    var dueDate: Date?
 
     static func fromBethinkery(_ bethinkery: Bethinkery) -> EditBethinkery {
         return EditBethinkery(
@@ -29,6 +30,7 @@ struct EditBethinkery {
             isCompleted: bethinkery.isCompleted,
             freshlyCompleted: bethinkery.freshlyCompleted,
             notes: bethinkery.notes,
-            url: bethinkery.url)
+            url: bethinkery.url,
+            dueDate: bethinkery.dueDate)
     }
 }
