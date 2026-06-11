@@ -155,7 +155,8 @@ struct MainView: View {
                         LoadingSpinnerView()
                             .glassEffect(in: .rect(cornerRadius: 16.0))
                     }
-                }.animation(.snappy, value: listsLoading)
+                }
+                .animation(.snappy, value: listsLoading)
 
             }
             .onReceive(clock) { _ in
@@ -170,19 +171,16 @@ struct MainView: View {
                 await tryTask(Task { try await reloadLists() })
             }
         }
-        .task {
-            guard model == nil else { return }
-            model = await ViewModel(modelContext: modelContext)
-        }
     }
 
     func reloadLists() async throws {
-        guard model != nil else {
-            throw BethinkMeError("tried to reloadLists with no viewModel instantiated")
-        }
-
         listsLoading = true
+
+        if model == nil {
+            model = await ViewModel(modelContext: modelContext)
+        }
         try await model!.loadLists()
+
         listsLoading = false
     }
 }
