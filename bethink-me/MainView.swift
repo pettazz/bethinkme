@@ -439,7 +439,7 @@ struct BethinkeryRowView: View {
                                     Button("Cancel") {
                                         cancelEdit()
                                     }
-                                    .sensoryFeedback(.stop, trigger: isEditing)
+                                    .sensoryFeedback(.stop, trigger: isEditing) // FIXME: it don't do
                                 }
                                 ToolbarItem(placement: .keyboard) {
                                     Spacer()
@@ -448,7 +448,7 @@ struct BethinkeryRowView: View {
                                     Button("Done") {
                                         saveEdit()
                                     }
-                                    .sensoryFeedback(.stop, trigger: isEditing)
+                                    .sensoryFeedback(.stop, trigger: isEditing) // FIXME: it don't do
                                 }
                             }
                             .onSubmit {
@@ -472,7 +472,7 @@ struct BethinkeryRowView: View {
                                     isEditing = true
                                 }
                             }
-                            .sensoryFeedback(.start, trigger: isEditing)
+                            .sensoryFeedback(.start, trigger: isEditing) // FIXME: it don't do
                             .accessibilityAddTraits(.isButton)
                     }
                 }
@@ -655,9 +655,7 @@ struct BethinkeryDetailView: View {
 
     var notesBinding: Binding<String> {
         Binding<String>(
-            get: {
-                return editBethinkeryCommand.notes ?? ""
-            },
+            get: { return editBethinkeryCommand.notes ?? "" },
             set: { newString in
                 let cleanedString = newString.trimmingCharacters(in: .whitespacesAndNewlines)
                 editBethinkeryCommand.notes = cleanedString.isEmpty ? nil : cleanedString
@@ -666,9 +664,7 @@ struct BethinkeryDetailView: View {
     }
     var urlBinding: Binding<String> {
         Binding<String>(
-            get: {
-                return editBethinkeryCommand.url?.absoluteString ?? ""
-            },
+            get: { return editBethinkeryCommand.url?.absoluteString ?? "" },
             set: { newString in
                 let cleanedString = newString.trimmingCharacters(in: .whitespacesAndNewlines)
                 editBethinkeryCommand.url = cleanedString.isEmpty ? nil : URL(string: newString)
@@ -681,6 +677,7 @@ struct BethinkeryDetailView: View {
         self.bethinkery = bethinkery
         self.editBethinkeryCommand = EditBethinkery.fromBethinkery(bethinkery)
     }
+
 
     var body: some View {
         NavigationView {
