@@ -283,7 +283,7 @@ final class BethinkeryProximityAlarm: BethinkeryAlarm {
     }
 }
 
-struct LatLng: Codable, Hashable {
+nonisolated struct LatLng: Codable, Hashable {
     var lat: Double
     var lng: Double
 }
