@@ -143,7 +143,7 @@ struct MainView: View {
                 }
 
                 ZStack {
-                    if showDelayedSpinner && listsLoading {
+                    if showDelayedSpinner {
                         Color.black.opacity(0.3)
                             .ignoresSafeArea()
                         LoadingSpinnerView()
