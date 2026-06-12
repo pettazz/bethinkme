@@ -15,13 +15,14 @@ struct MainView: View {
     private var scenePhase
 
     @State private var model: ViewModel?
+
     @State private var listEditMode: EditMode = .inactive
     @State private var shouldPresentNewListSheet = false
 
     @State private var listsLoading: Bool = false
     @State private var listsLoadingTime: Int = 0
+    @State private var showDelayedSpinner = false
 
-    private var clock = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     @State private var selectedBethinkeryForEdit: Bethinkery?
 
     var body: some View {
@@ -142,19 +143,24 @@ struct MainView: View {
                 }
 
                 ZStack {
-                    if listsLoadingTime >= 1 && listsLoading {
+                    if showDelayedSpinner && listsLoading {
                         Color.black.opacity(0.3)
                             .ignoresSafeArea()
                         LoadingSpinnerView()
                             .glassEffect(in: .rect(cornerRadius: 16.0))
                     }
                 }
-                .animation(.snappy, value: listsLoading)
+                .animation(.snappy, value: showDelayedSpinner)
+                .task(id: listsLoading) {
+                    showDelayedSpinner = false
 
-            }
-            .onReceive(clock) { _ in
-                withAnimation(.snappy) {
-                    listsLoadingTime = listsLoading ? listsLoadingTime + 1 : 0
+                    guard listsLoading else { return }
+                    try? await Task.sleep(for: .seconds(1))
+                    guard !Task.isCancelled, listsLoading else { return }
+
+                    withAnimation(.snappy) {
+                        showDelayedSpinner = true
+                    }
                 }
             }
         }

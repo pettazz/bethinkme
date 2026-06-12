@@ -53,7 +53,7 @@ class ViewModel {
     }
 
     func loadLists() async throws {
-//        try! await Task.sleep(for: .milliseconds(1500))
+//        try await Task.sleep(for: .milliseconds(1500))
         guard await checkPermissions() else {
             throw BethinkMeError("tried to loadLists without permissions")
         }
