@@ -1,5 +1,5 @@
-import Foundation
 import Combine
+import SwiftUI
 
 // a set of intermediate not-objects to use for holding all the fields
 // we want to do something with at once, rather than passing them around individually
@@ -21,31 +21,30 @@ class EditBethinkery: ObservableObject {
     @Published var title: String = ""
     @Published var isCompleted: Bool = false
     @Published var freshlyCompleted: Bool = false
-    @Published var notes: String?
-    @Published var url: URL?
+    @Published var notesText: String = ""
+    @Published var urlText: String = ""
     @Published var dueDate: Date?
+
+    var notes: String? {
+        notesText.isEmpty ? nil : notesText
+    }
+
+    var url: URL? {
+        urlText.isEmpty ? nil : URL(string: urlText)
+    }
 
     init(title: String = "",
          isCompleted: Bool = false,
          freshlyCompleted: Bool = false,
-         notes: String? = nil,
-         url: URL? = nil,
+         notesText: String = "",
+         urlText: String = "",
          dueDate: Date? = nil) {
         self.title = title
         self.isCompleted = isCompleted
         self.freshlyCompleted = freshlyCompleted
-        self.notes = notes
-        self.url = url
+        self.notesText = notesText
+        self.urlText = urlText
         self.dueDate = dueDate
-    }
-
-    func loadFromBethinkery(_ bethinkery: Bethinkery) {
-        self.title = bethinkery.title
-        self.isCompleted = bethinkery.isCompleted
-        self.freshlyCompleted = bethinkery.freshlyCompleted
-        self.notes = bethinkery.notes
-        self.url = bethinkery.url
-        self.dueDate = bethinkery.dueDate
     }
 
     static func fromBethinkery(_ bethinkery: Bethinkery) -> EditBethinkery {
@@ -53,8 +52,8 @@ class EditBethinkery: ObservableObject {
             title: bethinkery.title,
             isCompleted: bethinkery.isCompleted,
             freshlyCompleted: bethinkery.freshlyCompleted,
-            notes: bethinkery.notes,
-            url: bethinkery.url,
+            notesText: bethinkery.notes ?? "",
+            urlText: bethinkery.url?.absoluteString ?? "",
             dueDate: bethinkery.dueDate)
     }
 }

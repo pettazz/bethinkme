@@ -83,12 +83,6 @@ struct MainView: View {
                                     }
                                 }
                             }
-                            .sheet(item: $selectedBethinkeryForEdit) { bethinkery in
-                                BethinkeryDetailView(
-                                    model: model!,
-                                    bethinkery: bethinkery
-                                )
-                            }
                             .environment(\.editMode, $listEditMode)
                         }
                     }
@@ -168,6 +162,15 @@ struct MainView: View {
         .task(id: scenePhase) {
             if scenePhase == .active {
                 await tryTask(Task { try await reloadLists() })
+            }
+        }
+        .sheet(item: $selectedBethinkeryForEdit) { bethinkery in
+            if let model {
+                BethinkeryDetailView(
+                    model: model,
+                    bethinkery: bethinkery
+                )
+                .id(bethinkery.id)
             }
         }
     }
@@ -642,11 +645,7 @@ struct BethinkeryDetailView: View {
     var bethinkery: Bethinkery
 
     @StateObject private var editBethinkeryCommand: EditBethinkery = EditBethinkery()
-    @State private var newDueDate: Date = Date.now
-    @State private var newNotes: String = ""
-    @State private var newUrl: String = ""
 
-    @State private var dueDateEnabled: Bool = false
     @State private var dueDateEditorVisible: Bool = false
 
     @State private var newAlarmFormVisible: Bool = false
@@ -656,7 +655,27 @@ struct BethinkeryDetailView: View {
     @State private var newAlarmRadius: Double?
     @State private var newAlarmLocation: LatLng?
     @State private var newAlarmProxType: AlarmProximityType = .nothing
+    @State private var dueDatePickerValue: Date = .now
 
+    init(model: ViewModel, bethinkery: Bethinkery) {
+        self.model = model
+        self.bethinkery = bethinkery
+        _editBethinkeryCommand = StateObject(wrappedValue: .fromBethinkery(bethinkery))
+        _dueDatePickerValue = State(initialValue: bethinkery.dueDate ?? .now)
+    }
+
+    private var dueDateEnabled: Binding<Bool> {
+        Binding(
+            get: { editBethinkeryCommand.dueDate != nil },
+            set: { enabled in
+                if enabled {
+                    editBethinkeryCommand.dueDate = dueDatePickerValue
+                } else {
+                    editBethinkeryCommand.dueDate = nil
+                }
+            }
+        )
+    }
 
     var dateFormatter: DateFormatter {
         let it = DateFormatter()
@@ -668,7 +687,7 @@ struct BethinkeryDetailView: View {
     }
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             VStack {
                 // TODO: make this less ugly, see also ListDetailView
                 Text(editBethinkeryCommand.title)
@@ -686,14 +705,14 @@ struct BethinkeryDetailView: View {
                         .autocorrectionDisabled(!enableAutocorrectSetting)
 
                         TextField(
-                            editBethinkeryCommand.notes ?? "",
-                            text: $newNotes,
+                            "Notes",
+                            text: $editBethinkeryCommand.notesText,
                             prompt: Text("Notes"),
                             axis: .vertical)
 
                         TextField(
-                            editBethinkeryCommand.url?.absoluteString ?? "",
-                            text: $newUrl,
+                            "URL",
+                            text: $editBethinkeryCommand.urlText,
                             prompt: Text("URL"))
                         .keyboardType(.URL)
                         .autocorrectionDisabled(true)
@@ -701,10 +720,10 @@ struct BethinkeryDetailView: View {
                     }
 
                     Section {
-                        Toggle(isOn: $dueDateEnabled) {
+                        Toggle(isOn: dueDateEnabled) {
                             Group {
                                 Text("Due Date").bold()
-                                if dueDateEnabled && editBethinkeryCommand.dueDate != nil {
+                                if dueDateEnabled.wrappedValue && editBethinkeryCommand.dueDate != nil {
                                     Text(dateFormatter.string(from: editBethinkeryCommand.dueDate!))
                                 }
                             }
@@ -717,40 +736,42 @@ struct BethinkeryDetailView: View {
                             }
                             .accessibilityAddTraits(.isButton)
                         }
-                        .onChange(of: dueDateEnabled, {
+                        .onChange(of: dueDateEnabled.wrappedValue, {
                             withAnimation {
-                                dueDateEditorVisible = dueDateEnabled
+                                dueDateEditorVisible = dueDateEnabled.wrappedValue
                             }
                         })
 
-                        if dueDateEnabled && dueDateEditorVisible {
+                        if dueDateEnabled.wrappedValue && dueDateEditorVisible {
                             DatePicker("Select Due Date",
-                                       selection: $newDueDate,
+                                       selection: $dueDatePickerValue,
                                        displayedComponents: [.date])
                                 .datePickerStyle(.graphical)
+                                .onChange(of: dueDatePickerValue) {
+                                    editBethinkeryCommand.dueDate = dueDatePickerValue
+                                }
                         }
                     }
 
                     Section {
-                        List {
-                            if bethinkery.hasAlarms {
-                                ForEach(bethinkery.alarms) { alarm in
-                                    BethinkeryAlarmView(alarm: alarm)
+                        if bethinkery.hasAlarms {
+                            ForEach(bethinkery.alarms) { alarm in
+                                BethinkeryAlarmView(alarm: alarm)
+                            }
+                        }
+
+                        if newAlarmFormVisible {
+                            Picker("Type", selection: $newAlarmType) {
+                                ForEach(AvailableAlarmTypes.allCases, id: \.self) { alarmType in
+                                    Text(alarmType.rawValue).tag(alarmType)
                                 }
                             }
+                            .pickerStyle(.segmented)
+                        }
 
-                            if newAlarmFormVisible {
-                                Picker("Type", selection: $newAlarmType) {
-                                    ForEach(AvailableAlarmTypes.allCases, id: \.self) { alarmType in
-                                        Text(alarmType.rawValue).tag(alarmType)
-                                    }
-                                }
-                            }
-
-                            Button(newAlarmFormVisible ? "Cancel" : "Add Alarm") {
-                                withAnimation {
-                                    newAlarmFormVisible.toggle()
-                                }
+                        Button(newAlarmFormVisible ? "Cancel" : "Add Alarm") {
+                            withAnimation {
+                                newAlarmFormVisible.toggle()
                             }
                         }
                     } header: {
@@ -764,9 +785,6 @@ struct BethinkeryDetailView: View {
                     Button("Save") {
                         withAnimation {
                             withErrorReporter {
-                                editBethinkeryCommand.dueDate = dueDateEnabled ? newDueDate : nil
-                                editBethinkeryCommand.notes = newNotes
-                                editBethinkeryCommand.url = URL(string: newUrl)
                                 try model.update(bethinkery, with: editBethinkeryCommand)
                             }
                         }
@@ -778,19 +796,6 @@ struct BethinkeryDetailView: View {
                         dismiss()
                     }
                 }
-            }
-        }
-        .task {
-            editBethinkeryCommand.loadFromBethinkery(bethinkery)
-            dueDateEnabled = editBethinkeryCommand.dueDate != nil
-            if editBethinkeryCommand.dueDate != nil {
-                newDueDate = editBethinkeryCommand.dueDate!
-            }
-            if editBethinkeryCommand.notes != nil {
-                newNotes = editBethinkeryCommand.notes!
-            }
-            if editBethinkeryCommand.url != nil {
-                newUrl = editBethinkeryCommand.url!.absoluteString
             }
         }
     }
