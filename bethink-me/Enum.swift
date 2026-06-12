@@ -5,12 +5,12 @@ enum SettingsKey: String {
     case displayURLs = "settings.displayURLs"
 }
 
-enum AvailableAlarmTypes {
-    case timeAlarm
-    case locationAlarm
+enum AvailableAlarmTypes: String, CaseIterable {
+    case timeAlarm = "Time"
+    case proximityAlarm = "Location"
 }
 
-// because you basically can't put any non-model complex types into SwifData 
+// because you basically can't put any non-model complex types into SwiftData 
 enum AlarmProximityType: Int, Codable {
     case nothing = 0
     case enter = 1

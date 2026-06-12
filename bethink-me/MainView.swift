@@ -17,12 +17,12 @@ struct MainView: View {
     @State private var model: ViewModel?
     @State private var listEditMode: EditMode = .inactive
     @State private var shouldPresentNewListSheet = false
-    @State private var selectedBethinkeryForEdit: Bethinkery?
 
     @State private var listsLoading: Bool = false
     @State private var listsLoadingTime: Int = 0
 
     private var clock = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+    @State private var selectedBethinkeryForEdit: Bethinkery?
 
     var body: some View {
         NavigationStack {
@@ -83,12 +83,11 @@ struct MainView: View {
                                     }
                                 }
                             }
-                            .sheet(item: $selectedBethinkeryForEdit) { item in
+                            .sheet(item: $selectedBethinkeryForEdit) { bethinkery in
                                 BethinkeryDetailView(
                                     model: model!,
-                                    bethinkery: item
+                                    bethinkery: bethinkery
                                 )
-                                .textCase(.none)
                             }
                             .environment(\.editMode, $listEditMode)
                         }
@@ -210,11 +209,12 @@ struct BethinkeryListView: View {
 
     @FocusState private var addInFocus: Bool
 
-    @State var model: ViewModel
-    @State var list: BethinkeryList
+    var model: ViewModel
+    var list: BethinkeryList
     @State private var isAdding: Bool = false
     @State private var newTitle: String = ""
     @State private var shouldPresentEditListSheet = false
+
     @Binding var selectedBethinkeryForEdit: Bethinkery?
 
     var body: some View {
@@ -381,8 +381,8 @@ struct BethinkeryRowView: View {
 
     @FocusState private var editFocus: Bool
 
-    @State var model: ViewModel
-    @State var bethinkery: Bethinkery
+    var model: ViewModel
+    var bethinkery: Bethinkery
     @State private var isEditing: Bool = false
     @State private var editedTitle: String = ""
 
@@ -504,7 +504,7 @@ struct BethinkeryRowView: View {
 
     private func saveEdit() {
         withErrorReporter {
-            var updater = EditBethinkery.fromBethinkery(bethinkery)
+            let updater = EditBethinkery.fromBethinkery(bethinkery)
             updater.title = editedTitle
             try model.update(bethinkery, with: updater)
         }
@@ -520,7 +520,7 @@ struct ListDetailView: View {
     @Environment(\.dismiss)
     private var dismiss
 
-    @State var model: ViewModel
+    var model: ViewModel
     @State private var title: String = ""
     @State private var newTitle: String = ""
     @State private var newColor: Color = Color.accentColor
@@ -638,38 +638,25 @@ struct BethinkeryDetailView: View {
     @Environment(\.dismiss)
     private var dismiss
 
-    @State var model: ViewModel
-    @State var editBethinkeryCommand: EditBethinkery
-
-    @State var dueDateEnabled: Bool
-    @State var dueDateEditorVisible: Bool = false
-
+    var model: ViewModel
     var bethinkery: Bethinkery
 
-    var notesBinding: Binding<String> {
-        Binding<String>(
-            get: { return editBethinkeryCommand.notes ?? "" },
-            set: { newString in
-                let cleanedString = newString.trimmingCharacters(in: .whitespacesAndNewlines)
-                editBethinkeryCommand.notes = cleanedString.isEmpty ? nil : cleanedString
-            }
-        )
-    }
-    var urlBinding: Binding<String> {
-        Binding<String>(
-            get: { return editBethinkeryCommand.url?.absoluteString ?? "" },
-            set: { newString in
-                let cleanedString = newString.trimmingCharacters(in: .whitespacesAndNewlines)
-                editBethinkeryCommand.url = cleanedString.isEmpty ? nil : URL(string: newString)
-            }
-        )
-    }
-    var dueDateBinding: Binding<Date> {
-        Binding<Date>(
-            get: { return editBethinkeryCommand.dueDate ?? Date.now },
-            set: { editBethinkeryCommand.dueDate = $0 }
-        )
-    }
+    @StateObject private var editBethinkeryCommand: EditBethinkery = EditBethinkery()
+    @State private var newDueDate: Date = Date.now
+    @State private var newNotes: String = ""
+    @State private var newUrl: String = ""
+
+    @State private var dueDateEnabled: Bool = false
+    @State private var dueDateEditorVisible: Bool = false
+
+    @State private var newAlarmFormVisible: Bool = false
+    @State private var newAlarmType: AvailableAlarmTypes = .timeAlarm
+    @State private var newAlarmTime: Date?
+    @State private var newAlarmTitle: String?
+    @State private var newAlarmRadius: Double?
+    @State private var newAlarmLocation: LatLng?
+    @State private var newAlarmProxType: AlarmProximityType = .nothing
+
 
     var dateFormatter: DateFormatter {
         let it = DateFormatter()
@@ -679,14 +666,6 @@ struct BethinkeryDetailView: View {
 
         return it
     }
-
-    init(model: ViewModel, bethinkery: Bethinkery) {
-        self.model = model
-        self.bethinkery = bethinkery
-        self.editBethinkeryCommand = EditBethinkery.fromBethinkery(bethinkery)
-        self.dueDateEnabled = bethinkery.dueDate != nil
-    }
-
 
     var body: some View {
         NavigationView {
@@ -703,23 +682,20 @@ struct BethinkeryDetailView: View {
                         TextField(
                             editBethinkeryCommand.title,
                             text: $editBethinkeryCommand.title,
-                            prompt: Text("Title")
-                        )
+                            prompt: Text("Title"))
                         .autocorrectionDisabled(!enableAutocorrectSetting)
 
                         TextField(
                             editBethinkeryCommand.notes ?? "",
-                            text: notesBinding,
+                            text: $newNotes,
                             prompt: Text("Notes"),
-                            axis: .vertical
-                        )
+                            axis: .vertical)
 
                         TextField(
                             editBethinkeryCommand.url?.absoluteString ?? "",
-                            text: urlBinding,
-                            prompt: Text("URL")
-
-                        )
+                            text: $newUrl,
+                            prompt: Text("URL"))
+                        .keyboardType(.URL)
                         .autocorrectionDisabled(true)
                         .textInputAutocapitalization(.never)
                     }
@@ -742,31 +718,45 @@ struct BethinkeryDetailView: View {
                             .accessibilityAddTraits(.isButton)
                         }
                         .onChange(of: dueDateEnabled, {
-                            if dueDateEnabled {
-                                dueDateBinding.wrappedValue = editBethinkeryCommand.dueDate ?? Date.now
-                            }
                             withAnimation {
                                 dueDateEditorVisible = dueDateEnabled
                             }
                         })
 
                         if dueDateEnabled && dueDateEditorVisible {
-                            DatePicker("hey whats up", selection: dueDateBinding, displayedComponents: [.date])
+                            DatePicker("Select Due Date",
+                                       selection: $newDueDate,
+                                       displayedComponents: [.date])
                                 .datePickerStyle(.graphical)
                         }
                     }
 
-                    if bethinkery.hasAlarms {
-                        Section {
-                            List {
+                    Section {
+                        List {
+                            if bethinkery.hasAlarms {
                                 ForEach(bethinkery.alarms) { alarm in
                                     BethinkeryAlarmView(alarm: alarm)
                                 }
                             }
-                        } header: {
-                            Text("Alarms")
+
+                            if newAlarmFormVisible {
+                                Picker("Type", selection: $newAlarmType) {
+                                    ForEach(AvailableAlarmTypes.allCases, id: \.self) { alarmType in
+                                        Text(alarmType.rawValue).tag(alarmType)
+                                    }
+                                }
+                            }
+
+                            Button(newAlarmFormVisible ? "Cancel" : "Add Alarm") {
+                                withAnimation {
+                                    newAlarmFormVisible.toggle()
+                                }
+                            }
                         }
+                    } header: {
+                        Text("Alarms")
                     }
+
                 }
             }
             .toolbar {
@@ -774,6 +764,9 @@ struct BethinkeryDetailView: View {
                     Button("Save") {
                         withAnimation {
                             withErrorReporter {
+                                editBethinkeryCommand.dueDate = dueDateEnabled ? newDueDate : nil
+                                editBethinkeryCommand.notes = newNotes
+                                editBethinkeryCommand.url = URL(string: newUrl)
                                 try model.update(bethinkery, with: editBethinkeryCommand)
                             }
                         }
@@ -785,6 +778,19 @@ struct BethinkeryDetailView: View {
                         dismiss()
                     }
                 }
+            }
+        }
+        .task {
+            editBethinkeryCommand.loadFromBethinkery(bethinkery)
+            dueDateEnabled = editBethinkeryCommand.dueDate != nil
+            if editBethinkeryCommand.dueDate != nil {
+                newDueDate = editBethinkeryCommand.dueDate!
+            }
+            if editBethinkeryCommand.notes != nil {
+                newNotes = editBethinkeryCommand.notes!
+            }
+            if editBethinkeryCommand.url != nil {
+                newUrl = editBethinkeryCommand.url!.absoluteString
             }
         }
     }
