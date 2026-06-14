@@ -438,7 +438,6 @@ struct BethinkeryRowView: View {
                                     Button("Cancel") {
                                         cancelEdit()
                                     }
-                                    .sensoryFeedback(.stop, trigger: isEditing) // FIXME: it don't do
                                 }
                                 ToolbarItem(placement: .keyboard) {
                                     Spacer()
@@ -447,7 +446,6 @@ struct BethinkeryRowView: View {
                                     Button("Done") {
                                         saveEdit()
                                     }
-                                    .sensoryFeedback(.stop, trigger: isEditing) // FIXME: it don't do
                                 }
                             }
                             .onSubmit {
@@ -471,7 +469,6 @@ struct BethinkeryRowView: View {
                                     isEditing = true
                                 }
                             }
-                            .sensoryFeedback(.start, trigger: isEditing) // FIXME: it don't do
                             .accessibilityAddTraits(.isButton)
                     }
                 }
@@ -502,6 +499,7 @@ struct BethinkeryRowView: View {
                 }
             }
         }
+        .sensoryFeedback(.selection, trigger: isEditing)
     }
 
     private func cancelEdit() {
