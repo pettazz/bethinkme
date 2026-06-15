@@ -650,6 +650,7 @@ struct BethinkeryDetailView: View {
     @StateObject private var editBethinkeryCommand: EditBethinkery = EditBethinkery()
 
     @State private var dueDateEditorVisible: Bool = false
+    @State private var dueDatePickerValue: Date = .now
 
     @State private var newAlarmFormVisible: Bool = false
     @State private var newAlarmType: AvailableAlarmTypes = .timeAlarm
@@ -658,7 +659,6 @@ struct BethinkeryDetailView: View {
     @State private var newAlarmRadius: Double?
     @State private var newAlarmLocation: LatLng?
     @State private var newAlarmProxType: AlarmProximityType = .nothing
-    @State private var dueDatePickerValue: Date = .now
 
     init(model: ViewModel, bethinkery: Bethinkery) {
         self.model = model

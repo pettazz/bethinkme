@@ -136,12 +136,13 @@ final class Bethinkery: Equatable, Identifiable {
         self.reminder!.isCompleted = self.isCompleted
         self.reminder!.notes = self.notes
         self.reminder!.url = self.url
-        if dueDate != nil {
-            self.reminder!.dueDateComponents = Calendar.current.dateComponents(
-                                                    [.day, .month, .year], from: self.dueDate!)
+        if self.dueDate != nil {
+            let dateComps = Calendar.current.dateComponents([.day, .month, .year], from: self.dueDate!)
+            self.reminder!.dueDateComponents = dateComps
+            self.reminder!.startDateComponents = dateComps
         } else {
-            print("set em to nil")
             self.reminder!.dueDateComponents = nil
+            self.reminder!.startDateComponents = nil
         }
 
         return self.reminder!
