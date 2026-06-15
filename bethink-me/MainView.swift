@@ -765,7 +765,7 @@ struct BethinkeryDetailView: View {
                     Section {
                         if bethinkery.hasAlarms {
                             ForEach(bethinkery.alarms) { alarm in
-                                BethinkeryAlarmView(alarm: alarm)
+                                BethinkeryAlarmView(hasDueDate: dueDateEnabled, alarm: alarm)
                             }
                         }
 
@@ -778,49 +778,49 @@ struct BethinkeryDetailView: View {
                             .pickerStyle(.segmented)
 
                             switch newAlarmType {
-                                case .relativeTimeAlarm:
-                                    HStack(alignment: .center) {
-                                        Picker("Units", selection: $newAlarmOffsetAmount) {
-                                            ForEach(Array(stride(from: 1.0, to: 100.0, by: 1.0)), id: \.self) { num in
-                                                Text(num, format: .number.rounded(rule: .up, increment: 1.0)).tag(num)
-                                            }
-                                        }
-                                        .pickerStyle(.wheel)
-                                        Picker("Units", selection: $newAlarmOffsetUnit) {
-                                            ForEach(TimeAlarmIntervalUnits.allCases, id: \.self) { unit in
-                                                Text(String(describing: unit)).tag(unit)
-                                            }
-                                        }
-                                        .pickerStyle(.wheel)
-                                        Picker("Units", selection: $newAlarmOffsetDirection) {
-                                            ForEach(TimeAlarmIntervalDirection.allCases, id: \.self) { dir in
-                                                Text(String(describing: dir)).tag(dir)
-                                            }
-                                        }
-                                        .pickerStyle(.wheel)
-                                    }
-                                    Button("Save") {
-                                        let offset = newAlarmOffsetAmount *
-                                            newAlarmOffsetUnit.rawValue *
-                                            TimeInterval(newAlarmOffsetDirection.rawValue)
-                                        let newAlarm = BethinkeryRelativeTimeAlarm(offset: offset)
-                                        withErrorReporter {
-                                            try model.addAlarm(newAlarm, to: bethinkery)
+                            case .relativeTimeAlarm:
+                                HStack(alignment: .center) {
+                                    Picker("Units", selection: $newAlarmOffsetAmount) {
+                                        ForEach(Array(stride(from: 1.0, to: 100.0, by: 1.0)), id: \.self) { num in
+                                            Text(num, format: .number.rounded(rule: .up, increment: 1.0)).tag(num)
                                         }
                                     }
+                                    .pickerStyle(.wheel)
+                                    Picker("Units", selection: $newAlarmOffsetUnit) {
+                                        ForEach(TimeAlarmIntervalUnits.allCases, id: \.self) { unit in
+                                            Text(String(describing: unit)).tag(unit)
+                                        }
+                                    }
+                                    .pickerStyle(.wheel)
+                                    Picker("Units", selection: $newAlarmOffsetDirection) {
+                                        ForEach(TimeAlarmIntervalDirection.allCases, id: \.self) { dir in
+                                            Text(String(describing: dir)).tag(dir)
+                                        }
+                                    }
+                                    .pickerStyle(.wheel)
+                                }
+                                Button("Save") {
+                                    let offset = newAlarmOffsetAmount *
+                                        newAlarmOffsetUnit.rawValue *
+                                        TimeInterval(newAlarmOffsetDirection.rawValue)
+                                    let newAlarm = BethinkeryRelativeTimeAlarm(offset: offset)
+                                    withErrorReporter {
+                                        try model.addAlarm(newAlarm, to: bethinkery)
+                                    }
+                                }
 
-                                case .absoluteTimeAlarm:
-                                    DatePicker("Select Alarm Time",
-                                               selection: $newAlarmTime,
-                                               displayedComponents: [.date, .hourAndMinute])
-                                    Button("Save") {
-                                        let newAlarm = BethinkeryAbsoluteTimeAlarm(time: newAlarmTime)
-                                        withErrorReporter {
-                                            try model.addAlarm(newAlarm, to: bethinkery)
-                                        }
+                            case .absoluteTimeAlarm:
+                                DatePicker("Select Alarm Time",
+                                           selection: $newAlarmTime,
+                                           displayedComponents: [.date, .hourAndMinute])
+                                Button("Save") {
+                                    let newAlarm = BethinkeryAbsoluteTimeAlarm(time: newAlarmTime)
+                                    withErrorReporter {
+                                        try model.addAlarm(newAlarm, to: bethinkery)
                                     }
+                                }
 
-                                case .proximityAlarm:
+                            case .proximityAlarm:
                                     Text("not yet!")
                             }
                         }
@@ -858,6 +858,7 @@ struct BethinkeryDetailView: View {
 }
 
 struct BethinkeryAlarmView: View {
+    @Binding var hasDueDate: Bool
     var alarm: BethinkeryAlarm
 
     var body: some View {
@@ -868,6 +869,14 @@ struct BethinkeryAlarmView: View {
                 Text("trigger: \(timeAlarm.time.ISO8601Format())")
             } else if let timeAlarm = alarm as? BethinkeryRelativeTimeAlarm {
                 Text("type: offset")
+                if !hasDueDate {
+                    HStack {
+                        Image(systemName: "calendar.badge.exclamationmark")
+                            .foregroundStyle(Color.red)
+                        Text("won't trigger without Due Date set!")
+                            .foregroundStyle(Color.red)
+                    }
+                }
                 Text("trigger: \(timeAlarm.offset, format: .number.rounded(rule: .up, increment: 1.0))s")
             } else if let proxAlarm = alarm as? BethinkeryProximityAlarm {
                 Text("type: prox")
