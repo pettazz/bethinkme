@@ -204,7 +204,7 @@ class ViewModel {
     }
 
     func toggleCompleted(_ bethinkery: Bethinkery) throws {
-        var updatedBethinkery = EditBethinkery.fromBethinkery(bethinkery)
+        let updatedBethinkery = EditBethinkery.fromBethinkery(bethinkery)
         updatedBethinkery.isCompleted.toggle()
         updatedBethinkery.freshlyCompleted = updatedBethinkery.isCompleted
 
@@ -281,8 +281,37 @@ class ViewModel {
         }
     }
 
-    func addAlarm(_ newAlarm: BethinkeryAlarm, to bethinkery: Bethinkery) {
-        bethinkery.alarms.append(newAlarm)
+    func addAlarm(_ newAlarm: BethinkeryAlarm, to bethinkery: Bethinkery) throws {
+        guard newAlarm.baseAlarm == nil else {
+            throw BethinkMeError("tried to add a new alarm that was already associated with an EKAlarm")
+        }
+        let newBaseAlarm: EKAlarm
+        if newAlarm is BethinkeryAbsoluteTimeAlarm {
+            guard let newTimeAlarm = newAlarm as? BethinkeryAbsoluteTimeAlarm else {
+                throw BethinkMeError("unable to coerce BethinkeryAlarm to BethinkeryAbsoluteTimeAlarm when saving")
+            }
+            newBaseAlarm = EKAlarm(absoluteDate: newTimeAlarm.time)
+        } else if newAlarm is BethinkeryRelativeTimeAlarm {
+            guard let newTimeAlarm = newAlarm as? BethinkeryRelativeTimeAlarm else {
+                throw BethinkMeError("unable to coerce BethinkeryAlarm to BethinkeryRelativeTimeAlarm when saving")
+            }
+            newBaseAlarm = EKAlarm(relativeOffset: newTimeAlarm.offset)
+        } else if newAlarm is BethinkeryProximityAlarm {
+            throw BethinkMeError("prox alarm not implemented yet")
+        } else {
+            throw BethinkMeError("tried to add a new alarm of unrecognized type")
+        }
+
+        do {
+            newAlarm.baseAlarm = newBaseAlarm
+            bethinkery.alarms.append(newAlarm)
+            modelContext.insert(newAlarm)
+            let reminder = try bethinkery.toReminder()
+            reminder.addAlarm(newBaseAlarm)
+            try eventStore.save(reminder, commit: true)
+        } catch {
+            throw BethinkMeError("failed to add alarm to Bethinkery", from: error as NSError)
+        }
     }
 
 

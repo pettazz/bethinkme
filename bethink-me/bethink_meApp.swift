@@ -18,7 +18,8 @@ struct bethink_meApp: App { // swiftlint:disable:this type_name
             Bethinkery.self,
             BethinkeryList.self,
             BethinkeryProximityAlarm.self,
-            BethinkeryTimeAlarm.self
+            BethinkeryAbsoluteTimeAlarm.self,
+            BethinkeryRelativeTimeAlarm.self
         ])
     }
 }

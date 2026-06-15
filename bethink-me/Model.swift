@@ -158,9 +158,17 @@ final class Bethinkery: Equatable, Identifiable {
                     // this is new, make a whole new instance
                     if alarm.absoluteDate != nil {
                         do {
-                            try self.alarms.append(BethinkeryTimeAlarm.fromEKAlarm(alarm))
+                            try self.alarms.append(BethinkeryAbsoluteTimeAlarm.fromEKAlarm(alarm))
                         } catch {
-                            throw BethinkMeError("failed to coerce EKAlarm to BethinkeryTimeAlarm",
+                            throw BethinkMeError("failed to coerce EKAlarm to BethinkeryAbsoluteTimeAlarm",
+                                                 from: error as NSError)
+                        }
+                    }
+                    if alarm.relativeOffset != 0 {
+                        do {
+                            try self.alarms.append(BethinkeryRelativeTimeAlarm.fromEKAlarm(alarm))
+                        } catch {
+                            throw BethinkMeError("failed to coerce EKAlarm to BethinkeryRelativeTimeAlarm",
                                                  from: error as NSError)
                         }
                     }
@@ -206,9 +214,13 @@ class BethinkeryAlarm: Equatable, Identifiable {
 
     static func == (lhs: BethinkeryAlarm, rhs: EKAlarm) -> Bool {
         if rhs.absoluteDate != nil {
-            if let alarm = lhs as? BethinkeryTimeAlarm {
+            if let alarm = lhs as? BethinkeryAbsoluteTimeAlarm {
                 return alarm.time == rhs.absoluteDate
             }
+        } else if rhs.relativeOffset != 0 {
+                if let alarm = lhs as? BethinkeryRelativeTimeAlarm {
+                    return alarm.offset == rhs.relativeOffset
+                }
         } else if rhs.structuredLocation != nil {
             if let alarm = lhs as? BethinkeryProximityAlarm {
                 return alarm.title == rhs.structuredLocation?.title &&
@@ -225,23 +237,50 @@ class BethinkeryAlarm: Equatable, Identifiable {
 
 @available(iOS 26.0, *)
 @Model
-final class BethinkeryTimeAlarm: BethinkeryAlarm {
+final class BethinkeryAbsoluteTimeAlarm: BethinkeryAlarm {
     var time: Date
 
-    init(id: String?, time: Date, baseAlarm: EKAlarm?) {
+    init(id: String? = nil, time: Date, baseAlarm: EKAlarm? = nil) {
         self.time = time
 
         super.init(id: id, baseAlarm: baseAlarm)
     }
 
-    static func fromEKAlarm(_ alarm: EKAlarm) throws -> BethinkeryTimeAlarm {
+    static func fromEKAlarm(_ alarm: EKAlarm) throws -> BethinkeryAbsoluteTimeAlarm {
         guard alarm.absoluteDate != nil  else {
             throw BethinkMeError("tried to make a BethinkeryTimeAlarm from an EKAlarm with no time info")
         }
+        guard alarm.relativeOffset == 0 else {
+            throw BethinkMeError("tried to make a BethinkeryTimeAlarm from an EKAlarm with an offset")
+        }
 
-        return BethinkeryTimeAlarm(
+        return BethinkeryAbsoluteTimeAlarm(
             id: nil,
             time: alarm.absoluteDate!,
+            baseAlarm: alarm
+        )
+    }
+}
+
+@available(iOS 26.0, *)
+@Model
+final class BethinkeryRelativeTimeAlarm: BethinkeryAlarm {
+    var offset: TimeInterval
+
+    init(id: String? = nil, offset: TimeInterval, baseAlarm: EKAlarm? = nil) {
+        self.offset = offset
+
+        super.init(id: id, baseAlarm: baseAlarm)
+    }
+
+    static func fromEKAlarm(_ alarm: EKAlarm) throws -> BethinkeryRelativeTimeAlarm {
+        guard alarm.absoluteDate == nil  else {
+            throw BethinkMeError("tried to make a BethinkeryRelativeTimeAlarm from an EKAlarm with an absolute time")
+        }
+
+        return BethinkeryRelativeTimeAlarm(
+            id: nil,
+            offset: alarm.relativeOffset,
             baseAlarm: alarm
         )
     }
@@ -255,7 +294,12 @@ final class BethinkeryProximityAlarm: BethinkeryAlarm {
     var location: LatLng
     var type: AlarmProximityType
 
-    init(id: String?, title: String, radius: Double, location: LatLng, type: AlarmProximityType, baseAlarm: EKAlarm?) {
+    init(id: String? = nil,
+         title: String,
+         radius: Double,
+         location: LatLng,
+         type: AlarmProximityType,
+         baseAlarm: EKAlarm? = nil) {
         self.title = title
         self.radius = radius
         self.location = location
