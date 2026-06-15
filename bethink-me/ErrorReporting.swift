@@ -109,6 +109,8 @@ struct ErrorDetailView: View {
     @Environment(\.dismiss)
     private var dismiss
 
+    @State private var viewDidAppear: Bool = false
+
     var error: BethinkMeError
 
     var body: some View {
@@ -165,6 +167,10 @@ struct ErrorDetailView: View {
             }
         }
         .padding()
+        .onAppear {
+            viewDidAppear = true
+        }
+        .sensoryFeedback(.error, trigger: viewDidAppear)
     }
 }
 
