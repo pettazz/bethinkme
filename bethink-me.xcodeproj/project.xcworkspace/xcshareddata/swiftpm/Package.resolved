@@ -1,6 +1,15 @@
 {
-  "originHash" : "1fa961aa1dc717cea452f3389668f0f99a254f07e4eb11d190768a53798f744f",
+  "originHash" : "d1717cbfee7dc4212bd548ad42f5537c4dc2ac30097c7ac37c8bcde4767db529",
   "pins" : [
+    {
+      "identity" : "locationradiuspicker",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/birkoof/LocationRadiusPicker.git",
+      "state" : {
+        "revision" : "7a590f1e3a100fb3942976ab1b2ac28ff2404899",
+        "version" : "1.0.0"
+      }
+    },
     {
       "identity" : "swiftlintplugins",
       "kind" : "remoteSourceControl",

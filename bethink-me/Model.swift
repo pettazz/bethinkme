@@ -314,6 +314,11 @@ final class BethinkeryProximityAlarm: BethinkeryAlarm {
         }
 
         let loc = alarm.structuredLocation!
+        let proxType: AlarmProximityType = switch alarm.proximity {
+            case .enter: .enter
+            case .leave: .leave
+            default: .nothing
+        }
 
         return BethinkeryProximityAlarm(
             id: nil,
@@ -322,7 +327,7 @@ final class BethinkeryProximityAlarm: BethinkeryAlarm {
             location: LatLng(
                 lat: loc.geoLocation!.coordinate.latitude,
                 lng: loc.geoLocation!.coordinate.longitude),
-            type: AlarmProximityType(rawValue: alarm.proximity.rawValue) ?? AlarmProximityType.nothing,
+            type: proxType,
             baseAlarm: alarm
         )
     }

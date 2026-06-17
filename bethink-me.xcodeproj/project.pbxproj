@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		F0D172452FE05C82005EE8EA /* LocationRadiusPicker in Frameworks */ = {isa = PBXBuildFile; productRef = F0D172442FE05C82005EE8EA /* LocationRadiusPicker */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		F0D9DA512FA1300C0013F018 /* bethink-me.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "bethink-me.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -36,6 +40,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F0D172452FE05C82005EE8EA /* LocationRadiusPicker in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -80,6 +85,7 @@
 			);
 			name = "bethink-me";
 			packageProductDependencies = (
+				F0D172442FE05C82005EE8EA /* LocationRadiusPicker */,
 			);
 			productName = "bethink-me";
 			productReference = F0D9DA512FA1300C0013F018 /* bethink-me.app */;
@@ -111,6 +117,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				F0FAD81E2FCFC95500EC8026 /* XCRemoteSwiftPackageReference "SwiftLintPlugins" */,
+				F0D172432FE05C82005EE8EA /* XCRemoteSwiftPackageReference "LocationRadiusPicker" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F0D9DA522FA1300C0013F018 /* Products */;
@@ -399,6 +406,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		F0D172432FE05C82005EE8EA /* XCRemoteSwiftPackageReference "LocationRadiusPicker" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/birkoof/LocationRadiusPicker.git";
+			requirement = {
+				kind = exactVersion;
+				version = 1.0.0;
+			};
+		};
 		F0FAD81E2FCFC95500EC8026 /* XCRemoteSwiftPackageReference "SwiftLintPlugins" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/SimplyDanny/SwiftLintPlugins";
@@ -410,6 +425,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		F0D172442FE05C82005EE8EA /* LocationRadiusPicker */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F0D172432FE05C82005EE8EA /* XCRemoteSwiftPackageReference "LocationRadiusPicker" */;
+			productName = LocationRadiusPicker;
+		};
 		F0FAD81F2FCFC98400EC8026 /* SwiftLintBuildToolPlugin */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = F0FAD81E2FCFC95500EC8026 /* XCRemoteSwiftPackageReference "SwiftLintPlugins" */;

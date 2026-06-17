@@ -297,7 +297,19 @@ class ViewModel {
             }
             newBaseAlarm = EKAlarm(relativeOffset: newTimeAlarm.offset)
         } else if newAlarm is BethinkeryProximityAlarm {
-            throw BethinkMeError("prox alarm not implemented yet")
+            guard let newProxAlarm = newAlarm as? BethinkeryProximityAlarm else {
+                throw BethinkMeError("unable to coerce BethinkeryAlarm to BethinkeryProximityAlarm when saving")
+            }
+            let location = EKStructuredLocation(title: newProxAlarm.title)
+            location.geoLocation = CLLocation(latitude: newProxAlarm.location.lat, longitude: newProxAlarm.location.lng)
+            location.radius = newProxAlarm.radius
+            newBaseAlarm = EKAlarm(relativeOffset: 0)
+            newBaseAlarm.structuredLocation = location
+            newBaseAlarm.proximity = switch newProxAlarm.type {
+                case .enter: .enter
+                case .leave: .leave
+                case .nothing: .none
+            }
         } else {
             throw BethinkMeError("tried to add a new alarm of unrecognized type")
         }

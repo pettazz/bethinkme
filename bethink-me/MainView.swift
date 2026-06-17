@@ -1,5 +1,4 @@
 // swiftlint:disable type_contents_order
-import Combine
 import EventKit
 import SwiftData
 import SwiftUI
@@ -662,9 +661,11 @@ struct BethinkeryDetailView: View {
     @State private var newAlarmOffsetDirection: TimeAlarmIntervalDirection = .before
 
     @State private var newAlarmTitle: String?
+    @State private var newAlarmAddress: String?
     @State private var newAlarmRadius: Double?
-    @State private var newAlarmLocation: LatLng?
-    @State private var newAlarmProxType: AlarmProximityType = .nothing
+    @State private var newAlarmLocationLat: Double?
+    @State private var newAlarmLocationLng: Double?
+    @State private var newAlarmProxType: AlarmProximityType = .enter
 
     init(model: ViewModel, bethinkery: Bethinkery) {
         self.model = model
@@ -778,50 +779,80 @@ struct BethinkeryDetailView: View {
                             .pickerStyle(.segmented)
 
                             switch newAlarmType {
-                            case .relativeTimeAlarm:
-                                HStack(alignment: .center) {
-                                    Picker("Units", selection: $newAlarmOffsetAmount) {
-                                        ForEach(Array(stride(from: 1.0, to: 100.0, by: 1.0)), id: \.self) { num in
-                                            Text(num, format: .number.rounded(rule: .up, increment: 1.0)).tag(num)
+                                case .relativeTimeAlarm:
+                                    HStack(alignment: .center) {
+                                        Picker("Units", selection: $newAlarmOffsetAmount) {
+                                            ForEach(Array(stride(from: 1.0, to: 100.0, by: 1.0)), id: \.self) { num in
+                                                Text(num, format: .number.rounded(rule: .up, increment: 1.0)).tag(num)
+                                            }
                                         }
-                                    }
-                                    .pickerStyle(.wheel)
-                                    Picker("Units", selection: $newAlarmOffsetUnit) {
-                                        ForEach(TimeAlarmIntervalUnits.allCases, id: \.self) { unit in
-                                            Text(String(describing: unit)).tag(unit)
+                                        .pickerStyle(.wheel)
+                                        Picker("Units", selection: $newAlarmOffsetUnit) {
+                                            ForEach(TimeAlarmIntervalUnits.allCases, id: \.self) { unit in
+                                                Text(String(describing: unit)).tag(unit)
+                                            }
                                         }
-                                    }
-                                    .pickerStyle(.wheel)
-                                    Picker("Units", selection: $newAlarmOffsetDirection) {
-                                        ForEach(TimeAlarmIntervalDirection.allCases, id: \.self) { dir in
-                                            Text(String(describing: dir)).tag(dir)
+                                        .pickerStyle(.wheel)
+                                        Picker("Units", selection: $newAlarmOffsetDirection) {
+                                            ForEach(TimeAlarmIntervalDirection.allCases, id: \.self) { dir in
+                                                Text(String(describing: dir)).tag(dir)
+                                            }
                                         }
+                                        .pickerStyle(.wheel)
                                     }
-                                    .pickerStyle(.wheel)
-                                }
-                                Button("Save") {
-                                    let offset = newAlarmOffsetAmount *
-                                        newAlarmOffsetUnit.rawValue *
-                                        TimeInterval(newAlarmOffsetDirection.rawValue)
-                                    let newAlarm = BethinkeryRelativeTimeAlarm(offset: offset)
-                                    withErrorReporter {
-                                        try model.addAlarm(newAlarm, to: bethinkery)
+                                    Button("Save") {
+                                        let offset = newAlarmOffsetAmount *
+                                            newAlarmOffsetUnit.rawValue *
+                                            TimeInterval(newAlarmOffsetDirection.rawValue)
+                                        let newAlarm = BethinkeryRelativeTimeAlarm(offset: offset)
+                                        withErrorReporter {
+                                            try model.addAlarm(newAlarm, to: bethinkery)
+                                        }
+                                        newAlarmFormVisible.toggle()
                                     }
-                                }
 
-                            case .absoluteTimeAlarm:
-                                DatePicker("Select Alarm Time",
-                                           selection: $newAlarmTime,
-                                           displayedComponents: [.date, .hourAndMinute])
-                                Button("Save") {
-                                    let newAlarm = BethinkeryAbsoluteTimeAlarm(time: newAlarmTime)
-                                    withErrorReporter {
-                                        try model.addAlarm(newAlarm, to: bethinkery)
+                                case .absoluteTimeAlarm:
+                                    DatePicker("Select Alarm Time",
+                                               selection: $newAlarmTime,
+                                               displayedComponents: [.date, .hourAndMinute])
+                                    Button("Save") {
+                                        let newAlarm = BethinkeryAbsoluteTimeAlarm(time: newAlarmTime)
+                                        withErrorReporter {
+                                            try model.addAlarm(newAlarm, to: bethinkery)
+                                        }
+                                        newAlarmFormVisible.toggle()
                                     }
-                                }
 
-                            case .proximityAlarm:
-                                    Text("not yet!")
+                                case .proximityAlarm:
+                                    Text("Radius: \(String(describing: newAlarmRadius))")
+                                    Text("Title: \(String(describing: newAlarmTitle))")
+                                    Text("Address: \(String(describing: newAlarmAddress))")
+                                    Text("Lat: \(String(describing: newAlarmLocationLat))")
+                                    Text("Lng: \(String(describing: newAlarmLocationLng))")
+                                    Button("Select Location") {
+                                        LocationPicker(radius: $newAlarmRadius,
+                                                       name: $newAlarmTitle,
+                                                       address: $newAlarmAddress,
+                                                       lat: $newAlarmLocationLat,
+                                                       lng: $newAlarmLocationLng)
+                                    }
+                                    Button("Save") {
+                                        guard (newAlarmTitle != nil || newAlarmAddress != nil)
+                                                && newAlarmRadius != nil
+                                                && newAlarmLocationLat != nil
+                                                && newAlarmLocationLng != nil else { return }
+                                        let titleCleaned = newAlarmTitle!.trimmingCharacters(in: .whitespaces)
+                                        let newAlarm = BethinkeryProximityAlarm(
+                                            title: titleCleaned.isEmpty ? newAlarmAddress! : titleCleaned,
+                                            radius: newAlarmRadius!,
+                                            location: LatLng(lat: newAlarmLocationLat!, lng: newAlarmLocationLng!),
+                                            type: newAlarmProxType
+                                        )
+                                        withErrorReporter {
+                                            try model.addAlarm(newAlarm, to: bethinkery)
+                                        }
+                                        newAlarmFormVisible.toggle()
+                                    }
                             }
                         }
 
