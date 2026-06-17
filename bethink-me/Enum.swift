@@ -27,8 +27,19 @@ enum TimeAlarmIntervalDirection: Int, CaseIterable {
 }
 
 // because you basically can't put any non-model complex types into SwiftData 
-enum AlarmProximityType: Int, Codable {
+enum AlarmProximityType: Int, Codable, CaseIterable {
     case nothing = 0
     case enter = 1
     case leave = 2
+
+    var title: String {
+        switch self {
+            case .nothing:
+                return "None"
+            case .enter:
+                return "Arriving at"
+            case .leave:
+                return "Leaving"
+        }
+    }
 }

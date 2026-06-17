@@ -834,17 +834,31 @@ struct BethinkeryDetailView: View {
                                     }
 
                                 case .proximityAlarm:
-                                    Text("Radius: \(String(describing: newAlarmRadius))")
-                                    Text("Title: \(String(describing: newAlarmTitle))")
-                                    Text("Address: \(String(describing: newAlarmAddress))")
-                                    Text("Lat: \(String(describing: newAlarmLocationLat))")
-                                    Text("Lng: \(String(describing: newAlarmLocationLng))")
-                                    Button("Select Location") {
+                                    Picker("Type", selection: $newAlarmProxType) {
+                                        ForEach(AlarmProximityType.allCases, id: \.self) { proxType in
+                                            if proxType != .nothing {
+                                                Text(proxType.title).tag(proxType)
+                                            }
+                                        }
+                                    }
+                                    Button {
                                         LocationPicker(radius: $newAlarmRadius,
                                                        name: $newAlarmTitle,
                                                        address: $newAlarmAddress,
                                                        lat: $newAlarmLocationLat,
                                                        lng: $newAlarmLocationLng)
+                                    } label: {
+                                        if newAlarmTitle != nil || newAlarmAddress != nil {
+                                            let titleCleaned = newAlarmTitle!.trimmingCharacters(in: .whitespaces)
+                                            HStack {
+                                                Image(systemName: "location.circle.fill")
+                                                    .font(.headline)
+                                                    .accessibilityLabel(Text("Location alarm"))
+                                                Text(titleCleaned.isEmpty ? newAlarmAddress! : titleCleaned)
+                                            }
+                                        } else {
+                                            Text("Select location")
+                                        }
                                     }
                                     Button("Save") {
                                         guard (newAlarmTitle != nil || newAlarmAddress != nil)
@@ -957,7 +971,7 @@ struct BethinkeryAlarmView: View {
                 Image(systemName: "location.circle.fill")
                     .font(.headline)
                     .accessibilityLabel(Text("Location alarm"))
-                Text((proxAlarm.type == .enter ? "Arriving at " : "Leaving ") + proxAlarm.title)
+                Text("\(proxAlarm.type.title) \(proxAlarm.title)")
             } else {
                 Text("type: wat da fuk")
             }
