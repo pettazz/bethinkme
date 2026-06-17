@@ -35,6 +35,12 @@ extension Color {
     }
 }
 
+extension UIViewController {
+    var topmostPresentedViewController: UIViewController? {
+        presentedViewController?.topmostPresentedViewController ?? self
+    }
+}
+
 enum Env: String {
     case debug
     case testFlight
