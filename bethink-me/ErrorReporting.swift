@@ -34,41 +34,13 @@ struct BethinkMeError: LocalizedError {
 
 // adapted from https://github.com/fatbobman/SheetKit/tree/main
 
-extension UIViewController {
-    var topmostPresentedViewController: UIViewController? {
-        presentedViewController?.topmostPresentedViewController ?? self
-    }
-}
-
-public struct ErrorReporter {
-    var keyWindow: UIWindow? { UIApplication.shared.connectedScenes
-        .filter { $0.activationState == .foregroundActive }
-        .map { $0 as? UIWindowScene }
-        .compactMap { $0 }
-        .first?.windows
-        .first(where: { $0.isKeyWindow })
-    }
-
-    var rootViewController: UIViewController? {
-        keyWindow?.rootViewController
-    }
-
-
-    func present(_ error: any Error) {
+public struct ErrorReporter: ModalSheet {
+    func presentIfNonPrd(_ error: any Error) {
         if Bundle.env == Env.debug || Bundle.env == Env.testFlight {
             let castError = error as? BethinkMeError ?? BethinkMeError("failed to retrieve error details")
-
-            let viewController = rootViewController?.topmostPresentedViewController
-            let contentViewController = UIHostingController(rootView: ErrorDetailView(error: castError))
-
-            viewController?.present(contentViewController, animated: true)
+            present(ErrorDetailView(error: castError))
         }
     }
-
-    func dismiss() {
-        rootViewController?.dismiss(animated: true)
-    }
-
 }
 
 extension View {
@@ -78,7 +50,7 @@ extension View {
         do {
             result = try await task.value
         } catch {
-            ErrorReporter().present(error)
+            ErrorReporter().presentIfNonPrd(error)
         }
 
         return result
@@ -90,19 +62,11 @@ extension View {
         do {
             result = try perform()
         } catch {
-            ErrorReporter().present(error)
+            ErrorReporter().presentIfNonPrd(error)
         }
 
         return result
     }
-}
-
-public struct ErrorReporterKey: EnvironmentKey {
-    public static var defaultValue = ErrorReporter()
-}
-
-public extension EnvironmentValues {
-    var sheetKit: ErrorReporter { self[ErrorReporterKey.self] }
 }
 
 struct ErrorDetailView: View {
