@@ -23,7 +23,6 @@ class EditBethinkery: ObservableObject {
     @Published var freshlyCompleted: Bool = false
     @Published var notesText: String = ""
     @Published var urlText: String = ""
-    @Published var dueDate: Date?
 
     var notes: String? {
         notesText.isEmpty ? nil : notesText
@@ -37,14 +36,12 @@ class EditBethinkery: ObservableObject {
          isCompleted: Bool = false,
          freshlyCompleted: Bool = false,
          notesText: String = "",
-         urlText: String = "",
-         dueDate: Date? = nil) {
+         urlText: String = "") {
         self.title = title
         self.isCompleted = isCompleted
         self.freshlyCompleted = freshlyCompleted
         self.notesText = notesText
         self.urlText = urlText
-        self.dueDate = dueDate
     }
 
     static func fromBethinkery(_ bethinkery: Bethinkery) -> EditBethinkery {
@@ -53,7 +50,6 @@ class EditBethinkery: ObservableObject {
             isCompleted: bethinkery.isCompleted,
             freshlyCompleted: bethinkery.freshlyCompleted,
             notesText: bethinkery.notes ?? "",
-            urlText: bethinkery.url?.absoluteString ?? "",
-            dueDate: bethinkery.dueDate)
+            urlText: bethinkery.url?.absoluteString ?? "")
     }
 }

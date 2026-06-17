@@ -648,8 +648,8 @@ struct BethinkeryDetailView: View {
 
     @StateObject private var editBethinkeryCommand: EditBethinkery = EditBethinkery()
 
-    @State private var dueDateEditorVisible: Bool = false
-    @State private var dueDatePickerValue: Date = .now
+//    @State private var dueDateEditorVisible: Bool = false
+//    @State private var dueDatePickerValue: Date = .now
 
     @State private var newAlarmFormVisible: Bool = false
     @State private var newAlarmType: AvailableAlarmTypes = .absoluteTimeAlarm
@@ -671,21 +671,21 @@ struct BethinkeryDetailView: View {
         self.model = model
         self.bethinkery = bethinkery
         _editBethinkeryCommand = StateObject(wrappedValue: .fromBethinkery(bethinkery))
-        _dueDatePickerValue = State(initialValue: bethinkery.dueDate ?? .now)
+//        _dueDatePickerValue = State(initialValue: bethinkery.dueDate ?? .now)
     }
 
-    private var dueDateEnabled: Binding<Bool> {
-        Binding(
-            get: { editBethinkeryCommand.dueDate != nil },
-            set: { enabled in
-                if enabled {
-                    editBethinkeryCommand.dueDate = dueDatePickerValue
-                } else {
-                    editBethinkeryCommand.dueDate = nil
-                }
-            }
-        )
-    }
+//    private var dueDateEnabled: Binding<Bool> {
+//        Binding(
+//            get: { editBethinkeryCommand.dueDate != nil },
+//            set: { enabled in
+//                if enabled {
+//                    editBethinkeryCommand.dueDate = dueDatePickerValue
+//                } else {
+//                    editBethinkeryCommand.dueDate = nil
+//                }
+//            }
+//        )
+//    }
 
     var dateFormatter: DateFormatter {
         let it = DateFormatter()
@@ -729,45 +729,55 @@ struct BethinkeryDetailView: View {
                         .textInputAutocapitalization(.never)
                     }
 
-                    Section {
-                        Toggle(isOn: dueDateEnabled) {
-                            Group {
-                                Text("Due Date").bold()
-                                if dueDateEnabled.wrappedValue && editBethinkeryCommand.dueDate != nil {
-                                    Text(dateFormatter.string(from: editBethinkeryCommand.dueDate!))
-                                }
-                            }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .contentShape(Rectangle())
-                            .onTapGesture {
-                                withAnimation {
-                                    dueDateEditorVisible.toggle()
-                                }
-                            }
-                            .accessibilityAddTraits(.isButton)
-                        }
-                        .onChange(of: dueDateEnabled.wrappedValue, {
-                            withAnimation {
-                                dueDateEditorVisible = dueDateEnabled.wrappedValue
-                            }
-                        })
-
-                        if dueDateEnabled.wrappedValue && dueDateEditorVisible {
-                            DatePicker("Select Due Date",
-                                       selection: $dueDatePickerValue,
-                                       displayedComponents: [.date])
-                                .datePickerStyle(.graphical)
-                                .onChange(of: dueDatePickerValue) {
-                                    editBethinkeryCommand.dueDate = dueDatePickerValue
-                                }
-                        }
-                    }
+//                    Section {
+//                        Toggle(isOn: dueDateEnabled) {
+//                            Group {
+//                                Text("Due Date").bold()
+//                                if dueDateEnabled.wrappedValue && editBethinkeryCommand.dueDate != nil {
+//                                    Text(dateFormatter.string(from: editBethinkeryCommand.dueDate!))
+//                                }
+//                            }
+//                            .frame(maxWidth: .infinity, alignment: .leading)
+//                            .contentShape(Rectangle())
+//                            .onTapGesture {
+//                                withAnimation {
+//                                    dueDateEditorVisible.toggle()
+//                                }
+//                            }
+//                            .accessibilityAddTraits(.isButton)
+//                        }
+//                        .onChange(of: dueDateEnabled.wrappedValue, {
+//                            withAnimation {
+//                                dueDateEditorVisible = dueDateEnabled.wrappedValue
+//                            }
+//                        })
+//
+//                        if dueDateEnabled.wrappedValue && dueDateEditorVisible {
+//                            DatePicker("Select Due Date",
+//                                       selection: $dueDatePickerValue,
+//                                       displayedComponents: [.date, .hourAndMinute])
+//                                .datePickerStyle(.graphical)
+//                                .onChange(of: dueDatePickerValue) {
+//                                    editBethinkeryCommand.dueDate = dueDatePickerValue
+//                                }
+//                        }
+//                    }
 
                     Section {
                         if bethinkery.hasAlarms {
-                            ForEach(bethinkery.alarms) { alarm in
-                                BethinkeryAlarmView(hasDueDate: dueDateEnabled, alarm: alarm)
+                            ForEach(bethinkery.sortedAlarms) { alarm in
+                                BethinkeryAlarmView(relativeDate: bethinkery.earliestAlarm?.time, alarm: alarm)
+                                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                        Button(role: .destructive) {
+                                            withErrorReporter {
+                                                try model.removeAlarm(alarm, from: bethinkery)
+                                            }
+                                        } label: {
+                                            Label("Delete", systemImage: "trash")
+                                        }
+                                    }
                             }
+
                         }
 
                         if newAlarmFormVisible {
@@ -889,33 +899,68 @@ struct BethinkeryDetailView: View {
 }
 
 struct BethinkeryAlarmView: View {
-    @Binding var hasDueDate: Bool
+    var relativeDate: Date?
     var alarm: BethinkeryAlarm
 
+    var dateFormatter: DateFormatter {
+        let it = DateFormatter()
+        it.timeStyle = .short
+        it.dateStyle = .medium
+        it.doesRelativeDateFormatting = true
+
+        return it
+    }
+
+    var intervalFormatter: DateComponentsFormatter {
+        let it = DateComponentsFormatter()
+        it.allowedUnits = [.year, .month, .day, .hour, .minute]
+        it.allowsFractionalUnits = false
+        it.zeroFormattingBehavior = .dropAll
+        it.unitsStyle = .short
+
+        return it
+    }
+
     var body: some View {
-        VStack(alignment: .leading) {
-            Text("id: \(alarm.id)")
+        HStack {
             if let timeAlarm = alarm as? BethinkeryAbsoluteTimeAlarm {
-                Text("type: time")
-                Text("trigger: \(timeAlarm.time.ISO8601Format())")
+                Image(systemName: "calendar.badge.clock")
+                    .font(.headline)
+                    .accessibilityLabel(Text("Exact time alarm"))
+                Text(dateFormatter.string(from: timeAlarm.time))
             } else if let timeAlarm = alarm as? BethinkeryRelativeTimeAlarm {
-                Text("type: offset")
-                if !hasDueDate {
+                let relativity = timeAlarm.offset > 0 ? "after" : "before"
+                VStack(alignment: .leading) {
                     HStack {
-                        Image(systemName: "calendar.badge.exclamationmark")
-                            .foregroundStyle(Color.red)
-                        Text("won't trigger without Due Date set!")
-                            .foregroundStyle(Color.red)
+                        Image(systemName: "alarm.fill")
+                            .font(.headline)
+                            .accessibilityLabel(Text("Relative time alarm"))
+                        Text((intervalFormatter.string(from: abs(timeAlarm.offset)) ?? "unknown") +
+                             " \(relativity) " +
+                             (relativeDate != nil
+                                ? dateFormatter.string(from: relativeDate!)
+                                : "?")
+                        )
+                    }
+
+                    if relativeDate == nil {
+                        HStack {
+                            Image(systemName: "calendar.badge.exclamationmark")
+                                .foregroundStyle(Color.red)
+                                .accessibilityHidden(true)
+                            Text("Set an exact time alarm!")
+                                .foregroundStyle(Color.red)
+                        }
                     }
                 }
-                Text("trigger: \(timeAlarm.offset, format: .number.rounded(rule: .up, increment: 1.0))s")
             } else if let proxAlarm = alarm as? BethinkeryProximityAlarm {
-                Text("type: prox")
-                Text("trigger: \(proxAlarm.title)")
+                Image(systemName: "location.circle.fill")
+                    .font(.headline)
+                    .accessibilityLabel(Text("Location alarm"))
+                Text((proxAlarm.type == .enter ? "Arriving at " : "Leaving ") + proxAlarm.title)
             } else {
                 Text("type: wat da fuk")
             }
         }
-
     }
 }

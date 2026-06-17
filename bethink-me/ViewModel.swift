@@ -194,7 +194,6 @@ class ViewModel {
         bethinkery.freshlyCompleted = updateCommand.freshlyCompleted
         bethinkery.notes = updateCommand.notes
         bethinkery.url = updateCommand.url
-        bethinkery.dueDate = updateCommand.dueDate
 
         do {
             try eventStore.save(bethinkery.toReminder(), commit: true)
@@ -323,6 +322,21 @@ class ViewModel {
             try eventStore.save(reminder, commit: true)
         } catch {
             throw BethinkMeError("failed to add alarm to Bethinkery", from: error as NSError)
+        }
+    }
+
+    func removeAlarm(_ alarm: BethinkeryAlarm, from bethinkery: Bethinkery) throws {
+        do {
+            bethinkery.alarms.removeAll(where: { $0.id == alarm.id })
+            modelContext.delete(alarm)
+
+            if alarm.baseAlarm != nil {
+                let reminder = try bethinkery.toReminder()
+                reminder.removeAlarm(alarm.baseAlarm!)
+                try eventStore.save(reminder, commit: true)
+            }
+        } catch {
+            throw BethinkMeError("failed to delete alarm", from: error as NSError)
         }
     }
 

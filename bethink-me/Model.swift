@@ -66,7 +66,6 @@ final class Bethinkery: Equatable, Identifiable {
     var freshlyCompleted: Bool = false
     var notes: String?
     var url: URL?
-    var dueDate: Date?
     @Relationship(deleteRule: .cascade)
     var alarms: [BethinkeryAlarm] = []
     @Transient var reminder: EKReminder?
@@ -75,6 +74,39 @@ final class Bethinkery: Equatable, Identifiable {
     var hasUrl: Bool { return self.url != nil }
     var hasReminder: Bool { return self.reminder != nil }
     var hasAlarms: Bool { return !self.alarms.isEmpty }
+    var sortedAlarms: [BethinkeryAlarm] {
+        self.alarms.sorted(by: { lalarm, ralarm in
+            if let ltimeAlarm = lalarm as? BethinkeryRelativeTimeAlarm {
+                if let rtimeAlarm = ralarm as? BethinkeryRelativeTimeAlarm {
+                    return ltimeAlarm.offset < rtimeAlarm.offset
+                } else {
+                    return true
+                }
+            } else if let ltimeAlarm = lalarm as? BethinkeryAbsoluteTimeAlarm {
+                if let rtimeAlarm = ralarm as? BethinkeryAbsoluteTimeAlarm {
+                    return ltimeAlarm.time < rtimeAlarm.time
+                } else if ralarm is BethinkeryRelativeTimeAlarm {
+                    return false
+                } else {
+                    return true
+                }
+            } else if lalarm is BethinkeryProximityAlarm {
+                if ralarm is BethinkeryProximityAlarm {
+                    return true // who care
+                } else {
+                    return false
+                }
+            } else {
+                return true // should never happen
+            }
+        })
+    }
+    var earliestAlarm: BethinkeryAbsoluteTimeAlarm? {
+        let foundAlarm: BethinkeryAlarm? = self.sortedAlarms.first(where: { alarm in
+            alarm is BethinkeryAbsoluteTimeAlarm
+        })
+        return foundAlarm as? BethinkeryAbsoluteTimeAlarm ?? nil
+    }
 
 
     init(id: String,
@@ -83,7 +115,6 @@ final class Bethinkery: Equatable, Identifiable {
          isCompleted: Bool,
          notes: String?,
          url: URL?,
-         dueDate: Date?,
          reminder: EKReminder) {
         self.id = id
         self.list = list
@@ -91,7 +122,6 @@ final class Bethinkery: Equatable, Identifiable {
         self.isCompleted = isCompleted
         self.notes = notes
         self.url = url
-        self.dueDate = dueDate
         self.reminder = reminder
     }
 
@@ -104,7 +134,6 @@ final class Bethinkery: Equatable, Identifiable {
             isCompleted: reminder.isCompleted,
             notes: reminder.notes,
             url: reminder.url,
-            dueDate: reminder.dueDateComponents?.date,
             reminder: reminder)
 
         try addAlarms(from: reminder)
@@ -124,7 +153,6 @@ final class Bethinkery: Equatable, Identifiable {
         self.freshlyCompleted = false
         self.notes = reminder.notes
         self.url = reminder.url
-        self.dueDate = reminder.dueDateComponents?.date
         self.reminder = reminder
 
         try addAlarms(from: reminder, prune: true)
@@ -136,8 +164,11 @@ final class Bethinkery: Equatable, Identifiable {
         self.reminder!.isCompleted = self.isCompleted
         self.reminder!.notes = self.notes
         self.reminder!.url = self.url
-        if self.dueDate != nil {
-            let dateComps = Calendar.current.dateComponents([.day, .month, .year], from: self.dueDate!)
+        if self.earliestAlarm != nil {
+            let dateComps = Calendar.current.dateComponents(
+                [.day, .month, .year, .hour, .minute],
+                from: self.earliestAlarm!.time
+            )
             self.reminder!.dueDateComponents = dateComps
             self.reminder!.startDateComponents = dateComps
         } else {
