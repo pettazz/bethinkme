@@ -86,6 +86,24 @@ struct SettingsView: View {
                         })
                 }
                 .frame(maxWidth: .infinity, alignment: .center)
+
+                VStack {
+                    Image(systemName: "batteryblock.stack.fill")
+                        .font(.system(size: 60))
+                        .accessibilityHidden(true)
+                    Text("Acknowledgements")
+                        .font(.title2)
+
+                    Text("LocationRadiusPicker")
+                        .font(.headline)
+                    HStack {
+                        Link("[Source]", destination: URL(string: "https://github.com/birkoof/LocationRadiusPicker")!)
+                            .font(.subheadline)
+                        Link("[MIT License]", destination: URL(string: "https://github.com/birkoof/LocationRadiusPicker/blob/main/LICENSE")!)
+                            .font(.subheadline)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .center)
             }
             .navigationBarTitle("Settings")
         }
