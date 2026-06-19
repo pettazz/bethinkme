@@ -49,162 +49,177 @@ struct BethinkeryDetailView: View {
                     .font(.largeTitle)
                     .bold()
                     .padding(20)
-                Form {
-                    Section {
-                        TextField(
-                            editBethinkeryCommand.title,
-                            text: $editBethinkeryCommand.title,
-                            prompt: Text("Title"))
-                        .autocorrectionDisabled(!enableAutocorrectSetting)
+                ScrollViewReader { scrollProxy in
+                    Form {
+                        Section {
+                            TextField(
+                                editBethinkeryCommand.title,
+                                text: $editBethinkeryCommand.title,
+                                prompt: Text("Title"))
+                            .autocorrectionDisabled(!enableAutocorrectSetting)
 
-                        TextField(
-                            "Notes",
-                            text: $editBethinkeryCommand.notesText,
-                            prompt: Text("Notes"),
-                            axis: .vertical)
+                            TextField(
+                                "Notes",
+                                text: $editBethinkeryCommand.notesText,
+                                prompt: Text("Notes"),
+                                axis: .vertical)
 
-                        TextField(
-                            "URL",
-                            text: $editBethinkeryCommand.urlText,
-                            prompt: Text("URL"))
-                        .keyboardType(.URL)
-                        .autocorrectionDisabled(true)
-                        .textInputAutocapitalization(.never)
-                    }
-
-                    Section {
-                        if bethinkery.hasAlarms {
-                            ForEach(bethinkery.sortedAlarms) { alarm in
-                                AlarmView(relativeAlarm: bethinkery.earliestAlarm, alarm: alarm)
-                                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                                        Button(role: .destructive) {
-                                            withErrorReporter {
-                                                try model.removeAlarm(alarm, from: bethinkery)
-                                            }
-                                        } label: {
-                                            Label("Delete", systemImage: "trash")
-                                        }
-                                    }
-                            }
-
+                            TextField(
+                                "URL",
+                                text: $editBethinkeryCommand.urlText,
+                                prompt: Text("URL"))
+                            .keyboardType(.URL)
+                            .autocorrectionDisabled(true)
+                            .textInputAutocapitalization(.never)
                         }
 
-                        if newAlarmFormVisible {
-                            Picker("Type", selection: $newAlarmType) {
-                                ForEach(AvailableAlarmTypes.allCases, id: \.self) { alarmType in
-                                    Text(alarmType.rawValue).tag(alarmType)
+                        Section {
+                            if bethinkery.hasAlarms {
+                                ForEach(bethinkery.sortedAlarms) { alarm in
+                                    AlarmView(relativeAlarm: bethinkery.earliestAlarm, alarm: alarm)
+                                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                            Button(role: .destructive) {
+                                                withErrorReporter {
+                                                    try model.removeAlarm(alarm, from: bethinkery)
+                                                }
+                                            } label: {
+                                                Label("Delete", systemImage: "trash")
+                                            }
+                                        }
                                 }
-                            }
-                            .pickerStyle(.segmented)
 
-                            switch newAlarmType {
-                                case .relativeTimeAlarm:
-                                    HStack(alignment: .center) {
-                                        Picker("Units", selection: $newAlarmOffsetAmount) {
-                                            ForEach(Array(stride(from: 1.0, to: 100.0, by: 1.0)), id: \.self) { num in
-                                                Text(num, format: .number.rounded(rule: .up, increment: 1.0)).tag(num)
-                                            }
-                                        }
-                                        .pickerStyle(.wheel)
-                                        Picker("Units", selection: $newAlarmOffsetUnit) {
-                                            ForEach(TimeAlarmIntervalUnits.allCases, id: \.self) { unit in
-                                                Text(String(describing: unit)).tag(unit)
-                                            }
-                                        }
-                                        .pickerStyle(.wheel)
-                                        Picker("Units", selection: $newAlarmOffsetDirection) {
-                                            ForEach(TimeAlarmIntervalDirection.allCases, id: \.self) { dir in
-                                                Text(String(describing: dir)).tag(dir)
-                                            }
-                                        }
-                                        .pickerStyle(.wheel)
+                            }
+
+                            if newAlarmFormVisible {
+                                Picker("Type", selection: $newAlarmType) {
+                                    ForEach(AvailableAlarmTypes.allCases, id: \.self) { alarmType in
+                                        Text(alarmType.rawValue).tag(alarmType)
                                     }
-                                    Button("Save") {
-                                        let offset = newAlarmOffsetAmount *
+                                }
+                                .id("newAlarmForm")
+                                .pickerStyle(.segmented)
+
+                                switch newAlarmType {
+                                    case .relativeTimeAlarm:
+                                        HStack(alignment: .center) {
+                                            Picker("Units", selection: $newAlarmOffsetAmount) {
+                                                ForEach(Array(stride(from: 1.0, to: 100.0, by: 1.0)), id: \.self) { num in
+                                                    Text(num, format: .number.rounded(rule: .up, increment: 1.0)).tag(num)
+                                                }
+                                            }
+                                            .pickerStyle(.wheel)
+                                            Picker("Units", selection: $newAlarmOffsetUnit) {
+                                                ForEach(TimeAlarmIntervalUnits.allCases, id: \.self) { unit in
+                                                    Text(String(describing: unit)).tag(unit)
+                                                }
+                                            }
+                                            .pickerStyle(.wheel)
+                                            Picker("Units", selection: $newAlarmOffsetDirection) {
+                                                ForEach(TimeAlarmIntervalDirection.allCases, id: \.self) { dir in
+                                                    Text(String(describing: dir)).tag(dir)
+                                                }
+                                            }
+                                            .pickerStyle(.wheel)
+                                        }
+                                        Button("Save") {
+                                            let offset = newAlarmOffsetAmount *
                                             newAlarmOffsetUnit.rawValue *
                                             TimeInterval(newAlarmOffsetDirection.rawValue)
-                                        let newAlarm = RelativeTimeAlarm(offset: offset)
-                                        withErrorReporter {
-                                            try model.addAlarm(newAlarm, to: bethinkery)
-                                        }
-                                        newAlarmFormVisible.toggle()
-                                    }
-
-                                case .absoluteTimeAlarm:
-                                    if newAlarmIsAllDay {
-                                        DatePicker("Select Alarm Date",
-                                                   selection: $newAlarmTime,
-                                                   displayedComponents: [.date])
-                                    } else {
-                                        DatePicker("Select Alarm Time",
-                                                   selection: $newAlarmTime,
-                                                   displayedComponents: [.date, .hourAndMinute])
-                                    }
-                                    Toggle("All day", isOn: $newAlarmIsAllDay)
-                                    Button("Save") {
-                                        let newAlarm = AbsoluteTimeAlarm(time: newAlarmTime, isAllDay: newAlarmIsAllDay)
-                                        withErrorReporter {
-                                            try model.addAlarm(newAlarm, to: bethinkery)
-                                        }
-                                        newAlarmFormVisible.toggle()
-                                    }
-
-                                case .proximityAlarm:
-                                    Picker("Type", selection: $newAlarmProxType) {
-                                        ForEach(AlarmProximityType.allCases, id: \.self) { proxType in
-                                            if proxType != .nothing {
-                                                Text(proxType.title).tag(proxType)
+                                            let newAlarm = RelativeTimeAlarm(offset: offset)
+                                            withErrorReporter {
+                                                try model.addAlarm(newAlarm, to: bethinkery)
                                             }
+                                            newAlarmFormVisible.toggle()
                                         }
-                                    }
-                                    Button {
-                                        LocationPicker(radius: $newAlarmRadius,
-                                                       name: $newAlarmTitle,
-                                                       address: $newAlarmAddress,
-                                                       lat: $newAlarmLocationLat,
-                                                       lng: $newAlarmLocationLng)
-                                    } label: {
-                                        if newAlarmTitle != nil || newAlarmAddress != nil {
-                                            let titleCleaned = newAlarmTitle!.trimmingCharacters(in: .whitespaces)
-                                            HStack {
-                                                Image(systemName: "location.circle.fill")
-                                                    .font(.headline)
-                                                    .accessibilityLabel(Text("Location alarm"))
-                                                Text(titleCleaned.isEmpty ? newAlarmAddress! : titleCleaned)
-                                            }
+
+                                    case .absoluteTimeAlarm:
+                                        if newAlarmIsAllDay {
+                                            DatePicker("Select Alarm Date",
+                                                       selection: $newAlarmTime,
+                                                       displayedComponents: [.date])
                                         } else {
-                                            Text("Select location")
+                                            DatePicker("Select Alarm Time",
+                                                       selection: $newAlarmTime,
+                                                       displayedComponents: [.date, .hourAndMinute])
                                         }
-                                    }
-                                    Button("Save") {
-                                        guard (newAlarmTitle != nil || newAlarmAddress != nil)
-                                                && newAlarmRadius != nil
-                                                && newAlarmLocationLat != nil
-                                                && newAlarmLocationLng != nil else { return }
-                                        let titleCleaned = newAlarmTitle!.trimmingCharacters(in: .whitespaces)
-                                        let newAlarm = ProximityAlarm(
-                                            title: titleCleaned.isEmpty ? newAlarmAddress! : titleCleaned,
-                                            radius: newAlarmRadius!,
-                                            location: LatLng(lat: newAlarmLocationLat!, lng: newAlarmLocationLng!),
-                                            type: newAlarmProxType
-                                        )
-                                        withErrorReporter {
-                                            try model.addAlarm(newAlarm, to: bethinkery)
+                                        Toggle("All day", isOn: $newAlarmIsAllDay)
+                                        Button("Save") {
+                                            let newAlarm = AbsoluteTimeAlarm(time: newAlarmTime, isAllDay: newAlarmIsAllDay)
+                                            withErrorReporter {
+                                                try model.addAlarm(newAlarm, to: bethinkery)
+                                            }
+                                            newAlarmFormVisible.toggle()
                                         }
-                                        newAlarmFormVisible.toggle()
-                                    }
+
+                                    case .proximityAlarm:
+                                        Picker("Type", selection: $newAlarmProxType) {
+                                            ForEach(AlarmProximityType.allCases, id: \.self) { proxType in
+                                                if proxType != .nothing {
+                                                    Text(proxType.title).tag(proxType)
+                                                }
+                                            }
+                                        }
+                                        Button {
+                                            LocationPicker(radius: $newAlarmRadius,
+                                                           name: $newAlarmTitle,
+                                                           address: $newAlarmAddress,
+                                                           lat: $newAlarmLocationLat,
+                                                           lng: $newAlarmLocationLng)
+                                        } label: {
+                                            if newAlarmTitle != nil || newAlarmAddress != nil {
+                                                let titleCleaned = newAlarmTitle!.trimmingCharacters(in: .whitespaces)
+                                                HStack {
+                                                    Image(systemName: "location.circle.fill")
+                                                        .font(.headline)
+                                                        .accessibilityLabel(Text("Location alarm"))
+                                                    Text(titleCleaned.isEmpty ? newAlarmAddress! : titleCleaned)
+                                                }
+                                            } else {
+                                                Text("Select location")
+                                            }
+                                        }
+                                        Button("Save") {
+                                            guard (newAlarmTitle != nil || newAlarmAddress != nil)
+                                                    && newAlarmRadius != nil
+                                                    && newAlarmLocationLat != nil
+                                                    && newAlarmLocationLng != nil else { return }
+                                            let titleCleaned = newAlarmTitle!.trimmingCharacters(in: .whitespaces)
+                                            let newAlarm = ProximityAlarm(
+                                                title: titleCleaned.isEmpty ? newAlarmAddress! : titleCleaned,
+                                                radius: newAlarmRadius!,
+                                                location: LatLng(lat: newAlarmLocationLat!, lng: newAlarmLocationLng!),
+                                                type: newAlarmProxType
+                                            )
+                                            withErrorReporter {
+                                                try model.addAlarm(newAlarm, to: bethinkery)
+                                            }
+                                            newAlarmFormVisible.toggle()
+                                        }
+                                }
                             }
+
+                            Button(newAlarmFormVisible ? "Cancel" : "Add Alarm") {
+                                withAnimation {
+                                    newAlarmFormVisible.toggle()
+                                }
+                            }
+                        } header: {
+                            Text("Alarms")
                         }
 
-                        Button(newAlarmFormVisible ? "Cancel" : "Add Alarm") {
-                            withAnimation {
-                                newAlarmFormVisible.toggle()
-                            }
-                        }
-                    } header: {
-                        Text("Alarms")
                     }
-
+                    .onChange(of: newAlarmFormVisible) { _, isVisible in
+                        guard isVisible else { return }
+                        withAnimation {
+                            scrollProxy.scrollTo("newAlarmForm", anchor: .top)
+                        }
+                    }
+                    .onChange(of: newAlarmType) {
+                        guard newAlarmFormVisible else { return }
+                        withAnimation {
+                            scrollProxy.scrollTo("newAlarmForm", anchor: .top)
+                        }
+                    }
                 }
             }
             .toolbar {
