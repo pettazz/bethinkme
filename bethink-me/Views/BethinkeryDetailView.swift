@@ -10,13 +10,11 @@ struct BethinkeryDetailView: View {
 
     @StateObject private var editBethinkeryCommand: EditBethinkery = EditBethinkery()
 
-//    @State private var dueDateEditorVisible: Bool = false
-//    @State private var dueDatePickerValue: Date = .now
-
     @State private var newAlarmFormVisible: Bool = false
     @State private var newAlarmType: AvailableAlarmTypes = .absoluteTimeAlarm
 
     @State private var newAlarmTime: Date = Date.now
+    @State private var newAlarmIsAllDay: Bool = false
 
     @State private var newAlarmOffsetAmount: TimeInterval = 1
     @State private var newAlarmOffsetUnit: TimeAlarmIntervalUnits = .days
@@ -31,19 +29,6 @@ struct BethinkeryDetailView: View {
 
     var model: ViewModel
     var bethinkery: Bethinkery
-
-//    private var dueDateEnabled: Binding<Bool> {
-//        Binding(
-//            get: { editBethinkeryCommand.dueDate != nil },
-//            set: { enabled in
-//                if enabled {
-//                    editBethinkeryCommand.dueDate = dueDatePickerValue
-//                } else {
-//                    editBethinkeryCommand.dueDate = nil
-//                }
-//            }
-//        )
-//    }
 
     var dateFormatter: DateFormatter {
         let it = DateFormatter()
@@ -146,11 +131,18 @@ struct BethinkeryDetailView: View {
                                     }
 
                                 case .absoluteTimeAlarm:
-                                    DatePicker("Select Alarm Time",
-                                               selection: $newAlarmTime,
-                                               displayedComponents: [.date, .hourAndMinute])
+                                    if newAlarmIsAllDay {
+                                        DatePicker("Select Alarm Date",
+                                                   selection: $newAlarmTime,
+                                                   displayedComponents: [.date])
+                                    } else {
+                                        DatePicker("Select Alarm Time",
+                                                   selection: $newAlarmTime,
+                                                   displayedComponents: [.date, .hourAndMinute])
+                                    }
+                                    Toggle("All day", isOn: $newAlarmIsAllDay)
                                     Button("Save") {
-                                        let newAlarm = AbsoluteTimeAlarm(time: newAlarmTime, isAllDay: false)
+                                        let newAlarm = AbsoluteTimeAlarm(time: newAlarmTime, isAllDay: newAlarmIsAllDay)
                                         withErrorReporter {
                                             try model.addAlarm(newAlarm, to: bethinkery)
                                         }
@@ -239,6 +231,5 @@ struct BethinkeryDetailView: View {
         self.model = model
         self.bethinkery = bethinkery
         _editBethinkeryCommand = StateObject(wrappedValue: .fromBethinkery(bethinkery))
-//        _dueDatePickerValue = State(initialValue: bethinkery.dueDate ?? .now)
     }
 }
