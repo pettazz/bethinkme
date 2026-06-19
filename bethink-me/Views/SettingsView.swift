@@ -99,7 +99,8 @@ struct SettingsView: View {
                     HStack {
                         Link("[Source]", destination: URL(string: "https://github.com/birkoof/LocationRadiusPicker")!)
                             .font(.subheadline)
-                        Link("[MIT License]", destination: URL(string: "https://github.com/birkoof/LocationRadiusPicker/blob/main/LICENSE")!)
+                        Link("[MIT License]", destination:
+                                URL(string: "https://github.com/birkoof/LocationRadiusPicker/blob/main/LICENSE")!)
                             .font(.subheadline)
                     }
                 }

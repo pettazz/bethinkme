@@ -17,9 +17,9 @@ struct bethink_meApp: App { // swiftlint:disable:this type_name
         .modelContainer(for: [
             Bethinkery.self,
             BethinkeryList.self,
-            BethinkeryProximityAlarm.self,
-            BethinkeryAbsoluteTimeAlarm.self,
-            BethinkeryRelativeTimeAlarm.self
+            ProximityAlarm.self,
+            AbsoluteTimeAlarm.self,
+            RelativeTimeAlarm.self
         ])
     }
 }

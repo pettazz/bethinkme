@@ -285,8 +285,8 @@ class ViewModel {
             throw BethinkMeError("tried to add a new alarm that was already associated with an EKAlarm")
         }
         let newBaseAlarm: EKAlarm?
-        if newAlarm is BethinkeryAbsoluteTimeAlarm {
-            guard let newTimeAlarm = newAlarm as? BethinkeryAbsoluteTimeAlarm else {
+        if newAlarm is AbsoluteTimeAlarm {
+            guard let newTimeAlarm = newAlarm as? AbsoluteTimeAlarm else {
                 throw BethinkMeError("unable to coerce BethinkeryAlarm to BethinkeryAbsoluteTimeAlarm when saving")
             }
             if !newTimeAlarm.isAllDay {
@@ -294,13 +294,13 @@ class ViewModel {
             } else {
                 newBaseAlarm = nil
             }
-        } else if newAlarm is BethinkeryRelativeTimeAlarm {
-            guard let newTimeAlarm = newAlarm as? BethinkeryRelativeTimeAlarm else {
+        } else if newAlarm is RelativeTimeAlarm {
+            guard let newTimeAlarm = newAlarm as? RelativeTimeAlarm else {
                 throw BethinkMeError("unable to coerce BethinkeryAlarm to BethinkeryRelativeTimeAlarm when saving")
             }
             newBaseAlarm = EKAlarm(relativeOffset: newTimeAlarm.offset)
-        } else if newAlarm is BethinkeryProximityAlarm {
-            guard let newProxAlarm = newAlarm as? BethinkeryProximityAlarm else {
+        } else if newAlarm is ProximityAlarm {
+            guard let newProxAlarm = newAlarm as? ProximityAlarm else {
                 throw BethinkMeError("unable to coerce BethinkeryAlarm to BethinkeryProximityAlarm when saving")
             }
             let location = EKStructuredLocation(title: newProxAlarm.title)
