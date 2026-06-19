@@ -1,6 +1,6 @@
 import SwiftUI
 
-
+// adapted from https://github.com/fatbobman/SheetKit/tree/main
 protocol ModalSheet {
     var keyWindow: UIWindow? { get }
     var rootViewController: UIViewController? { get }

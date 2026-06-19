@@ -32,8 +32,6 @@ struct BethinkMeError: LocalizedError {
     }
 }
 
-// adapted from https://github.com/fatbobman/SheetKit/tree/main
-
 public struct ErrorReporter: ModalSheet {
     func presentIfNonPrd(_ error: any Error) {
         if Bundle.env == Env.debug || Bundle.env == Env.testFlight {
