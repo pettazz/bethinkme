@@ -729,44 +729,10 @@ struct BethinkeryDetailView: View {
                         .textInputAutocapitalization(.never)
                     }
 
-//                    Section {
-//                        Toggle(isOn: dueDateEnabled) {
-//                            Group {
-//                                Text("Due Date").bold()
-//                                if dueDateEnabled.wrappedValue && editBethinkeryCommand.dueDate != nil {
-//                                    Text(dateFormatter.string(from: editBethinkeryCommand.dueDate!))
-//                                }
-//                            }
-//                            .frame(maxWidth: .infinity, alignment: .leading)
-//                            .contentShape(Rectangle())
-//                            .onTapGesture {
-//                                withAnimation {
-//                                    dueDateEditorVisible.toggle()
-//                                }
-//                            }
-//                            .accessibilityAddTraits(.isButton)
-//                        }
-//                        .onChange(of: dueDateEnabled.wrappedValue, {
-//                            withAnimation {
-//                                dueDateEditorVisible = dueDateEnabled.wrappedValue
-//                            }
-//                        })
-//
-//                        if dueDateEnabled.wrappedValue && dueDateEditorVisible {
-//                            DatePicker("Select Due Date",
-//                                       selection: $dueDatePickerValue,
-//                                       displayedComponents: [.date, .hourAndMinute])
-//                                .datePickerStyle(.graphical)
-//                                .onChange(of: dueDatePickerValue) {
-//                                    editBethinkeryCommand.dueDate = dueDatePickerValue
-//                                }
-//                        }
-//                    }
-
                     Section {
                         if bethinkery.hasAlarms {
                             ForEach(bethinkery.sortedAlarms) { alarm in
-                                BethinkeryAlarmView(relativeDate: bethinkery.earliestAlarm?.time, alarm: alarm)
+                                BethinkeryAlarmView(relativeAlarm: bethinkery.earliestAlarm, alarm: alarm)
                                     .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                                         Button(role: .destructive) {
                                             withErrorReporter {
@@ -826,7 +792,7 @@ struct BethinkeryDetailView: View {
                                                selection: $newAlarmTime,
                                                displayedComponents: [.date, .hourAndMinute])
                                     Button("Save") {
-                                        let newAlarm = BethinkeryAbsoluteTimeAlarm(time: newAlarmTime)
+                                        let newAlarm = BethinkeryAbsoluteTimeAlarm(time: newAlarmTime, isAllDay: false)
                                         withErrorReporter {
                                             try model.addAlarm(newAlarm, to: bethinkery)
                                         }
@@ -913,12 +879,21 @@ struct BethinkeryDetailView: View {
 }
 
 struct BethinkeryAlarmView: View {
-    var relativeDate: Date?
+    var relativeAlarm: BethinkeryAbsoluteTimeAlarm?
     var alarm: BethinkeryAlarm
 
     var dateFormatter: DateFormatter {
         let it = DateFormatter()
         it.timeStyle = .short
+        it.dateStyle = .medium
+        it.doesRelativeDateFormatting = true
+
+        return it
+    }
+
+    var allDayFormatter: DateFormatter {
+        let it = DateFormatter()
+        it.timeStyle = .none
         it.dateStyle = .medium
         it.doesRelativeDateFormatting = true
 
@@ -935,29 +910,44 @@ struct BethinkeryAlarmView: View {
         return it
     }
 
+    var relativeDateFormatted: String {
+        if relativeAlarm != nil {
+            return relativeAlarm!.isAllDay
+                ? allDayFormatter.string(from: relativeAlarm!.time)
+                : dateFormatter.string(from: relativeAlarm!.time)
+        } else {
+            return "?"
+        }
+    }
+
     var body: some View {
         HStack {
             if let timeAlarm = alarm as? BethinkeryAbsoluteTimeAlarm {
-                Image(systemName: "calendar.badge.clock")
-                    .font(.headline)
-                    .accessibilityLabel(Text("Exact time alarm"))
-                Text(dateFormatter.string(from: timeAlarm.time))
+                if timeAlarm.isAllDay {
+                    Image(systemName: "calendar")
+                        .font(.headline)
+                        .accessibilityLabel(Text("All-day alarm"))
+                    Text(allDayFormatter.string(from: timeAlarm.time))
+                } else {
+                    Image(systemName: "calendar.badge.clock")
+                        .font(.headline)
+                        .accessibilityLabel(Text("Exact time alarm"))
+                    Text(dateFormatter.string(from: timeAlarm.time))
+                }
             } else if let timeAlarm = alarm as? BethinkeryRelativeTimeAlarm {
                 let relativity = timeAlarm.offset > 0 ? "after" : "before"
+
                 VStack(alignment: .leading) {
                     HStack {
                         Image(systemName: "alarm.fill")
                             .font(.headline)
                             .accessibilityLabel(Text("Relative time alarm"))
                         Text((intervalFormatter.string(from: abs(timeAlarm.offset)) ?? "unknown") +
-                             " \(relativity) " +
-                             (relativeDate != nil
-                                ? dateFormatter.string(from: relativeDate!)
-                                : "?")
+                             " \(relativity) \(relativeDateFormatted)"
                         )
                     }
 
-                    if relativeDate == nil {
+                    if relativeAlarm == nil {
                         HStack {
                             Image(systemName: "calendar.badge.exclamationmark")
                                 .foregroundStyle(Color.red)

@@ -284,12 +284,16 @@ class ViewModel {
         guard newAlarm.baseAlarm == nil else {
             throw BethinkMeError("tried to add a new alarm that was already associated with an EKAlarm")
         }
-        let newBaseAlarm: EKAlarm
+        let newBaseAlarm: EKAlarm?
         if newAlarm is BethinkeryAbsoluteTimeAlarm {
             guard let newTimeAlarm = newAlarm as? BethinkeryAbsoluteTimeAlarm else {
                 throw BethinkMeError("unable to coerce BethinkeryAlarm to BethinkeryAbsoluteTimeAlarm when saving")
             }
-            newBaseAlarm = EKAlarm(absoluteDate: newTimeAlarm.time)
+            if !newTimeAlarm.isAllDay {
+                newBaseAlarm = EKAlarm(absoluteDate: newTimeAlarm.time)
+            } else {
+                newBaseAlarm = nil
+            }
         } else if newAlarm is BethinkeryRelativeTimeAlarm {
             guard let newTimeAlarm = newAlarm as? BethinkeryRelativeTimeAlarm else {
                 throw BethinkMeError("unable to coerce BethinkeryAlarm to BethinkeryRelativeTimeAlarm when saving")
@@ -303,8 +307,8 @@ class ViewModel {
             location.geoLocation = CLLocation(latitude: newProxAlarm.location.lat, longitude: newProxAlarm.location.lng)
             location.radius = newProxAlarm.radius
             newBaseAlarm = EKAlarm(relativeOffset: 0)
-            newBaseAlarm.structuredLocation = location
-            newBaseAlarm.proximity = switch newProxAlarm.type {
+            newBaseAlarm!.structuredLocation = location
+            newBaseAlarm!.proximity = switch newProxAlarm.type {
                 case .enter: .enter
                 case .leave: .leave
                 case .nothing: .none
@@ -318,7 +322,9 @@ class ViewModel {
             bethinkery.alarms.append(newAlarm)
             modelContext.insert(newAlarm)
             let reminder = try bethinkery.toReminder()
-            reminder.addAlarm(newBaseAlarm)
+            if newBaseAlarm != nil {
+                reminder.addAlarm(newBaseAlarm!)
+            }
             try eventStore.save(reminder, commit: true)
         } catch {
             throw BethinkMeError("failed to add alarm to Bethinkery", from: error as NSError)
@@ -330,11 +336,11 @@ class ViewModel {
             bethinkery.alarms.removeAll(where: { $0.id == alarm.id })
             modelContext.delete(alarm)
 
+            let reminder = try bethinkery.toReminder()
             if alarm.baseAlarm != nil {
-                let reminder = try bethinkery.toReminder()
                 reminder.removeAlarm(alarm.baseAlarm!)
-                try eventStore.save(reminder, commit: true)
             }
+            try eventStore.save(reminder, commit: true)
         } catch {
             throw BethinkMeError("failed to delete alarm", from: error as NSError)
         }

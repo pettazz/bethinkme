@@ -164,9 +164,11 @@ final class Bethinkery: Equatable, Identifiable {
         self.reminder!.isCompleted = self.isCompleted
         self.reminder!.notes = self.notes
         self.reminder!.url = self.url
-        if self.earliestAlarm != nil {
+        if let implicitDueDate = self.earliestAlarm {
             let dateComps = Calendar.current.dateComponents(
-                [.day, .month, .year, .hour, .minute],
+                implicitDueDate.isAllDay
+                    ? [.day, .month, .year]
+                    : [.day, .month, .year, .hour, .minute],
                 from: self.earliestAlarm!.time
             )
             self.reminder!.dueDateComponents = dateComps
@@ -225,6 +227,28 @@ final class Bethinkery: Equatable, Identifiable {
             }
             self.alarms.remove(atOffsets: IndexSet(deleteables))
         }
+
+        if reminder.dueDateComponents != nil {
+            let due = reminder.dueDateComponents!
+            if !(self.alarms.contains { alarm in
+                if let timeAlarm = alarm as? BethinkeryAbsoluteTimeAlarm {
+                    let alarmComps = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute],
+                                                                     from: timeAlarm.time)
+                    return due.year == alarmComps.year
+                        && due.month == alarmComps.month
+                        && due.day == alarmComps.day
+                } else {
+                    return false
+                }
+            }) {
+                print("synth time")
+                let ddDate = Calendar.current.date(from: reminder.dueDateComponents!)
+                if ddDate != nil {
+                    let ddAlarm = BethinkeryAbsoluteTimeAlarm(time: ddDate!, isAllDay: true)
+                    self.alarms.append(ddAlarm)
+                }
+            }
+        }
     }
 }
 
@@ -270,9 +294,11 @@ class BethinkeryAlarm: Equatable, Identifiable {
 @Model
 final class BethinkeryAbsoluteTimeAlarm: BethinkeryAlarm {
     var time: Date
+    var isAllDay: Bool = false
 
-    init(id: String? = nil, time: Date, baseAlarm: EKAlarm? = nil) {
+    init(id: String? = nil, time: Date, isAllDay: Bool, baseAlarm: EKAlarm? = nil) {
         self.time = time
+        self.isAllDay = isAllDay
 
         super.init(id: id, baseAlarm: baseAlarm)
     }
@@ -288,6 +314,7 @@ final class BethinkeryAbsoluteTimeAlarm: BethinkeryAlarm {
         return BethinkeryAbsoluteTimeAlarm(
             id: nil,
             time: alarm.absoluteDate!,
+            isAllDay: false,
             baseAlarm: alarm
         )
     }
