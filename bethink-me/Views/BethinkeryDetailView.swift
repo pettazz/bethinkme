@@ -103,8 +103,10 @@ struct BethinkeryDetailView: View {
                                     case .relativeTimeAlarm:
                                         HStack(alignment: .center) {
                                             Picker("Units", selection: $newAlarmOffsetAmount) {
-                                                ForEach(Array(stride(from: 1.0, to: 100.0, by: 1.0)), id: \.self) { num in
-                                                    Text(num, format: .number.rounded(rule: .up, increment: 1.0)).tag(num)
+                                                ForEach(Array(stride(from: 1.0, to: 100.0, by: 1.0)),
+                                                        id: \.self) { num in
+                                                    Text(num, format: .number.rounded(rule: .up, increment: 1.0))
+                                                        .tag(num)
                                                 }
                                             }
                                             .pickerStyle(.wheel)
@@ -144,7 +146,9 @@ struct BethinkeryDetailView: View {
                                         }
                                         Toggle("All day", isOn: $newAlarmIsAllDay)
                                         Button("Save") {
-                                            let newAlarm = AbsoluteTimeAlarm(time: newAlarmTime, isAllDay: newAlarmIsAllDay)
+                                            let newAlarm = AbsoluteTimeAlarm(
+                                                time: newAlarmTime,
+                                                isAllDay: newAlarmIsAllDay)
                                             withErrorReporter {
                                                 try model.addAlarm(newAlarm, to: bethinkery)
                                             }
