@@ -13,7 +13,7 @@ struct RowView: View {
     @State private var isEditing: Bool = false
     @State private var editedTitle: String = ""
 
-    var model: ViewModel
+    var bethinkeryModel: BethinkeryViewModel
     var bethinkery: Bethinkery
 
     var body: some View {
@@ -29,7 +29,7 @@ struct RowView: View {
                         Button {
                             withAnimation {
                                 withErrorReporter {
-                                    try model.toggleCompleted(bethinkery)
+                                    try bethinkeryModel.toggleCompleted(bethinkery)
                                 }
                             }
                         } label: {
@@ -133,7 +133,7 @@ struct RowView: View {
         withErrorReporter {
             let updater = EditBethinkery.fromBethinkery(bethinkery)
             updater.title = editedTitle
-            try model.update(bethinkery, with: updater)
+            try bethinkeryModel.update(bethinkery, with: updater)
         }
 
         cancelEdit()

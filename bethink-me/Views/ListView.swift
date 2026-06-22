@@ -15,7 +15,9 @@ struct ListView: View {
 
     @Binding var selectedBethinkeryForEdit: Bethinkery?
 
-    var model: ViewModel
+    var sharedModel: SharedViewModel
+    var listModel: ListViewModel
+    var bethinkeryModel: BethinkeryViewModel
     var list: BethinkeryList
 
     var body: some View {
@@ -61,14 +63,14 @@ struct ListView: View {
                     }
                 }
 
-                let orderedBethinkeries = model.bethinkeries.filter({ $0.list.id == list.id })
+                let orderedBethinkeries = sharedModel.bethinkeries.filter({ $0.list.id == list.id })
 
                 ForEach(orderedBethinkeries) { bethinkery in
-                    RowView(model: model, bethinkery: bethinkery)
+                    RowView(bethinkeryModel: bethinkeryModel, bethinkery: bethinkery)
                         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                             Button(role: .destructive) {
                                 withErrorReporter {
-                                    try model.delete(bethinkery)
+                                    try bethinkeryModel.delete(bethinkery)
                                 }
                             } label: {
                                 Label("Delete", systemImage: "trash")
@@ -83,12 +85,12 @@ struct ListView: View {
 
                             Menu {
                                 Section("Destination List") {
-                                    ForEach(model.bethinkeryLists) { moveMenuList in
+                                    ForEach(sharedModel.bethinkeryLists) { moveMenuList in
                                         if moveMenuList != list {
                                             Button {
                                                 withAnimation {
                                                     withErrorReporter {
-                                                        try model.moveBethinkery(bethinkery, to: moveMenuList)
+                                                        try bethinkeryModel.moveBethinkery(bethinkery, to: moveMenuList)
                                                     }
                                                 }
                                             } label: {
@@ -112,7 +114,7 @@ struct ListView: View {
                 }
                 .onMove { from, to in
                     withErrorReporter {
-                        try model.moveBethinkeryPosition(from: from, to: to, list: list)
+                        try bethinkeryModel.moveBethinkeryPosition(from: from, to: to, list: list)
                     }
                 }
             }, header: {
@@ -130,7 +132,7 @@ struct ListView: View {
                             .accessibilityLabel(Text("Edit the \(list.title) list"))
                     }
                     .sheet(isPresented: $shouldPresentEditListSheet, content: {
-                        ListDetailView(model: model, list: list)
+                        ListDetailView(sharedModel: sharedModel, listModel: listModel, list: list)
                             .textCase(.none)
                     })
                     Button {
@@ -159,7 +161,7 @@ struct ListView: View {
             guard !cleanTitle.isEmpty else { return }
 
             let newBethinkery = EditBethinkery(title: cleanTitle, isCompleted: false)
-            try model.create(from: newBethinkery, list: list)
+            try bethinkeryModel.create(from: newBethinkery, list: list)
         }
         newTitle = ""
         addInFocus = true

@@ -14,17 +14,18 @@ struct ListDetailView: View {
     @State private var newColor: Color = Color.accentColor
     @State private var newSourceId: String = ""
 
-    var model: ViewModel
+    var sharedModel: SharedViewModel
+    var listModel: ListViewModel
     var list: BethinkeryList?
 
     private var isNew: Bool { list == nil }
 
     private var selectedSource: EKSource? {
-        model.availableSources.first(where: { $0.sourceIdentifier == newSourceId })
+        listModel.availableSources.first(where: { $0.sourceIdentifier == newSourceId })
     }
 
     var body: some View {
-        if !model.availableSources.isEmpty {
+        if !listModel.availableSources.isEmpty {
             // TODO: make this less ugly, see also BethinkeryDetailView
             NavigationView {
                 VStack {
@@ -41,7 +42,7 @@ struct ListDetailView: View {
                             ColorPicker("List color", selection: $newColor)
                             if isNew {
                                 Picker("Save to", selection: $newSourceId) {
-                                    ForEach(model.availableSources, id: \.sourceIdentifier) { source in
+                                    ForEach(listModel.availableSources, id: \.sourceIdentifier) { source in
                                         Text(source.title).tag(source.sourceIdentifier)
                                     }
                                 }
@@ -59,12 +60,12 @@ struct ListDetailView: View {
                                         guard selectedSource != nil else {
                                             throw BethinkMeError("tried to create a List on a nonexistent Source")
                                         }
-                                        try model.createList(from: creator, source: selectedSource!)
+                                        try listModel.create(from: creator, source: selectedSource!)
                                     } else {
                                         var updater = EditBethinkeryList.fromBethinkeryList(list!)
                                         updater.title = newTitle
                                         updater.hexColor = newColor.toHex()
-                                        try model.update(list!, with: updater)
+                                        try listModel.update(list!, with: updater)
                                     }
                                 }
                             }
@@ -81,8 +82,8 @@ struct ListDetailView: View {
             .task {
                 if isNew {
                     title = "New List"
-                    newSourceId = model.defaultSource?.sourceIdentifier ??
-                        model.availableSources.first?.sourceIdentifier ??
+                    newSourceId = listModel.defaultSource?.sourceIdentifier ??
+                    listModel.availableSources.first?.sourceIdentifier ??
                         ""
                 } else {
                     title = list!.title

@@ -12,7 +12,9 @@ struct MainView: View {
     @Environment(\.scenePhase)
     private var scenePhase
 
-    @State private var model: ViewModel?
+    @State private var sharedModel: SharedViewModel?
+    @State private var listModel: ListViewModel?
+    @State private var bethinkeryModel: BethinkeryViewModel?
 
     @State private var listEditMode: EditMode = .inactive
     @State private var shouldPresentNewListSheet = false
@@ -27,8 +29,8 @@ struct MainView: View {
         NavigationStack {
             ZStack {
                 VStack {
-                    if model != nil {
-                        if !model!.hasAccess {
+                    if sharedModel != nil && listModel != nil && bethinkeryModel != nil {
+                        if !sharedModel!.hasAccess {
                             VStack {
                                 Spacer()
                                 Image(systemName: "hand.raised.square.on.square")
@@ -45,7 +47,7 @@ struct MainView: View {
                                      destination: URL(string: UIApplication.openSettingsURLString)!)
                                 Spacer()
                             }
-                        } else if model!.bethinkeryLists.isEmpty {
+                        } else if sharedModel!.bethinkeryLists.isEmpty {
                             VStack {
                                 Spacer()
                                 Image(systemName: "checklist")
@@ -62,15 +64,17 @@ struct MainView: View {
                             }
                         } else {
                             List {
-                                ForEach(model!.bethinkeryLists) { list in
+                                ForEach(sharedModel!.bethinkeryLists) { list in
                                     ListView(
                                         selectedBethinkeryForEdit: $selectedBethinkeryForEdit,
-                                        model: model!,
+                                        sharedModel: sharedModel!,
+                                        listModel: listModel!,
+                                        bethinkeryModel: bethinkeryModel!,
                                         list: list
                                     )
                                 }
                                 .onMove { from, to in
-                                    model!.moveListPosition(from: from, to: to)
+                                    listModel!.moveListPosition(from: from, to: to)
                                 }
                                 .onDelete { offsets in
                                     withErrorReporter {
@@ -78,7 +82,7 @@ struct MainView: View {
                                         guard offsets.count == 1 else {
                                             throw BethinkMeError("tried to delete multiple list offsets: \(offsets)")
                                         }
-                                        try model!.delete(model!.bethinkeryLists[offsets.first!])
+                                        try listModel!.delete(sharedModel!.bethinkeryLists[offsets.first!])
                                     }
                                 }
                             }
@@ -88,7 +92,7 @@ struct MainView: View {
                 }
                 .navigationTitle("Lists")
                 .toolbar {
-                    if model != nil {
+                    if sharedModel != nil && listModel != nil {
                         if listEditMode != .active {
                             ToolbarItem(placement: .primaryAction) {
                                 Button {
@@ -98,7 +102,7 @@ struct MainView: View {
                                         .accessibilityLabel(Text("Add a new list"))
                                 }
                                 .sheet(isPresented: $shouldPresentNewListSheet, content: {
-                                    ListDetailView(model: model!)
+                                    ListDetailView(sharedModel: sharedModel!, listModel: listModel!)
                                 })
                                 .disabled(listsLoading)
                             }
@@ -122,11 +126,11 @@ struct MainView: View {
                             ToolbarItem(placement: .primaryAction) {
                                 Button {
                                     withAnimation {
-                                        model!.showCompleted.toggle()
+                                        sharedModel!.showCompleted.toggle()
                                     }
-                                    model!.resetOrdinals()
+                                    sharedModel!.resetOrdinals()
                                 } label: {
-                                    if model!.showCompleted {
+                                    if sharedModel!.showCompleted {
                                         Image(systemName: "eye.slash.fill")
                                             .accessibilityLabel(Text("Hide completed Bethinkeries"))
                                     } else {
@@ -169,9 +173,9 @@ struct MainView: View {
             }
         }
         .sheet(item: $selectedBethinkeryForEdit) { bethinkery in
-            if let model {
+            if let bethinkeryModel {
                 BethinkeryDetailView(
-                    model: model,
+                    bethinkeryModel: bethinkeryModel,
                     bethinkery: bethinkery
                 )
                 .id(bethinkery.id)
@@ -182,10 +186,16 @@ struct MainView: View {
     func reloadLists() async throws {
         listsLoading = true
 
-        if model == nil {
-            model = await ViewModel(modelContext: modelContext)
+        if sharedModel == nil {
+            sharedModel = await SharedViewModel(modelContext: modelContext)
         }
-        try await model!.loadLists()
+        if listModel == nil {
+            listModel = ListViewModel(sharedModel: sharedModel!)
+        }
+        if bethinkeryModel == nil {
+            bethinkeryModel = BethinkeryViewModel(sharedModel: sharedModel!)
+        }
+        try await listModel!.loadLists()
 
         listsLoading = false
     }

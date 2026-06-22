@@ -27,7 +27,7 @@ struct BethinkeryDetailView: View {
     @State private var newAlarmLocationLng: Double?
     @State private var newAlarmProxType: AlarmProximityType = .enter
 
-    var model: ViewModel
+    var bethinkeryModel: BethinkeryViewModel
     var bethinkery: Bethinkery
 
     var dateFormatter: DateFormatter {
@@ -80,7 +80,7 @@ struct BethinkeryDetailView: View {
                                         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                                             Button(role: .destructive) {
                                                 withErrorReporter {
-                                                    try model.removeAlarm(alarm, from: bethinkery)
+                                                    try bethinkeryModel.removeAlarm(alarm, from: bethinkery)
                                                 }
                                             } label: {
                                                 Label("Delete", systemImage: "trash")
@@ -102,7 +102,7 @@ struct BethinkeryDetailView: View {
                                 switch newAlarmType {
                                     case .relativeTimeAlarm:
                                         HStack(alignment: .center) {
-                                            Picker("Units", selection: $newAlarmOffsetAmount) {
+                                            Picker("Time Amount", selection: $newAlarmOffsetAmount) {
                                                 ForEach(Array(stride(from: 1.0, to: 100.0, by: 1.0)),
                                                         id: \.self) { num in
                                                     Text(num, format: .number.rounded(rule: .up, increment: 1.0))
@@ -110,13 +110,13 @@ struct BethinkeryDetailView: View {
                                                 }
                                             }
                                             .pickerStyle(.wheel)
-                                            Picker("Units", selection: $newAlarmOffsetUnit) {
+                                            Picker("Time Units", selection: $newAlarmOffsetUnit) {
                                                 ForEach(TimeAlarmIntervalUnits.allCases, id: \.self) { unit in
                                                     Text(String(describing: unit)).tag(unit)
                                                 }
                                             }
                                             .pickerStyle(.wheel)
-                                            Picker("Units", selection: $newAlarmOffsetDirection) {
+                                            Picker("Relative Time Direction", selection: $newAlarmOffsetDirection) {
                                                 ForEach(TimeAlarmIntervalDirection.allCases, id: \.self) { dir in
                                                     Text(String(describing: dir)).tag(dir)
                                                 }
@@ -129,7 +129,7 @@ struct BethinkeryDetailView: View {
                                             TimeInterval(newAlarmOffsetDirection.rawValue)
                                             let newAlarm = RelativeTimeAlarm(offset: offset)
                                             withErrorReporter {
-                                                try model.addAlarm(newAlarm, to: bethinkery)
+                                                try bethinkeryModel.addAlarm(newAlarm, to: bethinkery)
                                             }
                                             newAlarmFormVisible.toggle()
                                         }
@@ -150,7 +150,7 @@ struct BethinkeryDetailView: View {
                                                 time: newAlarmTime,
                                                 isAllDay: newAlarmIsAllDay)
                                             withErrorReporter {
-                                                try model.addAlarm(newAlarm, to: bethinkery)
+                                                try bethinkeryModel.addAlarm(newAlarm, to: bethinkery)
                                             }
                                             newAlarmFormVisible.toggle()
                                         }
@@ -195,7 +195,7 @@ struct BethinkeryDetailView: View {
                                                 type: newAlarmProxType
                                             )
                                             withErrorReporter {
-                                                try model.addAlarm(newAlarm, to: bethinkery)
+                                                try bethinkeryModel.addAlarm(newAlarm, to: bethinkery)
                                             }
                                             newAlarmFormVisible.toggle()
                                         }
@@ -231,7 +231,7 @@ struct BethinkeryDetailView: View {
                     Button("Save") {
                         withAnimation {
                             withErrorReporter {
-                                try model.update(bethinkery, with: editBethinkeryCommand)
+                                try bethinkeryModel.update(bethinkery, with: editBethinkeryCommand)
                             }
                         }
                         dismiss()
@@ -246,8 +246,8 @@ struct BethinkeryDetailView: View {
         }
     }
 
-    init(model: ViewModel, bethinkery: Bethinkery) {
-        self.model = model
+    init(bethinkeryModel: BethinkeryViewModel, bethinkery: Bethinkery) {
+        self.bethinkeryModel = bethinkeryModel
         self.bethinkery = bethinkery
         _editBethinkeryCommand = StateObject(wrappedValue: .fromBethinkery(bethinkery))
     }
