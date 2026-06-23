@@ -98,24 +98,15 @@ final class BethinkeryViewModel {
             throw BethinkMeError("tried to add a new alarm that was already associated with an EKAlarm")
         }
         let newBaseAlarm: EKAlarm?
-        if newAlarm is AbsoluteTimeAlarm {
-            guard let newTimeAlarm = newAlarm as? AbsoluteTimeAlarm else {
-                throw BethinkMeError("unable to coerce BethinkeryAlarm to BethinkeryAbsoluteTimeAlarm when saving")
-            }
+        if let newTimeAlarm = newAlarm as? AbsoluteTimeAlarm {
             if !newTimeAlarm.isAllDay {
                 newBaseAlarm = EKAlarm(absoluteDate: newTimeAlarm.time)
             } else {
                 newBaseAlarm = nil
             }
-        } else if newAlarm is RelativeTimeAlarm {
-            guard let newTimeAlarm = newAlarm as? RelativeTimeAlarm else {
-                throw BethinkMeError("unable to coerce BethinkeryAlarm to BethinkeryRelativeTimeAlarm when saving")
-            }
+        } else if let newTimeAlarm = newAlarm as? RelativeTimeAlarm {
             newBaseAlarm = EKAlarm(relativeOffset: newTimeAlarm.offset)
-        } else if newAlarm is ProximityAlarm {
-            guard let newProxAlarm = newAlarm as? ProximityAlarm else {
-                throw BethinkMeError("unable to coerce BethinkeryAlarm to BethinkeryProximityAlarm when saving")
-            }
+        } else if let newProxAlarm = newAlarm as? ProximityAlarm {
             let location = EKStructuredLocation(title: newProxAlarm.title)
             location.geoLocation = CLLocation(latitude: newProxAlarm.location.lat, longitude: newProxAlarm.location.lng)
             location.radius = newProxAlarm.radius
@@ -127,7 +118,7 @@ final class BethinkeryViewModel {
                 case .nothing: .none
             }
         } else {
-            throw BethinkMeError("tried to add a new alarm of unrecognized type")
+            throw BethinkMeError("unable to coerce plain BethinkeryAlarm to any known type when saving: \(newAlarm)")
         }
 
         do {

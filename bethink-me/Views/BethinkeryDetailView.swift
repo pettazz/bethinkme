@@ -199,10 +199,15 @@ struct BethinkeryDetailView: View {
                                             }
                                             newAlarmFormVisible.toggle()
                                         }
+                                        .disabled(!((newAlarmTitle != nil || newAlarmAddress != nil)
+                                                    && newAlarmRadius != nil
+                                                    && newAlarmLocationLat != nil
+                                                    && newAlarmLocationLng != nil))
                                 }
                             }
 
                             Button(newAlarmFormVisible ? "Cancel" : "Add Alarm") {
+                                resetAddAlarmForm()
                                 withAnimation {
                                     newAlarmFormVisible.toggle()
                                 }
@@ -250,5 +255,20 @@ struct BethinkeryDetailView: View {
         self.bethinkeryModel = bethinkeryModel
         self.bethinkery = bethinkery
         _editBethinkeryCommand = StateObject(wrappedValue: .fromBethinkery(bethinkery))
+    }
+
+    func resetAddAlarmForm() {
+        newAlarmType = .absoluteTimeAlarm
+        newAlarmTime = Date.now
+        newAlarmIsAllDay = false
+        newAlarmOffsetAmount = 1
+        newAlarmOffsetUnit = .days
+        newAlarmOffsetDirection = .before
+        newAlarmTitle = nil
+        newAlarmAddress = nil
+        newAlarmRadius = nil
+        newAlarmLocationLat = nil
+        newAlarmLocationLng = nil
+        newAlarmProxType = .enter
     }
 }
