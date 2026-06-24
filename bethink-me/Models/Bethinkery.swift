@@ -22,39 +22,6 @@ final class Bethinkery: Equatable, Identifiable {
     var hasUrl: Bool { return self.url != nil }
     var hasReminder: Bool { return self.reminder != nil }
     var hasAlarms: Bool { return !self.alarms.isEmpty }
-    var sortedAlarms: [BethinkeryAlarm] {
-        self.alarms.sorted(by: { lalarm, ralarm in
-            if let ltimeAlarm = lalarm as? RelativeTimeAlarm {
-                if let rtimeAlarm = ralarm as? RelativeTimeAlarm {
-                    return ltimeAlarm.offset < rtimeAlarm.offset
-                } else {
-                    return true
-                }
-            } else if let ltimeAlarm = lalarm as? AbsoluteTimeAlarm {
-                if let rtimeAlarm = ralarm as? AbsoluteTimeAlarm {
-                    return ltimeAlarm.time < rtimeAlarm.time
-                } else if ralarm is RelativeTimeAlarm {
-                    return false
-                } else {
-                    return true
-                }
-            } else if lalarm is ProximityAlarm {
-                if ralarm is ProximityAlarm {
-                    return true // who care
-                } else {
-                    return false
-                }
-            } else {
-                return true // should never happen
-            }
-        })
-    }
-    var earliestAlarm: AbsoluteTimeAlarm? {
-        let foundAlarm: BethinkeryAlarm? = self.sortedAlarms.first(where: { alarm in
-            alarm is AbsoluteTimeAlarm
-        })
-        return foundAlarm as? AbsoluteTimeAlarm ?? nil
-    }
 
 
     init(id: String,
@@ -112,12 +79,12 @@ final class Bethinkery: Equatable, Identifiable {
         self.reminder!.isCompleted = self.isCompleted
         self.reminder!.notes = self.notes
         self.reminder!.url = self.url
-        if let implicitDueDate = self.earliestAlarm {
+        if let implicitDueDate = self.alarms.earliestAlarm {
             let dateComps = Calendar.current.dateComponents(
                 implicitDueDate.isAllDay
                     ? [.day, .month, .year]
                     : [.day, .month, .year, .hour, .minute],
-                from: self.earliestAlarm!.time
+                from: self.alarms.earliestAlarm!.time
             )
             self.reminder!.dueDateComponents = dateComps
             self.reminder!.startDateComponents = dateComps

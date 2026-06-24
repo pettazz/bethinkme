@@ -75,8 +75,8 @@ struct BethinkeryDetailView: View {
 
                         Section {
                             if bethinkery.hasAlarms {
-                                ForEach(bethinkery.sortedAlarms) { alarm in
-                                    AlarmView(relativeAlarm: bethinkery.earliestAlarm, alarm: alarm)
+                                ForEach(bethinkery.alarms.sortedAlarms) { alarm in
+                                    AlarmView(relativeAlarm: bethinkery.alarms.earliestAlarm, alarm: alarm)
                                         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                                             Button(role: .destructive) {
                                                 withErrorReporter {
@@ -131,7 +131,9 @@ struct BethinkeryDetailView: View {
                                             withErrorReporter {
                                                 try bethinkeryModel.addAlarm(newAlarm, to: bethinkery)
                                             }
-                                            newAlarmFormVisible.toggle()
+                                            withAnimation {
+                                                newAlarmFormVisible.toggle()
+                                            }
                                         }
 
                                     case .absoluteTimeAlarm:
@@ -152,7 +154,9 @@ struct BethinkeryDetailView: View {
                                             withErrorReporter {
                                                 try bethinkeryModel.addAlarm(newAlarm, to: bethinkery)
                                             }
-                                            newAlarmFormVisible.toggle()
+                                            withAnimation {
+                                                newAlarmFormVisible.toggle()
+                                            }
                                         }
 
                                     case .proximityAlarm:
@@ -197,7 +201,9 @@ struct BethinkeryDetailView: View {
                                             withErrorReporter {
                                                 try bethinkeryModel.addAlarm(newAlarm, to: bethinkery)
                                             }
-                                            newAlarmFormVisible.toggle()
+                                            withAnimation {
+                                                newAlarmFormVisible.toggle()
+                                            }
                                         }
                                         .disabled(!((newAlarmTitle != nil || newAlarmAddress != nil)
                                                     && newAlarmRadius != nil
