@@ -19,7 +19,7 @@ struct AlarmsEditView: View {
     @State private var newAlarmLocationLng: Double?
     @State private var newAlarmProxType: AlarmProximityType = .enter
 
-    var bethinkery: Bethinkery
+    var alarmList: [BethinkeryAlarm]
     let scrollProxy: ScrollViewProxy?
 
     let onAdd: (BethinkeryAlarm) -> Void
@@ -27,9 +27,9 @@ struct AlarmsEditView: View {
 
     var body: some View {
         Section {
-            if bethinkery.hasAlarms {
-                ForEach(bethinkery.alarms.sortedAlarms) { alarm in
-                    AlarmView(relativeAlarm: bethinkery.alarms.earliestAlarm, alarm: alarm)
+            if !alarmList.isEmpty {
+                ForEach(alarmList.sortedAlarms) { alarm in
+                    AlarmView(relativeAlarm: alarmList.earliestAlarm, alarm: alarm)
                         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                             Button(role: .destructive) {
                                 onDelete(alarm)
@@ -38,7 +38,6 @@ struct AlarmsEditView: View {
                             }
                         }
                 }
-
             }
 
             if newAlarmFormVisible {

@@ -57,7 +57,7 @@ struct BethinkeryDetailView: View {
                         }
 
                         AlarmsEditView(
-                            bethinkery: bethinkery,
+                            alarmList: bethinkery.alarms,
                             scrollProxy: scrollProxy,
                             onAdd: { alarm in
                                 withErrorReporter {
