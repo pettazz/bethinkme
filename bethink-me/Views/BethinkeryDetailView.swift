@@ -13,15 +13,6 @@ struct BethinkeryDetailView: View {
     var bethinkeryModel: BethinkeryViewModel
     var bethinkery: Bethinkery
 
-    var dateFormatter: DateFormatter {
-        let it = DateFormatter()
-        it.dateFormat = "MMM d"
-        it.dateStyle = .medium
-        it.doesRelativeDateFormatting = true
-
-        return it
-    }
-
     var body: some View {
         NavigationStack {
             VStack {
@@ -57,17 +48,13 @@ struct BethinkeryDetailView: View {
                         }
 
                         AlarmsEditView(
-                            alarmList: bethinkery.alarms,
+                            alarmList: editBethinkeryCommand.alarms,
                             scrollProxy: scrollProxy,
                             onAdd: { alarm in
-                                withErrorReporter {
-                                    try bethinkeryModel.addAlarm(alarm, to: bethinkery)
-                                }
+                                editBethinkeryCommand.alarms.append(alarm)
                             },
                             onDelete: { alarm in
-                                withErrorReporter {
-                                    try bethinkeryModel.removeAlarm(alarm, from: bethinkery)
-                                }
+                                editBethinkeryCommand.alarms.removeAll(where: { $0.id == alarm.id })
                             }
                         )
                     }

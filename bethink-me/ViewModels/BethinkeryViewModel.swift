@@ -38,6 +38,16 @@ final class BethinkeryViewModel {
         bethinkery.notes = updateCommand.notes
         bethinkery.url = updateCommand.url
 
+        let existingAlarmIDs = Set(bethinkery.alarms.map(\.id))
+        let updatedAlarmIDs = Set(updateCommand.alarms.map(\.id))
+
+        for alarm in bethinkery.alarms where !updatedAlarmIDs.contains(alarm.id) {
+            try removeAlarm(alarm, from: bethinkery)
+        }
+        for alarm in updateCommand.alarms where !existingAlarmIDs.contains(alarm.id) {
+            try addAlarm(alarm, to: bethinkery)
+        }
+
         do {
             try sharedModel.eventStore.save(bethinkery.toReminder(), commit: true)
         } catch {
@@ -93,7 +103,7 @@ final class BethinkeryViewModel {
         }
     }
 
-    func addAlarm(_ newAlarm: BethinkeryAlarm, to bethinkery: Bethinkery) throws {
+    private func addAlarm(_ newAlarm: BethinkeryAlarm, to bethinkery: Bethinkery) throws {
         guard newAlarm.baseAlarm == nil else {
             throw BethinkMeError("tried to add a new alarm that was already associated with an EKAlarm")
         }
@@ -129,13 +139,12 @@ final class BethinkeryViewModel {
             if newBaseAlarm != nil {
                 reminder.addAlarm(newBaseAlarm!)
             }
-            try sharedModel.eventStore.save(reminder, commit: true)
         } catch {
             throw BethinkMeError("failed to add alarm to Bethinkery", from: error as NSError)
         }
     }
 
-    func removeAlarm(_ alarm: BethinkeryAlarm, from bethinkery: Bethinkery) throws {
+    private func removeAlarm(_ alarm: BethinkeryAlarm, from bethinkery: Bethinkery) throws {
         do {
             bethinkery.alarms.removeAll(where: { $0.id == alarm.id })
             sharedModel.modelContext.delete(alarm)
@@ -144,7 +153,6 @@ final class BethinkeryViewModel {
             if alarm.baseAlarm != nil {
                 reminder.removeAlarm(alarm.baseAlarm!)
             }
-            try sharedModel.eventStore.save(reminder, commit: true)
         } catch {
             throw BethinkMeError("failed to delete alarm", from: error as NSError)
         }

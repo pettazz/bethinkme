@@ -51,7 +51,7 @@ final class Bethinkery: Equatable, Identifiable {
             url: reminder.url,
             reminder: reminder)
 
-        try addAlarms(from: reminder)
+        try loadAlarms(from: reminder)
     }
 
 
@@ -70,7 +70,7 @@ final class Bethinkery: Equatable, Identifiable {
         self.url = reminder.url
         self.reminder = reminder
 
-        try addAlarms(from: reminder)
+        try loadAlarms(from: reminder)
     }
 
     func toReminder() throws -> EKReminder {
@@ -96,7 +96,7 @@ final class Bethinkery: Equatable, Identifiable {
         return self.reminder!
     }
 
-    private func addAlarms(from reminder: EKReminder) throws {
+    private func loadAlarms(from reminder: EKReminder) throws {
         if reminder.hasAlarms {
             for alarm in reminder.alarms! {
                 if let existingAlarm = self.alarms.first(where: { $0 == alarm }) {

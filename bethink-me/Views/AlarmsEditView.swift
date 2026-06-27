@@ -19,7 +19,7 @@ struct AlarmsEditView: View {
     @State private var newAlarmLocationLng: Double?
     @State private var newAlarmProxType: AlarmProximityType = .enter
 
-    var alarmList: [BethinkeryAlarm]
+    @State var alarmList: [BethinkeryAlarm]
     let scrollProxy: ScrollViewProxy?
 
     let onAdd: (BethinkeryAlarm) -> Void
@@ -32,6 +32,7 @@ struct AlarmsEditView: View {
                     AlarmView(relativeAlarm: alarmList.earliestAlarm, alarm: alarm)
                         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                             Button(role: .destructive) {
+                                alarmList.removeAll(where: { $0 == alarm })
                                 onDelete(alarm)
                             } label: {
                                 Label("Delete", systemImage: "trash")
@@ -79,6 +80,7 @@ struct AlarmsEditView: View {
                             TimeInterval(newAlarmOffsetDirection.rawValue)
                             let newAlarm = RelativeTimeAlarm(offset: offset)
 
+                            alarmList.append(newAlarm)
                             onAdd(newAlarm)
 
                             withAnimation {
@@ -102,6 +104,7 @@ struct AlarmsEditView: View {
                                 time: newAlarmTime,
                                 isAllDay: newAlarmIsAllDay)
 
+                            alarmList.append(newAlarm)
                             onAdd(newAlarm)
 
                             withAnimation {
@@ -149,6 +152,7 @@ struct AlarmsEditView: View {
                                 type: newAlarmProxType
                             )
 
+                            alarmList.append(newAlarm)
                             onAdd(newAlarm)
 
                             withAnimation {
