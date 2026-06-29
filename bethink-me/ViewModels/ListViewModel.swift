@@ -136,6 +136,7 @@ final class ListViewModel {
 
         do {
             try sharedModel.eventStore.saveCalendar(bethinkeryList.toCalendar(), commit: true)
+            try sharedModel.modelContext.save()
             sharedModel.syncCoordinator.iJustMadeAChange()
         } catch {
             throw BethinkMeError("failed to commit List update", from: error as NSError)

@@ -39,6 +39,7 @@ final class SyncCoordinator {
 
     func requestSync(reason: SyncReason) async {
         if reason == .initialized {
+            // TODO: global error state
             try? await sync(reason: reason)
         } else {
             debouncer?.cancel()
@@ -70,7 +71,7 @@ final class SyncCoordinator {
             syncInProgress = false
             if pendingSync {
                 pendingSync = false
-                Task { try? await sync(reason: pendingReason) }
+                Task { try await sync(reason: pendingReason) }
             }
         }
 
