@@ -19,12 +19,22 @@ struct ListView: View {
     var listModel: ListViewModel
     var bethinkeryModel: BethinkeryViewModel
     var list: BethinkeryList
+    var onListDelete: (BethinkeryList) -> Void
 
     var body: some View {
         if editMode?.wrappedValue.isEditing == true {
-            Text(list.title)
-                .font(.headline)
-                .foregroundColor(Color(hex: list.hexColor))
+            HStack {
+                Button(role: .destructive) {
+                    onListDelete(list)
+                } label: {
+                    Image(systemName: "minus.circle.fill")
+                }
+                Text(list.title)
+                    .font(.headline)
+                    .foregroundColor(Color(hex: list.hexColor))
+                    .padding(.leading, 10)
+            }
+            
         } else {
             Section(content: {
                 if isAdding {

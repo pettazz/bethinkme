@@ -125,6 +125,7 @@ final class ListViewModel {
             sharedModel.modelContext.insert(newBethinkeryList)
             try sharedModel.modelContext.save()
             sharedModel.syncCoordinator.iJustMadeAChange()
+            sharedModel.reload()
             sharedModel.resetOrdinals()
         } catch {
             throw BethinkMeError("failed to save new List", from: error as NSError)

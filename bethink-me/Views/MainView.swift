@@ -27,7 +27,7 @@ struct MainView: View {
     @State private var selectedBethinkeryForEdit: Bethinkery?
 
     @State private var isPresentingDeleteConfirmation: Bool = false
-    @State private var deleteOffsets: IndexSet = []
+    @State private var selectedListForDelete: BethinkeryList?
 
     var body: some View {
         if let activeError = errorState.currentError {
@@ -56,34 +56,17 @@ struct MainView: View {
                                             sharedModel: sharedModel!,
                                             listModel: listModel!,
                                             bethinkeryModel: bethinkeryModel!,
-                                            list: list
+                                            list: list,
+                                            onListDelete: { list in
+                                                selectedListForDelete = list
+                                                isPresentingDeleteConfirmation = true
+                                            }
                                         )
                                     }
                                     .onMove { from, to in
                                         withErrorReporter {
                                             try listModel!.moveListPosition(from: from, to: to)
                                         }
-                                    }
-                                    .onDelete { offsets in
-                                        deleteOffsets = offsets
-                                        isPresentingDeleteConfirmation = true
-                                    }
-                                    .confirmationDialog("Are you sure?",
-                                                        isPresented: $isPresentingDeleteConfirmation) {
-                                        Button("Delete List", role: .destructive) {
-                                            withErrorReporter {
-                                                guard deleteOffsets.count == 1 else {
-                                                    throw BethinkMeError(
-                                                        "tried to delete multiple list offsets: \(deleteOffsets)")
-                                                }
-                                                try listModel!.delete(
-                                                    sharedModel!.bethinkeryLists[deleteOffsets.first!])
-                                            }
-                                        }
-
-                                    } message: {
-                                        // swiftlint:disable:next line_length
-                                        Text("Are you sure you want to delete this list and all Bethinkeries on it? This cannot be undone.")
                                     }
                                 }
                                 .environment(\.editMode, $listEditMode)
@@ -167,7 +150,24 @@ struct MainView: View {
                     }
                 }
             }
-
+            .confirmationDialog("Are you sure?",
+                                isPresented: $isPresentingDeleteConfirmation) {
+                Button("Delete List", role: .destructive) {
+                    guard selectedListForDelete != nil else { return }
+                    withErrorReporter {
+                        try listModel!.delete(selectedListForDelete!)
+                    }
+                    isPresentingDeleteConfirmation = false
+                    selectedListForDelete = nil
+                }
+                Button("Cancel", role: .cancel) {
+                    isPresentingDeleteConfirmation = false
+                    selectedListForDelete = nil
+                }
+            } message: {
+                // swiftlint:disable:next line_length
+                Text("Are you sure you want to delete **\(selectedListForDelete?.title ?? "this list")** and all Reminders on it? This cannot be undone.")
+            }
             .task(id: scenePhase) {
                 guard scenePhase == .active else { return }
                 try? await setupVMs()
