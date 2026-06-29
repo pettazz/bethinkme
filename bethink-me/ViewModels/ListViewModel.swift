@@ -109,6 +109,7 @@ final class ListViewModel {
         }
 
         try sharedModel.modelContext.save()
+        sharedModel.reload()
     }
 
     func create(from createCommand: EditBethinkeryList, source: EKSource) throws {
@@ -149,6 +150,7 @@ final class ListViewModel {
             sharedModel.modelContext.delete(bethinkeryList)
             try sharedModel.modelContext.save()
             sharedModel.syncCoordinator.iJustMadeAChange()
+            sharedModel.reload()
         } catch {
             throw BethinkMeError("failed to delete List", from: error as NSError)
         }

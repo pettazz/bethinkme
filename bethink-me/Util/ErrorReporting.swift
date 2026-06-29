@@ -33,35 +33,44 @@ struct BethinkMeError: LocalizedError {
 }
 
 public struct ErrorReporter: ModalSheet {
-    func presentIfNonPrd(_ error: any Error) {
-        // TODO: global error state, some kind of telemetry reporting?
+    func report(_ error: any Error, retry: (() async throws -> Void)? = nil) {
+        let castError = error as? BethinkMeError ?? BethinkMeError(
+            "failed to retrieve error details",
+            from: error as NSError
+        )
+        ErrorState.instance.report(castError, retry: retry)
         if Bundle.env == Env.debug || Bundle.env == Env.testFlight {
-            let castError = error as? BethinkMeError ?? BethinkMeError("failed to retrieve error details")
             present(ErrorDetailView(error: castError))
+        } else {
+            // TODO: telemetry!
         }
     }
 }
 
 extension View {
-    func tryTask<ResultType>(_ task: Task<ResultType, Error>) async -> ResultType? {
+    func tryTask<ResultType>(
+            _ task: Task<ResultType, Error>,
+            retry: (() async throws -> Void)? = nil) async -> ResultType? {
         var result: ResultType?
 
         do {
             result = try await task.value
         } catch {
-            ErrorReporter().presentIfNonPrd(error)
+            ErrorReporter().report(error, retry: retry)
         }
 
         return result
     }
 
-    func withErrorReporter<ResultType>(_ perform: () throws -> ResultType) -> ResultType? {
+    func withErrorReporter<ResultType>(
+            _ perform: () throws -> ResultType,
+            retry: (() async throws -> Void)? = nil) -> ResultType? {
         var result: ResultType?
 
         do {
             result = try perform()
         } catch {
-            ErrorReporter().presentIfNonPrd(error)
+            ErrorReporter().report(error, retry: retry)
         }
 
         return result

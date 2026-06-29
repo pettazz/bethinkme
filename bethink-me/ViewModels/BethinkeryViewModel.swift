@@ -65,6 +65,7 @@ final class BethinkeryViewModel {
             sharedModel.modelContext.delete(bethinkery)
             try sharedModel.modelContext.save()
             sharedModel.syncCoordinator.iJustMadeAChange()
+            sharedModel.reload()
         } catch {
             throw BethinkMeError("failed to delete Bethinkery", from: error as NSError)
         }

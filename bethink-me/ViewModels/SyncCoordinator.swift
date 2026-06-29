@@ -39,14 +39,26 @@ final class SyncCoordinator {
 
     func requestSync(reason: SyncReason) async {
         if reason == .initialized {
-            // TODO: global error state
-            try? await sync(reason: reason)
+            do {
+                try await sync(reason: reason)
+            } catch {
+                ErrorReporter().report(error, retry: {
+                    try await self.sync(reason: reason)
+                })
+            }
         } else {
             debouncer?.cancel()
             debouncer = Task {
                 try? await Task.sleep(for: .milliseconds(kSyncRequestDebounceMilliseconds))
                 guard !Task.isCancelled else { return }
-                try? await sync(reason: reason)
+
+                do {
+                    try await sync(reason: reason)
+                } catch {
+                    ErrorReporter().report(error, retry: {
+                        try await self.sync(reason: reason)
+                    })
+                }
             }
         }
     }

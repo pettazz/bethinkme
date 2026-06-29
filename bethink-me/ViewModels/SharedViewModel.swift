@@ -14,34 +14,19 @@ final class SharedViewModel {
     var hasAccess: Bool = false
     var showCompleted: Bool = false
 
-    var bethinkeryLists: [BethinkeryList] {
-        // TODO: global error state with retry when fetch is broken
-        // swiftlint:disable:next force_try
-        try! modelContext.fetch(FetchDescriptor(
-            sortBy: [.init(\BethinkeryList.ordinal)]))
-    }
+    private var bethinkeryListsCache: [BethinkeryList] = []
+    private var bethinkeriesCache: [Bethinkery] = []
+    private var unfilteredBethinkeriesCache: [Bethinkery] = []
 
-    var bethinkeries: [Bethinkery] {
-        // TODO: global error state with retry when fetch is broken
-        // swiftlint:disable:next force_try
-        try! modelContext.fetch(FetchDescriptor(
-            predicate: #Predicate<Bethinkery> { bethinkery in
-                return (showCompleted || !bethinkery.isCompleted) || bethinkery.freshlyCompleted
-            },
-            sortBy: [.init(\Bethinkery.ordinal)]))
-    }
-
-    var unfilteredBethinkeries: [Bethinkery] {
-        // TODO: global error state with retry when fetch is broken
-        // swiftlint:disable:next force_try
-        try! modelContext.fetch(FetchDescriptor(
-            sortBy: [.init(\Bethinkery.ordinal)]))
-    }
+    var bethinkeryLists: [BethinkeryList] { bethinkeryListsCache }
+    var bethinkeries: [Bethinkery] { bethinkeriesCache }
+    var unfilteredBethinkeries: [Bethinkery] { unfilteredBethinkeriesCache }
 
 
     init(modelContext: ModelContext) async {
         self.modelContext = modelContext
         self.hasAccess = await checkPermissions()
+        self.reload()
     }
 
     func startEventStoreObserver() {
@@ -69,6 +54,34 @@ final class SharedViewModel {
                 bethinkery.ordinal = iidx
                 bethinkery.freshlyCompleted = false // hehehehe side effects
             }
+        }
+    }
+
+    private func fetchAll() throws {
+        let bethinkeryListsCacheUpdate = try modelContext.fetch(FetchDescriptor(
+            sortBy: [.init(\BethinkeryList.ordinal)]))
+
+        let bethinkeriesCacheUpdate = try modelContext.fetch(FetchDescriptor(
+            predicate: #Predicate<Bethinkery> { bethinkery in
+                return (showCompleted || !bethinkery.isCompleted) || bethinkery.freshlyCompleted
+            },
+            sortBy: [.init(\Bethinkery.ordinal)]))
+
+        let unfilteredBethinkeriesCacheUpdate = try modelContext.fetch(FetchDescriptor(
+            sortBy: [.init(\Bethinkery.ordinal)]))
+
+        bethinkeryListsCache = bethinkeryListsCacheUpdate
+        bethinkeriesCache = bethinkeriesCacheUpdate
+        unfilteredBethinkeriesCache = unfilteredBethinkeriesCacheUpdate
+    }
+
+    func reload() {
+        do {
+            try fetchAll()
+            ErrorState.instance.clear()
+        } catch {
+            ErrorReporter().report(BethinkMeError("failed to fetch from model context", from: error as NSError),
+                                   retry: { try self.fetchAll() })
         }
     }
 }

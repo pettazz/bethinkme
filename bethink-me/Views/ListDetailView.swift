@@ -93,22 +93,10 @@ struct ListDetailView: View {
             }
         } else {
             NavigationStack {
-                VStack {
-                    Spacer()
-                    Image(systemName: "text.badge.xmark")
-                        .font(.system(size: 60))
-                        .foregroundColor(.gray)
-                        .accessibilityHidden(true)
-                    Text("No Sources")
-                        .font(.title2)
-                        .foregroundColor(.gray)
-                    Text("You have nowhere to save Reminders!")
-                        .font(.subheadline)
-                        .foregroundColor(.gray)
-                    Link("Add an account in Settings!",
-                         destination: URL(string: UIApplication.openSettingsURLString)!)
-                    Spacer()
-                }
+                InvalidStateView(icon: Image(systemName: "arrow.down.app.dashed.trianglebadge.exclamationmark"),
+                                 title: "No Sources",
+                                 message: "You have nowhere to save Reminders!",
+                                 linkTitle: "Add an account in Settings!")
                 .toolbar {
                     ToolbarItem(placement: .confirmationAction) {
                         Button("Close") {
