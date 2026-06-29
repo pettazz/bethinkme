@@ -5,7 +5,7 @@ import SwiftUI
 
 struct MainView: View {
     @AppStorage(SettingsKey.maxCompletedAgeDays.rawValue)
-    private var maxCompletedAgeDaysSetting: Int = 7
+    private var maxCompletedAgeDaysSetting: Int = kMaxCompletedAgeDaysDefault
 
     @Environment(\.modelContext)
     private var modelContext
@@ -20,7 +20,6 @@ struct MainView: View {
     @State private var shouldPresentNewListSheet = false
 
     @State private var listsLoading: Bool = false
-    @State private var listsLoadingTime: Int = 0
     @State private var showDelayedSpinner = false
 
     @State private var selectedBethinkeryForEdit: Bethinkery?

@@ -7,7 +7,7 @@ import SwiftUI
 @Observable
 final class ListViewModel {
     @AppStorage(SettingsKey.maxCompletedAgeDays.rawValue)
-    @ObservationIgnored private var maxCompletedAgeDaysSetting: Int = 7
+    @ObservationIgnored private var maxCompletedAgeDaysSetting: Int = kMaxCompletedAgeDaysDefault
 
     private let sharedModel: SharedViewModel
 

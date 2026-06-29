@@ -2,11 +2,13 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 
+let kMaxCompletedAgeDaysDefault = 30
+
 struct SettingsView: View {
     @AppStorage(SettingsKey.enableAutocorrect.rawValue)
     private var enableAutocorrect: Bool = true
     @AppStorage(SettingsKey.maxCompletedAgeDays.rawValue)
-    private var maxCompletedAgeDays: Int = 30
+    private var maxCompletedAgeDays: Int = kMaxCompletedAgeDaysDefault
     @AppStorage(SettingsKey.displayNotes.rawValue)
     private var displayNotes: Bool = false
     @AppStorage(SettingsKey.displayURLs.rawValue)
