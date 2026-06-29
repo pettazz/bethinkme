@@ -34,6 +34,7 @@ struct BethinkMeError: LocalizedError {
 
 public struct ErrorReporter: ModalSheet {
     func presentIfNonPrd(_ error: any Error) {
+        // TODO: global error state, some kind of telemetry reporting?
         if Bundle.env == Env.debug || Bundle.env == Env.testFlight {
             let castError = error as? BethinkMeError ?? BethinkMeError("failed to retrieve error details")
             present(ErrorDetailView(error: castError))

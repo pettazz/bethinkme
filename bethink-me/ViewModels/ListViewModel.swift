@@ -107,6 +107,8 @@ final class ListViewModel {
             let defaultCal = sharedModel.eventStore.defaultCalendarForNewReminders() ?? calendars.first!
             defaultSource = defaultCal.source
         }
+
+        try sharedModel.modelContext.save()
     }
 
     func create(from createCommand: EditBethinkeryList, source: EKSource) throws {
@@ -151,13 +153,15 @@ final class ListViewModel {
         }
     }
 
-    func moveListPosition(from: IndexSet, to: Int) {
+    func moveListPosition(from: IndexSet, to: Int) throws {
         var tmpLists = sharedModel.bethinkeryLists
         tmpLists.move(fromOffsets: from, toOffset: to)
 
         for (idx, list) in tmpLists.enumerated() {
             list.ordinal = idx
         }
+
+        try sharedModel.modelContext.save()
     }
 
     private func loadRemindersForCalendar(_ calendar: EKCalendar) async -> [EKReminder] {

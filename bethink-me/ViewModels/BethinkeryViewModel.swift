@@ -93,6 +93,7 @@ final class BethinkeryViewModel {
         for (idx, bethinkery) in tmpBethinkeries[...(max(from.first!, to))].enumerated() {
             bethinkery.ordinal = idx
         }
+        try sharedModel.modelContext.save()
     }
 
     func moveBethinkery(_ bethinkery: Bethinkery, to: BethinkeryList) throws {

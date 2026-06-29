@@ -73,7 +73,9 @@ struct MainView: View {
                                     )
                                 }
                                 .onMove { from, to in
-                                    listModel!.moveListPosition(from: from, to: to)
+                                    withErrorReporter {
+                                        try listModel!.moveListPosition(from: from, to: to)
+                                    }
                                 }
                                 .onDelete { offsets in
                                     withErrorReporter {
