@@ -111,16 +111,14 @@ final class Bethinkery: Equatable, Identifiable {
                             throw BethinkMeError("failed to coerce EKAlarm to BethinkeryAbsoluteTimeAlarm",
                                                  from: error as NSError)
                         }
-                    }
-                    if alarm.relativeOffset != 0 {
+                    } else if alarm.relativeOffset != 0 {
                         do {
                             try self.alarms.append(RelativeTimeAlarm.fromEKAlarm(alarm))
                         } catch {
                             throw BethinkMeError("failed to coerce EKAlarm to BethinkeryRelativeTimeAlarm",
                                                  from: error as NSError)
                         }
-                    }
-                    if alarm.structuredLocation != nil {
+                    } else if alarm.structuredLocation != nil {
                         do {
                             try self.alarms.append(ProximityAlarm.fromEKAlarm(alarm))
                         } catch {
