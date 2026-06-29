@@ -85,8 +85,6 @@ struct AlarmView: View {
                     .font(.headline)
                     .accessibilityLabel(Text("Location alarm"))
                 Text("\(proxAlarm.type.title) \(proxAlarm.title)")
-            } else {
-                Text("type: wat da fuk")
             }
         }
     }
