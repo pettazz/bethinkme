@@ -67,9 +67,9 @@ struct ListDetailView: View {
                                         updater.hexColor = newColor.toHex()
                                         try listModel.update(list!, with: updater)
                                     }
+                                    dismiss()
                                 }
                             }
-                            dismiss()
                         }
                     }
                     ToolbarItem(placement: .cancellationAction) {
