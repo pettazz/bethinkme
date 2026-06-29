@@ -5,7 +5,10 @@ import SwiftData
 @MainActor
 final class SharedViewModel {
     let modelContext: ModelContext
+    let syncCoordinator = SyncCoordinator()
     nonisolated final let eventStore = EKEventStore()
+
+    private var eventStoreChangedTask: Task<Void, Never>?
 
     var hasAccess: Bool = false
     var showCompleted: Bool = false
@@ -35,6 +38,17 @@ final class SharedViewModel {
     init(modelContext: ModelContext) async {
         self.modelContext = modelContext
         self.hasAccess = await checkPermissions()
+    }
+
+    func startEventStoreObserver() {
+        guard eventStoreChangedTask == nil else { return }
+        eventStoreChangedTask = Task {
+            for await _ in NotificationCenter.default.notifications(
+                named: .EKEventStoreChanged,
+                object: nil) {
+                await self.syncCoordinator.requestSync(reason: .EKChanged)
+            }
+        }
     }
 
     func checkPermissions() async -> Bool {

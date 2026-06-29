@@ -168,9 +168,17 @@ struct MainView: View {
         }
 
         .task(id: scenePhase) {
-            if scenePhase == .active {
-                await tryTask(Task { try await reloadLists() })
+            guard scenePhase == .active else { return }
+            try? await setupVMs()
+            let coordinator = sharedModel!.syncCoordinator
+            if !coordinator.hasEverSynced {
+                await tryTask(Task {
+                    await coordinator.requestSync(reason: .initialized)
+                })
+            } else if coordinator.shouldPerformForegroundedSync {
+                await coordinator.requestSync(reason: .foregrounded)
             }
+
         }
         .sheet(item: $selectedBethinkeryForEdit) { bethinkery in
             if let bethinkeryModel {
@@ -183,9 +191,7 @@ struct MainView: View {
         }
     }
 
-    func reloadLists() async throws {
-        listsLoading = true
-
+    private func setupVMs() async throws {
         if sharedModel == nil {
             sharedModel = await SharedViewModel(modelContext: modelContext)
         }
@@ -195,8 +201,13 @@ struct MainView: View {
         if bethinkeryModel == nil {
             bethinkeryModel = BethinkeryViewModel(sharedModel: sharedModel!)
         }
-        try await listModel!.loadLists()
-
-        listsLoading = false
+        if sharedModel!.syncCoordinator.synchronizer == nil {
+            sharedModel!.syncCoordinator.synchronizer = { [listModel = listModel!] in
+                listsLoading = true
+                try await listModel.loadLists()
+                listsLoading = false
+            }
+            sharedModel!.startEventStoreObserver()
+        }
     }
 }

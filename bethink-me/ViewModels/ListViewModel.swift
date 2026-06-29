@@ -120,6 +120,8 @@ final class ListViewModel {
 
             let newBethinkeryList = BethinkeryList(calendar: newCalendar)
             sharedModel.modelContext.insert(newBethinkeryList)
+            try sharedModel.modelContext.save()
+            sharedModel.syncCoordinator.iJustMadeAChange()
             sharedModel.resetOrdinals()
         } catch {
             throw BethinkMeError("failed to save new List", from: error as NSError)
@@ -132,6 +134,7 @@ final class ListViewModel {
 
         do {
             try sharedModel.eventStore.saveCalendar(bethinkeryList.toCalendar(), commit: true)
+            sharedModel.syncCoordinator.iJustMadeAChange()
         } catch {
             throw BethinkMeError("failed to commit List update", from: error as NSError)
         }
@@ -141,6 +144,8 @@ final class ListViewModel {
         do {
             try sharedModel.eventStore.removeCalendar(bethinkeryList.toCalendar(), commit: true)
             sharedModel.modelContext.delete(bethinkeryList)
+            try sharedModel.modelContext.save()
+            sharedModel.syncCoordinator.iJustMadeAChange()
         } catch {
             throw BethinkMeError("failed to delete List", from: error as NSError)
         }

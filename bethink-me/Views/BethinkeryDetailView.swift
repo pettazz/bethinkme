@@ -63,12 +63,10 @@ struct BethinkeryDetailView: View {
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
-                        withAnimation {
-                            withErrorReporter {
-                                try bethinkeryModel.update(bethinkery, with: editBethinkeryCommand)
-                            }
+                        withErrorReporter {
+                            try bethinkeryModel.update(bethinkery, with: editBethinkeryCommand)
+                            dismiss()
                         }
-                        dismiss()
                     }
                 }
                 ToolbarItem(placement: .cancellationAction) {
