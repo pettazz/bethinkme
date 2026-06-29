@@ -14,24 +14,24 @@ final class SharedViewModel {
     var showCompleted: Bool = false
 
     var bethinkeryLists: [BethinkeryList] {
-        (try? modelContext.fetch(FetchDescriptor(
-            sortBy: [.init(\BethinkeryList.ordinal)])))
-        ?? []
+        // TODO: global error state with retry when fetch is broken
+        try! modelContext.fetch(FetchDescriptor(
+            sortBy: [.init(\BethinkeryList.ordinal)]))
     }
 
     var bethinkeries: [Bethinkery] {
-        (try? modelContext.fetch(FetchDescriptor(
+        // TODO: global error state with retry when fetch is broken
+        try! modelContext.fetch(FetchDescriptor(
             predicate: #Predicate<Bethinkery> { bethinkery in
                 return (showCompleted || !bethinkery.isCompleted) || bethinkery.freshlyCompleted
             },
-            sortBy: [.init(\Bethinkery.ordinal)])))
-        ?? []
+            sortBy: [.init(\Bethinkery.ordinal)]))
     }
 
     var unfilteredBethinkeries: [Bethinkery] {
-        (try? modelContext.fetch(FetchDescriptor(
-            sortBy: [.init(\Bethinkery.ordinal)])))
-        ?? []
+        // TODO: global error state with retry when fetch is broken
+        try! modelContext.fetch(FetchDescriptor(
+            sortBy: [.init(\Bethinkery.ordinal)]))
     }
 
 
