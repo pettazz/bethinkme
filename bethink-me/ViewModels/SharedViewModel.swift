@@ -3,6 +3,7 @@ import SwiftData
 
 
 @MainActor
+@Observable
 final class SharedViewModel {
     let modelContext: ModelContext
     let syncCoordinator = SyncCoordinator()
@@ -15,12 +16,14 @@ final class SharedViewModel {
 
     var bethinkeryLists: [BethinkeryList] {
         // TODO: global error state with retry when fetch is broken
+        // swiftlint:disable:next force_try
         try! modelContext.fetch(FetchDescriptor(
             sortBy: [.init(\BethinkeryList.ordinal)]))
     }
 
     var bethinkeries: [Bethinkery] {
         // TODO: global error state with retry when fetch is broken
+        // swiftlint:disable:next force_try
         try! modelContext.fetch(FetchDescriptor(
             predicate: #Predicate<Bethinkery> { bethinkery in
                 return (showCompleted || !bethinkery.isCompleted) || bethinkery.freshlyCompleted
@@ -30,6 +33,7 @@ final class SharedViewModel {
 
     var unfilteredBethinkeries: [Bethinkery] {
         // TODO: global error state with retry when fetch is broken
+        // swiftlint:disable:next force_try
         try! modelContext.fetch(FetchDescriptor(
             sortBy: [.init(\Bethinkery.ordinal)]))
     }
