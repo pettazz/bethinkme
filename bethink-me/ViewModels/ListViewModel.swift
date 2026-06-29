@@ -123,10 +123,8 @@ final class ListViewModel {
 
             let newBethinkeryList = BethinkeryList(calendar: newCalendar)
             sharedModel.modelContext.insert(newBethinkeryList)
-            try sharedModel.modelContext.save()
-            sharedModel.syncCoordinator.iJustMadeAChange()
-            sharedModel.reload()
             sharedModel.resetOrdinals()
+            try sharedModel.saveContext()
         } catch {
             throw BethinkMeError("failed to save new List", from: error as NSError)
         }
@@ -138,8 +136,7 @@ final class ListViewModel {
 
         do {
             try sharedModel.eventStore.saveCalendar(bethinkeryList.toCalendar(), commit: true)
-            try sharedModel.modelContext.save()
-            sharedModel.syncCoordinator.iJustMadeAChange()
+            try sharedModel.saveContext()
         } catch {
             throw BethinkMeError("failed to commit List update", from: error as NSError)
         }
@@ -149,9 +146,7 @@ final class ListViewModel {
         do {
             try sharedModel.eventStore.removeCalendar(bethinkeryList.toCalendar(), commit: true)
             sharedModel.modelContext.delete(bethinkeryList)
-            try sharedModel.modelContext.save()
-            sharedModel.syncCoordinator.iJustMadeAChange()
-            sharedModel.reload()
+            try sharedModel.saveContext()
         } catch {
             throw BethinkMeError("failed to delete List", from: error as NSError)
         }
@@ -165,7 +160,7 @@ final class ListViewModel {
             list.ordinal = idx
         }
 
-        try sharedModel.modelContext.save()
+        try sharedModel.saveContext()
     }
 
     private func loadRemindersForCalendar(_ calendar: EKCalendar) async -> [EKReminder] {

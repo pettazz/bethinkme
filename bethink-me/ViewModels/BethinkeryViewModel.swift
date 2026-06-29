@@ -24,8 +24,7 @@ final class BethinkeryViewModel {
 
             let newBethinkery = try Bethinkery(reminder: reminder, list: list)
             sharedModel.modelContext.insert(newBethinkery)
-            try sharedModel.modelContext.save()
-            sharedModel.syncCoordinator.iJustMadeAChange()
+            try sharedModel.saveContext()
             list.bethinkeries.insert(newBethinkery, at: 0)
             sharedModel.resetOrdinals()
         } catch {
@@ -52,8 +51,7 @@ final class BethinkeryViewModel {
 
         do {
             try sharedModel.eventStore.save(bethinkery.toReminder(), commit: true)
-            try sharedModel.modelContext.save()
-            sharedModel.syncCoordinator.iJustMadeAChange()
+            try sharedModel.saveContext()
         } catch {
             throw BethinkMeError("failed to commit Bethinkery update", from: error as NSError)
         }
@@ -63,9 +61,7 @@ final class BethinkeryViewModel {
         do {
             try sharedModel.eventStore.remove(bethinkery.toReminder(), commit: true)
             sharedModel.modelContext.delete(bethinkery)
-            try sharedModel.modelContext.save()
-            sharedModel.syncCoordinator.iJustMadeAChange()
-            sharedModel.reload()
+            try sharedModel.saveContext()
         } catch {
             throw BethinkMeError("failed to delete Bethinkery", from: error as NSError)
         }
@@ -94,7 +90,7 @@ final class BethinkeryViewModel {
         for (idx, bethinkery) in tmpBethinkeries[...(max(from.first!, to))].enumerated() {
             bethinkery.ordinal = idx
         }
-        try sharedModel.modelContext.save()
+        try sharedModel.saveContext()
     }
 
     func moveBethinkery(_ bethinkery: Bethinkery, to: BethinkeryList) throws {

@@ -84,4 +84,10 @@ final class SharedViewModel {
                                    retry: { try self.fetchAll() })
         }
     }
+
+    func saveContext() throws {
+        try modelContext.save()
+        syncCoordinator.iJustMadeAChange()
+        reload()
+    }
 }
