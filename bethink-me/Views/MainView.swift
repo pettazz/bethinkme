@@ -26,9 +26,12 @@ struct MainView: View {
 
     @State private var selectedBethinkeryForEdit: Bethinkery?
 
+    @State private var isPresentingDeleteConfirmation: Bool = false
+    @State private var deleteOffsets: IndexSet = []
+
     var body: some View {
         if let activeError = errorState.currentError {
-            InvalidStateView(icon: Image(systemName: "exclamationmark.triangle.fill"),
+            InvalidStateView(icon: "exclamationmark.triangle.fill",
                              title: "We've run into an error",
                              message: activeError.error.message)
         } else {
@@ -37,12 +40,12 @@ struct MainView: View {
                     VStack {
                         if sharedModel != nil && listModel != nil && bethinkeryModel != nil {
                             if !sharedModel!.hasAccess {
-                                InvalidStateView(icon: Image(systemName: "hand.raised.square.on.square"),
+                                InvalidStateView(icon: "hand.raised.square.on.square",
                                                  title: "No Permission",
                                                  message: "u gotta let me look at them toedeos",
                                                  linkTitle: "Enable me in settings!")
                             } else if sharedModel!.bethinkeryLists.isEmpty {
-                                InvalidStateView(icon: Image(systemName: "checklist"),
+                                InvalidStateView(icon: "checklist",
                                                  title: "oh no",
                                                  message: "no toedoes?")
                             } else {
@@ -62,13 +65,25 @@ struct MainView: View {
                                         }
                                     }
                                     .onDelete { offsets in
-                                        withErrorReporter {
-                                            // TODO: confirmation dialog?
-                                            guard offsets.count == 1 else {
-                                                throw BethinkMeError("tried to delete multiple list offsets: \(offsets)")
+                                        deleteOffsets = offsets
+                                        isPresentingDeleteConfirmation = true
+                                    }
+                                    .confirmationDialog("Are you sure?",
+                                                        isPresented: $isPresentingDeleteConfirmation) {
+                                        Button("Delete List", role: .destructive) {
+                                            withErrorReporter {
+                                                guard deleteOffsets.count == 1 else {
+                                                    throw BethinkMeError(
+                                                        "tried to delete multiple list offsets: \(deleteOffsets)")
+                                                }
+                                                try listModel!.delete(
+                                                    sharedModel!.bethinkeryLists[deleteOffsets.first!])
                                             }
-                                            try listModel!.delete(sharedModel!.bethinkeryLists[offsets.first!])
                                         }
+
+                                    } message: {
+                                        // swiftlint:disable:next line_length
+                                        Text("Are you sure you want to delete this list and all Bethinkeries on it? This cannot be undone.")
                                     }
                                 }
                                 .environment(\.editMode, $listEditMode)

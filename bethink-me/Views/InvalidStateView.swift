@@ -2,7 +2,7 @@ import SwiftUI
 
 
 struct InvalidStateView: View {
-    let icon: Image
+    let icon: String
     let title: String
     let message: String
 
@@ -13,7 +13,8 @@ struct InvalidStateView: View {
         // TODO: it also uggly
         VStack {
             Spacer()
-            icon.font(.system(size: 60))
+            Image(systemName: icon)
+                .font(.system(size: 60))
                 .foregroundColor(.gray)
                 .accessibilityHidden(true)
             Text(title)
@@ -44,7 +45,7 @@ struct InvalidStateView: View {
 
 
 #Preview {
-    InvalidStateView(icon: Image(systemName: "hand.raised.square.on.square"),
+    InvalidStateView(icon: "hand.raised.square.on.square",
                      title: "Hahaha, Oh wow!",
                      message: "You really fucked up big time, who knows what's gonna happen now.",
                      linkTitle: "Enable me in settings"

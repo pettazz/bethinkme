@@ -93,7 +93,7 @@ struct ListDetailView: View {
             }
         } else {
             NavigationStack {
-                InvalidStateView(icon: Image(systemName: "arrow.down.app.dashed.trianglebadge.exclamationmark"),
+                InvalidStateView(icon: "arrow.down.app.dashed.trianglebadge.exclamationmark",
                                  title: "No Sources",
                                  message: "You have nowhere to save Reminders!",
                                  linkTitle: "Add an account in Settings!")
