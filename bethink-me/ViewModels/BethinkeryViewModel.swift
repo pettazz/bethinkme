@@ -103,8 +103,8 @@ final class BethinkeryViewModel {
         do {
             // TODO: ensure we strip existing list-applied rules like location/time alerts, add new ones
             let clonedBethinkery = EditBethinkery.fromBethinkery(bethinkery)
-            try delete(bethinkery)
             try create(from: clonedBethinkery, list: to)
+            try delete(bethinkery)
         } catch {
             throw BethinkMeError("failed to move Bethinkery", from: error as NSError)
         }
