@@ -24,7 +24,7 @@ extension Color {
 
     func toHex() -> String {
         let uic = UIColor(self)
-        let components = uic.cgColor.components!
+        let components = uic.cgColor.components ?? [0.0, 0.0, 0.0]
         // swiftlint:disable identifier_name
         let r = Float(components[0])
         let g = Float(components[1])
