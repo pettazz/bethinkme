@@ -13,6 +13,8 @@ struct SettingsView: View {
     private var displayNotes: Bool = false
     @AppStorage(SettingsKey.displayURLs.rawValue)
     private var displayURLs: Bool = false
+    @AppStorage(SettingsKey.displayAlarmIcons.rawValue)
+    private var displayAlarmIcons: Bool = false
 
     @State private var shouldShowVersionCopiedPopover: Bool = false
 
@@ -43,6 +45,7 @@ struct SettingsView: View {
                     }
                     Toggle("Show Notes", isOn: $displayNotes)
                     Toggle("Show URLs", isOn: $displayURLs)
+                    Toggle("Show Alarm Icons", isOn: $displayAlarmIcons)
                 } header: {
                     Text("Viewing")
                 }

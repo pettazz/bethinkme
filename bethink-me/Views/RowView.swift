@@ -8,6 +8,8 @@ struct RowView: View {
     private var displayNotes: Bool = false
     @AppStorage(SettingsKey.displayURLs.rawValue)
     private var displayURLs: Bool = false
+    @AppStorage(SettingsKey.displayAlarmIcons.rawValue)
+    private var displayAlarmIcons: Bool = false
 
     @FocusState private var editFocus: Bool
     @State private var isEditing: Bool = false
@@ -115,6 +117,25 @@ struct RowView: View {
                             }
                         }
                         .containerRelativeFrame(.horizontal, count: 10, span: 8, spacing: 5, alignment: .trailing)
+                    }
+                }
+                if displayAlarmIcons {
+                    HStack {
+                        if bethinkery.hasAbsoluteTimeAlarm {
+                            Image(systemName: "calendar")
+                                .accessibilityLabel(Text("Has at least one absolute time alarm set"))
+                                .foregroundColor(Color(hex: bethinkery.list.hexColor))
+                        }
+                        if bethinkery.hasRelativeTimeAlarm {
+                            Image(systemName: "alarm.fill")
+                                .accessibilityLabel(Text("Has at least one relative time alarm set"))
+                                .foregroundColor(Color(hex: bethinkery.list.hexColor))
+                        }
+                        if bethinkery.hasProximityAlarm {
+                            Image(systemName: "location.circle.fill")
+                                .accessibilityLabel(Text("Has at least one location alarm set"))
+                                .foregroundColor(Color(hex: bethinkery.list.hexColor))
+                        }
                     }
                 }
             }

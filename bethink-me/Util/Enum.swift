@@ -36,6 +36,7 @@ enum SettingsKey: String {
     case maxCompletedAgeDays = "settings.maxCompletedAgeDays"
     case displayNotes = "settings.displayNotes"
     case displayURLs = "settings.displayURLs"
+    case displayAlarmIcons = "settings.displayAlarmIcons"
 }
 
 enum TimeAlarmIntervalDirection: Int, CaseIterable {

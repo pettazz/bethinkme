@@ -22,6 +22,9 @@ final class Bethinkery: Equatable, Identifiable {
     var hasUrl: Bool { return self.url != nil }
     var hasReminder: Bool { return self.reminder != nil }
     var hasAlarms: Bool { return !self.alarms.isEmpty }
+    var hasAbsoluteTimeAlarm: Bool { return self.alarms.contains(where: { $0 is AbsoluteTimeAlarm }) }
+    var hasRelativeTimeAlarm: Bool { return self.alarms.contains(where: { $0 is RelativeTimeAlarm }) }
+    var hasProximityAlarm: Bool { return self.alarms.contains(where: { $0 is ProximityAlarm }) }
 
 
     init(id: String,
