@@ -122,6 +122,8 @@ final class ListViewModel {
             try sharedModel.eventStore.saveCalendar(newCalendar, commit: true)
 
             let newBethinkeryList = BethinkeryList(calendar: newCalendar)
+            newBethinkeryList.alarmTemplates = createCommand.alarmTemplates
+
             sharedModel.modelContext.insert(newBethinkeryList)
             sharedModel.resetOrdinals()
             try sharedModel.saveContext()
@@ -133,6 +135,18 @@ final class ListViewModel {
     func update(_ bethinkeryList: BethinkeryList, with updateCommand: EditBethinkeryList) throws {
         bethinkeryList.title = updateCommand.title
         bethinkeryList.hexColor = updateCommand.hexColor
+
+        let existingAlarmIDs = Set(bethinkeryList.alarmTemplates.map(\.id))
+        let updatedAlarmIDs = Set(updateCommand.alarmTemplates.map(\.id))
+
+        for alarm in bethinkeryList.alarmTemplates where !updatedAlarmIDs.contains(alarm.id) {
+            bethinkeryList.alarmTemplates.removeAll(where: { $0.id == alarm.id })
+            sharedModel.modelContext.delete(alarm)
+        }
+        for alarm in updateCommand.alarmTemplates where !existingAlarmIDs.contains(alarm.id) {
+            bethinkeryList.alarmTemplates.append(alarm)
+            sharedModel.modelContext.insert(alarm)
+        }
 
         do {
             try sharedModel.eventStore.saveCalendar(bethinkeryList.toCalendar(), commit: true)

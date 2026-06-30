@@ -6,14 +6,24 @@ import SwiftUI
 // yeah we could just edit the model directly but I don't like the idea of either
 // decoupling it from the backing object commit to EventKit or doing that in a view
 
-struct EditBethinkeryList {
-    var title: String
-    var hexColor: String
+class EditBethinkeryList: ObservableObject {
+    @Published var title: String
+    @Published var hexColor: String
+    @Published var alarmTemplates: [BethinkeryAlarm] = []
+
+    init(title: String = "",
+         hexColor: String = "",
+         alarmTemplates: [BethinkeryAlarm] = []) {
+        self.title = title
+        self.hexColor = hexColor
+        self.alarmTemplates = alarmTemplates
+    }
 
     static func fromBethinkeryList(_ bethinkeryList: BethinkeryList) -> EditBethinkeryList {
         return EditBethinkeryList(
             title: bethinkeryList.title,
-            hexColor: bethinkeryList.hexColor)
+            hexColor: bethinkeryList.hexColor,
+            alarmTemplates: bethinkeryList.alarmTemplates)
     }
 }
 

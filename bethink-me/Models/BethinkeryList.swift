@@ -12,8 +12,11 @@ final class BethinkeryList: Equatable, Identifiable {
     var ordinal: Int = -1
     var title: String
     var hexColor: String
+    @Relationship(deleteRule: .cascade)
+    var alarmTemplates: [BethinkeryAlarm] = []
     @Transient private var calendar: EKCalendar?
 
+    var hasAlarms: Bool { return !self.alarmTemplates.isEmpty }
     var hasCalendar: Bool { return self.calendar != nil }
 
 

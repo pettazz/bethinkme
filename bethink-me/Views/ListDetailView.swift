@@ -9,8 +9,8 @@ struct ListDetailView: View {
     @Environment(\.dismiss)
     private var dismiss
 
-    @State private var title: String = ""
-    @State private var newTitle: String = ""
+    @StateObject private var editListCommand: EditBethinkeryList = EditBethinkeryList()
+
     @State private var newColor: Color = Color.accentColor
     @State private var newSourceId: String = ""
 
@@ -27,26 +27,40 @@ struct ListDetailView: View {
     var body: some View {
         if !listModel.availableSources.isEmpty {
             // TODO: make this less ugly, see also BethinkeryDetailView
-            NavigationView {
+            NavigationStack {
                 VStack {
-                    Text(newTitle.isEmpty ? "New List" : newTitle)
+                    Text(editListCommand.title.isEmpty ? "New List" : editListCommand.title)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .foregroundColor(newColor)
                         .font(.largeTitle)
                         .bold()
                         .padding(20)
-                    Form {
-                        Section {
-                            TextField(title, text: $newTitle)
-                                .autocorrectionDisabled(!enableAutocorrectSetting)
-                            ColorPicker("List color", selection: $newColor)
-                            if isNew {
-                                Picker("Save to", selection: $newSourceId) {
-                                    ForEach(listModel.availableSources, id: \.sourceIdentifier) { source in
-                                        Text(source.title).tag(source.sourceIdentifier)
+                    ScrollViewReader { scrollProxy in
+                        Form {
+                            Section {
+                                TextField(editListCommand.title.isEmpty ? "New List" : editListCommand.title,
+                                          text: $editListCommand.title)
+                                    .autocorrectionDisabled(!enableAutocorrectSetting)
+                                ColorPicker("List color", selection: $newColor)
+                                if isNew {
+                                    Picker("Save to", selection: $newSourceId) {
+                                        ForEach(listModel.availableSources, id: \.sourceIdentifier) { source in
+                                            Text(source.title).tag(source.sourceIdentifier)
+                                        }
                                     }
                                 }
                             }
+
+                            AlarmsEditView(
+                                alarmList: editListCommand.alarmTemplates,
+                                scrollProxy: scrollProxy,
+                                onAdd: { alarm in
+                                    editListCommand.alarmTemplates.append(alarm)
+                                },
+                                onDelete: { alarm in
+                                    editListCommand.alarmTemplates.removeAll(where: { $0.id == alarm.id })
+                                }
+                            )
                         }
                     }
                 }
@@ -55,17 +69,14 @@ struct ListDetailView: View {
                         Button("Save") {
                             withAnimation {
                                 withErrorReporter {
+                                    editListCommand.hexColor = newColor.toHex()
                                     if isNew {
-                                        let creator = EditBethinkeryList(title: newTitle, hexColor: newColor.toHex())
                                         guard selectedSource != nil else {
                                             throw BethinkMeError("tried to create a List on a nonexistent Source")
                                         }
-                                        try listModel.create(from: creator, source: selectedSource!)
+                                        try listModel.create(from: editListCommand, source: selectedSource!)
                                     } else {
-                                        var updater = EditBethinkeryList.fromBethinkeryList(list!)
-                                        updater.title = newTitle
-                                        updater.hexColor = newColor.toHex()
-                                        try listModel.update(list!, with: updater)
+                                        try listModel.update(list!, with: editListCommand)
                                     }
                                     dismiss()
                                 }
@@ -81,14 +92,10 @@ struct ListDetailView: View {
             }
             .task {
                 if isNew {
-                    title = "New List"
                     newSourceId = listModel.defaultSource?.sourceIdentifier ??
-                    listModel.availableSources.first?.sourceIdentifier ??
-                        ""
+                                  listModel.availableSources.first?.sourceIdentifier ?? ""
                 } else {
-                    title = list!.title
-                    newTitle = list!.title
-                    newColor = Color(hex: list!.hexColor)
+                    newColor = Color(hex: editListCommand.hexColor)
                 }
             }
         } else {
@@ -105,6 +112,15 @@ struct ListDetailView: View {
                     }
                 }
             }
+        }
+    }
+
+    init(sharedModel: SharedViewModel, listModel: ListViewModel, list: BethinkeryList? = nil) {
+        self.sharedModel = sharedModel
+        self.listModel = listModel
+        self.list = list
+        if list != nil {
+            _editListCommand = StateObject(wrappedValue: .fromBethinkeryList(list!))
         }
     }
 }

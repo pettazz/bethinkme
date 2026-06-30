@@ -38,4 +38,18 @@ class BethinkeryAlarm: Equatable, Identifiable {
 
         return false
     }
+
+    func cloneAsTemplate() throws -> BethinkeryAlarm {
+        if let alarm = self as? AbsoluteTimeAlarm {
+            return AbsoluteTimeAlarm(time: alarm.time, isAllDay: alarm.isAllDay)
+        }
+        if let alarm = self as? RelativeTimeAlarm {
+            return RelativeTimeAlarm(offset: alarm.offset)
+        }
+        if let alarm = self as? ProximityAlarm {
+            return ProximityAlarm(title: alarm.title, radius: alarm.radius, location: alarm.location, type: alarm.type)
+        }
+
+        throw BethinkMeError("unable to clone existing alarm, unknown type: \(String(describing: self))")
+    }
 }

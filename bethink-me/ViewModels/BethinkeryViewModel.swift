@@ -14,19 +14,28 @@ final class BethinkeryViewModel {
     }
 
     func create(from createCommand: EditBethinkery, list: BethinkeryList) throws {
-        do {
-            let reminder = EKReminder(eventStore: sharedModel.eventStore)
-            reminder.title = createCommand.title
-            reminder.isCompleted = createCommand.isCompleted
-            reminder.calendar = try list.toCalendar()
+        let reminder = EKReminder(eventStore: sharedModel.eventStore)
+        reminder.title = createCommand.title
+        reminder.isCompleted = createCommand.isCompleted
+        reminder.calendar = try list.toCalendar()
 
+        do {
             try sharedModel.eventStore.save(reminder, commit: true)
 
             let newBethinkery = try Bethinkery(reminder: reminder, list: list)
             sharedModel.modelContext.insert(newBethinkery)
             try sharedModel.saveContext()
+
+            for alarm in list.alarmTemplates {
+                try addAlarm(alarm.cloneAsTemplate(), to: newBethinkery)
+            }
+
+            try sharedModel.eventStore.save(newBethinkery.toReminder(), commit: true)
+            try sharedModel.saveContext()
+
             list.bethinkeries.insert(newBethinkery, at: 0)
             sharedModel.resetOrdinals()
+
         } catch {
             throw BethinkMeError("failed to create new Bethinkery", from: error as NSError)
         }
