@@ -57,6 +57,8 @@ struct SettingsView: View {
                                 domain: "Demozone",
                                 code: 1701,
                                 userInfo: ["key": "value", "NSLocalizedDescripton": "i made it up!"]))
+                        } retry: {
+                            print("hehehe")
                         }
                     }
                 } header: {

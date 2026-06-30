@@ -28,13 +28,13 @@ struct ListView: View {
                     onListDelete(list)
                 } label: {
                     Image(systemName: "minus.circle.fill")
+                        .accessibilityLabel(Text("Delete List"))
                 }
                 Text(list.title)
                     .font(.headline)
                     .foregroundColor(Color(hex: list.hexColor))
                     .padding(.leading, 10)
             }
-            
         } else {
             Section(content: {
                 if isAdding {
