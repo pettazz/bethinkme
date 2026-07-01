@@ -132,7 +132,9 @@ final class ListViewModel {
         }
     }
 
-    func update(_ bethinkeryList: BethinkeryList, with updateCommand: EditBethinkeryList) throws {
+    func update(_ bethinkeryList: BethinkeryList,
+                with updateCommand: EditBethinkeryList,
+                replaceBethinkeryAlarms: Bool = false) throws {
         bethinkeryList.title = updateCommand.title
         bethinkeryList.hexColor = updateCommand.hexColor
 
@@ -153,6 +155,17 @@ final class ListViewModel {
             try sharedModel.saveContext()
         } catch {
             throw BethinkMeError("failed to commit List update", from: error as NSError)
+        }
+
+        if replaceBethinkeryAlarms {
+            do {
+                for bethinkery in bethinkeryList.bethinkeries {
+                    try sharedModel.replaceAlarms(on: bethinkery, with: bethinkeryList.alarmTemplates)
+                }
+                try sharedModel.saveContext()
+            } catch {
+                throw BethinkMeError("failed to replace alarms on Bethinkery after list update", from: error as NSError)
+            }
         }
     }
 

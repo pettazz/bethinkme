@@ -14,9 +14,12 @@ struct ListDetailView: View {
     @State private var newColor: Color = Color.accentColor
     @State private var newSourceId: String = ""
 
+    @State private var isPresentingAlarmEditAlert: Bool = false
+
     var sharedModel: SharedViewModel
     var listModel: ListViewModel
     var list: BethinkeryList?
+
 
     private var isNew: Bool { list == nil }
 
@@ -75,10 +78,15 @@ struct ListDetailView: View {
                                             throw BethinkMeError("tried to create a List on a nonexistent Source")
                                         }
                                         try listModel.create(from: editListCommand, source: selectedSource!)
+                                        dismiss()
                                     } else {
-                                        try listModel.update(list!, with: editListCommand)
+                                        if !(list!.bethinkeries.isEmpty) {
+                                            isPresentingAlarmEditAlert = true
+                                        } else {
+                                            try listModel.update(list!, with: editListCommand)
+                                            dismiss()
+                                        }
                                     }
-                                    dismiss()
                                 }
                             }
                         }
@@ -89,6 +97,22 @@ struct ListDetailView: View {
                         }
                     }
                 }
+            }
+            .alert("Editing List Alarms", isPresented: $isPresentingAlarmEditAlert) {
+                Button("Replace with List alarms", role: .destructive) {
+                    withErrorReporter {
+                        try listModel.update(list!, with: editListCommand, replaceBethinkeryAlarms: true)
+                        dismiss()
+                    }
+                }
+                Button("Keep existing alarms", role: .cancel) {
+                    withErrorReporter {
+                        try listModel.update(list!, with: editListCommand)
+                        dismiss()
+                    }
+                }
+            } message: {
+                Text("This list already contains Reminders. Do you want to discard any existing alarms they have set and replace them with the alarms from this list?")
             }
             .task {
                 if isNew {
