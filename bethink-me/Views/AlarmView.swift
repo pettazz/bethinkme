@@ -2,28 +2,25 @@ import SwiftUI
 
 
 struct AlarmView: View {
-    var relativeAlarm: AbsoluteTimeAlarm?
-    var alarm: BethinkeryAlarm
-
-    var dateFormatter: DateFormatter {
+    private static let dateFormatter: DateFormatter = {
         let it = DateFormatter()
         it.timeStyle = .short
         it.dateStyle = .medium
         it.doesRelativeDateFormatting = true
 
         return it
-    }
+    }()
 
-    var allDayFormatter: DateFormatter {
+    private static let allDayFormatter: DateFormatter = {
         let it = DateFormatter()
         it.timeStyle = .none
         it.dateStyle = .medium
         it.doesRelativeDateFormatting = true
 
         return it
-    }
+    }()
 
-    var intervalFormatter: DateComponentsFormatter {
+    private static let intervalFormatter: DateComponentsFormatter = {
         let it = DateComponentsFormatter()
         it.allowedUnits = [.year, .month, .day, .hour, .minute]
         it.allowsFractionalUnits = false
@@ -31,13 +28,16 @@ struct AlarmView: View {
         it.unitsStyle = .short
 
         return it
-    }
+    }()
+
+    var relativeAlarm: AbsoluteTimeAlarm?
+    var alarm: BethinkeryAlarm
 
     var relativeDateFormatted: String {
         if relativeAlarm != nil {
             return relativeAlarm!.isAllDay
-                ? allDayFormatter.string(from: relativeAlarm!.time)
-                : dateFormatter.string(from: relativeAlarm!.time)
+                ? AlarmView.allDayFormatter.string(from: relativeAlarm!.time)
+                : AlarmView.dateFormatter.string(from: relativeAlarm!.time)
         } else {
             return "?"
         }
@@ -50,12 +50,12 @@ struct AlarmView: View {
                     Image(systemName: "calendar")
                         .font(.headline)
                         .accessibilityLabel(Text("All-day alarm"))
-                    Text(allDayFormatter.string(from: timeAlarm.time))
+                    Text(AlarmView.allDayFormatter.string(from: timeAlarm.time))
                 } else {
                     Image(systemName: "calendar.badge.clock")
                         .font(.headline)
                         .accessibilityLabel(Text("Exact time alarm"))
-                    Text(dateFormatter.string(from: timeAlarm.time))
+                    Text(AlarmView.dateFormatter.string(from: timeAlarm.time))
                 }
             } else if let timeAlarm = alarm as? RelativeTimeAlarm {
                 let relativity = timeAlarm.offset > 0 ? "after" : "before"
@@ -65,7 +65,7 @@ struct AlarmView: View {
                         Image(systemName: "alarm.fill")
                             .font(.headline)
                             .accessibilityLabel(Text("Relative time alarm"))
-                        Text((intervalFormatter.string(from: abs(timeAlarm.offset)) ?? "unknown") +
+                        Text((AlarmView.intervalFormatter.string(from: abs(timeAlarm.offset)) ?? "unknown") +
                              " \(relativity) \(relativeDateFormatted)"
                         )
                     }
