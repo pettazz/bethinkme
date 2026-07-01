@@ -102,15 +102,25 @@ final class BethinkeryViewModel {
         try sharedModel.saveContext()
     }
 
-    func moveBethinkery(_ bethinkery: Bethinkery, to: BethinkeryList) throws {
+    func moveBethinkery(_ bethinkery: Bethinkery, to list: BethinkeryList, inheritListAlarms: Bool = true) throws {
         let currentList = bethinkery.list
-        guard currentList != to else { return }
+        guard currentList != list else { return }
 
         do {
-            // TODO: ensure we strip existing list-applied rules like location/time alerts, add new ones
-            let clonedBethinkery = EditBethinkery.fromBethinkery(bethinkery)
-            try create(from: clonedBethinkery, list: to)
-            try delete(bethinkery)
+            let reminder = try bethinkery.toReminder()
+            bethinkery.list.bethinkeries.removeAll(where: { $0.id == bethinkery.id })
+
+            bethinkery.ordinal = -1
+            bethinkery.list = list
+            bethinkery.list.bethinkeries.insert(bethinkery, at: 0)
+            reminder.calendar = try list.toCalendar()
+
+            if inheritListAlarms {
+                try sharedModel.replaceAlarms(on: bethinkery, with: list.alarmTemplates)
+            }
+
+            try sharedModel.eventStore.save(reminder, commit: true)
+            try sharedModel.saveContext()
         } catch {
             throw BethinkMeError("failed to move Bethinkery", from: error as NSError)
         }

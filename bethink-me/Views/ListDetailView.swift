@@ -112,6 +112,7 @@ struct ListDetailView: View {
                     }
                 }
             } message: {
+                // swiftlint:disable:next line_length
                 Text("This list already contains Reminders. Do you want to discard any existing alarms they have set and replace them with the alarms from this list?")
             }
             .task {

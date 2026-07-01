@@ -11,7 +11,11 @@ struct ListView: View {
     @FocusState private var addInFocus: Bool
     @State private var isAdding: Bool = false
     @State private var newTitle: String = ""
-    @State private var shouldPresentEditListSheet = false
+    @State private var isPresentingEditListSheet: Bool = false
+
+    @State private var isPresentingAlarmEditAlert: Bool = false
+    @State private var movingBethinkery: Bethinkery?
+    @State private var destinationList: BethinkeryList?
 
     @Binding var selectedBethinkeryForEdit: Bethinkery?
 
@@ -100,19 +104,11 @@ struct ListView: View {
                                             Button {
                                                 withAnimation {
                                                     withErrorReporter {
-                                                        try bethinkeryModel.moveBethinkery(bethinkery, to: moveMenuList)
+                                                        try doBethinkeryMove(bethinkery, destination: moveMenuList)
                                                     }
                                                 }
                                             } label: {
-                                                HStack(spacing: 12) {
-                                                    Image(systemName: "list.bullet.circle.fill")
-                                                        .accessibilityHidden(true)
-                                                        .foregroundStyle(
-                                                                .white,
-                                                                .secondary,
-                                                                Color(hex: moveMenuList.hexColor))
-                                                    Text(moveMenuList.title)
-                                                }
+                                                moveDestinationLabel(moveMenuList)
                                             }
                                         }
                                     }
@@ -134,14 +130,14 @@ struct ListView: View {
                         .foregroundColor(Color(hex: list.hexColor))
                     Spacer()
                     Button {
-                        shouldPresentEditListSheet.toggle()
+                        isPresentingEditListSheet.toggle()
                     } label: {
                         Image(systemName: "info.circle.fill")
                             .font(.title)
                             .foregroundColor(Color(hex: list.hexColor))
                             .accessibilityLabel(Text("Edit the \(list.title) list"))
                     }
-                    .sheet(isPresented: $shouldPresentEditListSheet, content: {
+                    .sheet(isPresented: $isPresentingEditListSheet, content: {
                         ListDetailView(sharedModel: sharedModel, listModel: listModel, list: list)
                             .textCase(.none)
                     })
@@ -162,6 +158,36 @@ struct ListView: View {
                     closeAdding()
                 }
             }
+            .alert("Moving List", isPresented: $isPresentingAlarmEditAlert) {
+                Button("Replace with List alarms", role: .destructive) {
+                    withErrorReporter {
+                        guard movingBethinkery != nil && destinationList != nil else { return }
+                        try bethinkeryModel.moveBethinkery(movingBethinkery!,
+                                                           to: destinationList!,
+                                                           inheritListAlarms: true)
+                    }
+                }
+                Button("Keep existing alarms", role: .cancel) {
+                    withErrorReporter {
+                        guard movingBethinkery != nil && destinationList != nil else { return }
+                        try bethinkeryModel.moveBethinkery(movingBethinkery!,
+                                                           to: destinationList!,
+                                                           inheritListAlarms: false)
+                    }
+                }
+            } message: {
+                // swiftlint:disable:next line_length
+                Text("This Reminder has alarms and is being moved to a List with different alarms. Do you want to discard the existing alarms and replace them with the alarms from the new list?")
+            }
+        }
+    }
+    @ViewBuilder
+    private func moveDestinationLabel(_ destination: BethinkeryList) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: "list.bullet.circle.fill")
+                .accessibilityHidden(true)
+                .foregroundStyle(.white, .secondary, Color(hex: destination.hexColor))
+            Text(destination.title)
         }
     }
 
@@ -181,5 +207,22 @@ struct ListView: View {
         newTitle = ""
         isAdding = false
         addInFocus = false
+    }
+
+    private func doBethinkeryMove(_ bethinkery: Bethinkery, destination: BethinkeryList) throws {
+        if bethinkery.hasAlarms {
+            if destination.hasAlarms {
+                isPresentingAlarmEditAlert = true
+                movingBethinkery = bethinkery
+                destinationList = destination
+            } else {
+                // retain existing alarms and don't inherit []
+                try bethinkeryModel.moveBethinkery(bethinkery,
+                                                   to: destination,
+                                                   inheritListAlarms: false)
+            }
+        } else {
+            try bethinkeryModel.moveBethinkery(bethinkery, to: destination)
+        }
     }
 }
