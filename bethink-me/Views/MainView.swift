@@ -30,11 +30,7 @@ struct MainView: View {
     @State private var selectedListForDelete: BethinkeryList?
 
     var body: some View {
-        if let activeError = errorState.currentError {
-            InvalidStateView(icon: "exclamationmark.triangle.fill",
-                             title: "We've run into an error",
-                             message: activeError.error.message)
-        } else {
+        ZStack {
             NavigationStack {
                 ZStack {
                     VStack {
@@ -191,7 +187,17 @@ struct MainView: View {
                     .id(bethinkery.id)
                 }
             }
+            .disabled(errorState.currentError != nil)
+
+            if let activeError = errorState.currentError {
+                InvalidStateView(icon: "exclamationmark.triangle.fill",
+                                 title: "We've run into an error",
+                                 message: activeError.error.message)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color(.systemBackground))
+            }
         }
+
     }
 
     private func setupVMs() async throws {
