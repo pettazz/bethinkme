@@ -159,7 +159,7 @@ final class ListViewModel {
 
         if replaceBethinkeryAlarms {
             do {
-                for bethinkery in bethinkeryList.bethinkeries {
+                for bethinkery in bethinkeryList.liveBethinkeries {
                     try sharedModel.replaceAlarms(on: bethinkery, with: bethinkeryList.alarmTemplates)
                 }
                 try sharedModel.saveContext()

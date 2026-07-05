@@ -19,6 +19,10 @@ final class BethinkeryList: Equatable, Identifiable {
     var hasAlarms: Bool { return !self.alarmTemplates.isEmpty }
     var hasCalendar: Bool { return self.calendar != nil }
 
+    var liveBethinkeries: [Bethinkery] {
+        bethinkeries.filter({ !$0.isCompleted })
+    }
+
 
     init(id: String, title: String, hexColor: String, calendar: EKCalendar) {
         self.id = id

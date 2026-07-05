@@ -80,7 +80,7 @@ struct ListDetailView: View {
                                         try listModel.create(from: editListCommand, source: selectedSource!)
                                         dismiss()
                                     } else {
-                                        if !(list!.bethinkeries.isEmpty) {
+                                        if !(list!.liveBethinkeries.isEmpty) {
                                             isPresentingAlarmEditAlert = true
                                         } else {
                                             try listModel.update(list!, with: editListCommand)
