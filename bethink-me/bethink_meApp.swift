@@ -20,4 +20,9 @@ struct bethink_meApp: App { // swiftlint:disable:this type_name
             BethinkeryList.self
         ])
     }
+
+
+    init() {
+        UserDefaults.registerSettingsDefaults()
+    }
 }
