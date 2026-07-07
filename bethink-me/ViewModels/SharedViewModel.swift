@@ -35,7 +35,7 @@ final class SharedViewModel {
             for await _ in NotificationCenter.default.notifications(
                 named: .EKEventStoreChanged,
                 object: nil) {
-                await self.syncCoordinator.requestSync(reason: .EKChanged)
+                self.syncCoordinator.requestSync(reason: .EKChanged)
             }
         }
     }

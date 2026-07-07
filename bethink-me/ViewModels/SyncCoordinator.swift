@@ -15,76 +15,70 @@ final class SyncCoordinator {
     private var lastSync: Date?
     private var lastChange: Date?
 
-    private var syncInProgress: Bool = false
-    private var pendingSync: Bool = false
-    private var pendingReason: SyncReason = .EKChanged
+    private let stream: AsyncStream<SyncReason>
+    private let continuation: AsyncStream<SyncReason>.Continuation
+    private var consumer: Task<Void, Never>?
 
-    private var debouncer: Task<Void, Never>?
 
-    var shouldPerformForegroundedSync: Bool {
-        if lastSync != nil && Date.now.timeIntervalSince(lastSync!) < kForegroundedSyncGracePeriodSeconds {
-            return false
-        }
-        return true
+    init() {
+        (stream, continuation) = AsyncStream.makeStream(of: SyncReason.self,
+                                                        bufferingPolicy: .bufferingNewest(1))
     }
 
+    func start() {
+        guard consumer == nil else { return }
+        consumer = Task { [weak self, stream] in
+            for await reason in stream {
+                guard let self else { return }
+                if reason != .initialized {
+                    try? await Task.sleep(for: .milliseconds(kSyncRequestDebounceMilliseconds))
+                    if Task.isCancelled {
+                        break
+                    }
+                }
+                await self.performSync(reason: reason)
+            }
+        }
+    }
 
     func iJustMadeAChange() {
         lastChange = .now
     }
 
-    func requestSync(reason: SyncReason) async {
-        if reason == .initialized {
-            do {
-                try await sync(reason: reason)
-            } catch {
-                ErrorReporter().report(error, retry: {
-                    try await self.sync(reason: reason)
-                })
-            }
-        } else {
-            debouncer?.cancel()
-            debouncer = Task {
-                try? await Task.sleep(for: .milliseconds(kSyncRequestDebounceMilliseconds))
-                guard !Task.isCancelled else { return }
+    func requestSync(reason: SyncReason) {
+        continuation.yield(reason)
+    }
 
-                do {
-                    try await sync(reason: reason)
-                } catch {
-                    ErrorReporter().report(error, retry: {
-                        try await self.sync(reason: reason)
-                    })
+    private func performSync(reason: SyncReason) async {
+        guard let synchronizer else { return }
+        switch reason {
+            case .initialized:
+                break // only once!
+            case .foregrounded:
+                if let lastSync,
+                   Date.now.timeIntervalSince(lastSync) < kForegroundedSyncGracePeriodSeconds {
+                    return
                 }
-            }
+                fallthrough
+            case .EKChanged:
+                if let lastChange,
+                   Date.now.timeIntervalSince(lastChange) < kChangeGracePeriodSeconds {
+                    return
+                }
+        }
+
+        do {
+            try await synchronizer()
+            lastSync = Date.now
+            hasEverSynced = true
+        } catch {
+            ErrorReporter().report(error, retry: { [weak self] in
+                await self?.performSync(reason: reason)
+            })
         }
     }
 
-    private func sync(reason: SyncReason) async throws {
-        guard synchronizer != nil else { return }
-
-        if syncInProgress {
-            pendingSync = true
-            pendingReason = reason
-            return
-        }
-
-        if reason != .initialized,
-           let lastChange,
-           Date.now.timeIntervalSince(lastChange) < kChangeGracePeriodSeconds {
-            return
-        }
-
-        syncInProgress = true
-        defer {
-            syncInProgress = false
-            if pendingSync {
-                pendingSync = false
-                Task { try await sync(reason: pendingReason) }
-            }
-        }
-
-        try await synchronizer!()
-        lastSync = Date.now
-        hasEverSynced = true
+    deinit {
+        continuation.finish()
     }
 }

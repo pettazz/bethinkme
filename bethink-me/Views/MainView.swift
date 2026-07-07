@@ -173,16 +173,18 @@ struct MainView: View {
             }
             .task(id: scenePhase) {
                 guard scenePhase == .active else { return }
-                try? await setupVMs()
-                if sharedModel!.hasAccess {
-                    let coordinator = sharedModel!.syncCoordinator
-                    if !coordinator.hasEverSynced {
-                        Task {
-                            await coordinator.requestSync(reason: .initialized)
-                        }
-                    } else if coordinator.shouldPerformForegroundedSync {
-                        await coordinator.requestSync(reason: .foregrounded)
-                    }
+                do {
+                    try await setupVMs()
+                } catch {
+                    ErrorReporter().report(error, retry: {
+                        try await setupVMs()
+                    })
+                }
+
+                guard let sharedModel else { return }
+                if sharedModel.hasAccess {
+                    let coordinator = sharedModel.syncCoordinator
+                    coordinator.requestSync(reason: coordinator.hasEverSynced ? .foregrounded : .initialized)
                 }
             }
             .sheet(item: $selectedBethinkeryForEdit) { bethinkery in
@@ -218,19 +220,24 @@ struct MainView: View {
         if sharedModel == nil {
             sharedModel = await SharedViewModel(modelContext: modelContext)
         }
+        guard let sharedModel else { throw BethinkMeError("failed to set up Shared ViewModel") }
         if listModel == nil {
-            listModel = ListViewModel(sharedModel: sharedModel!)
+            listModel = ListViewModel(sharedModel: sharedModel)
         }
+        guard let listModel else { throw BethinkMeError("failed to set up List ViewModel") }
         if bethinkeryModel == nil {
-            bethinkeryModel = BethinkeryViewModel(sharedModel: sharedModel!)
+            bethinkeryModel = BethinkeryViewModel(sharedModel: sharedModel)
         }
-        if sharedModel!.syncCoordinator.synchronizer == nil {
-            sharedModel!.syncCoordinator.synchronizer = { [listModel = listModel!] in
+        guard let bethinkeryModel else { throw BethinkMeError("failed to set up Bethinkery ViewModel") }
+
+        if sharedModel.syncCoordinator.synchronizer == nil {
+            sharedModel.syncCoordinator.synchronizer = {
                 listsLoading = true
                 try await listModel.loadLists()
                 listsLoading = false
             }
-            sharedModel!.startEventStoreObserver()
+            sharedModel.syncCoordinator.start()
+            sharedModel.startEventStoreObserver()
         }
     }
 }
