@@ -22,9 +22,9 @@ final class Bethinkery: Equatable, Identifiable {
     var hasUrl: Bool { return self.url != nil }
     var hasReminder: Bool { return self.reminder != nil }
     var hasAlarms: Bool { return !self.alarms.isEmpty }
-    var hasAbsoluteTimeAlarm: Bool { return self.alarms.contains(where: { $0 is AbsoluteTimeAlarm }) }
-    var hasRelativeTimeAlarm: Bool { return self.alarms.contains(where: { $0 is RelativeTimeAlarm }) }
-    var hasProximityAlarm: Bool { return self.alarms.contains(where: { $0 is ProximityAlarm }) }
+    var hasAbsoluteTimeAlarm: Bool { return self.alarms.contains(where: { $0.kind == .absoluteTimeAlarm }) }
+    var hasRelativeTimeAlarm: Bool { return self.alarms.contains(where: { $0.kind == .relativeTimeAlarm }) }
+    var hasProximityAlarm: Bool { return self.alarms.contains(where: { $0.kind == .proximityAlarm }) }
 
 
     init(id: String,
@@ -83,11 +83,14 @@ final class Bethinkery: Equatable, Identifiable {
         self.reminder!.notes = self.notes
         self.reminder!.url = self.url
         if let implicitDueDate = self.alarms.earliestAlarm {
+            guard let implicitTime = implicitDueDate.time else {
+                throw BethinkMeError("Bethinkery with implicit Due Date has no Time value")
+            }
             let dateComps = Calendar.current.dateComponents(
                 implicitDueDate.isAllDay
                     ? [.day, .month, .year]
                     : [.day, .month, .year, .hour, .minute],
-                from: self.alarms.earliestAlarm!.time
+                from: implicitTime
             )
             self.reminder!.dueDateComponents = dateComps
             self.reminder!.startDateComponents = dateComps
@@ -107,63 +110,43 @@ final class Bethinkery: Equatable, Identifiable {
                     existingAlarm.baseAlarm = alarm
                 } else {
                     // this is new, make a whole new instance
-                    if alarm.absoluteDate != nil {
-                        do {
-                            try self.alarms.append(AbsoluteTimeAlarm.fromEKAlarm(alarm))
-                        } catch {
-                            throw BethinkMeError("failed to coerce EKAlarm to BethinkeryAbsoluteTimeAlarm",
-                                                 from: error as NSError)
+                    do {
+                        if let newAlarm = try BethinkeryAlarm.fromEKAlarm(alarm) {
+                            self.alarms.append(newAlarm)
                         }
-                    } else if alarm.relativeOffset != 0 {
-                        do {
-                            try self.alarms.append(RelativeTimeAlarm.fromEKAlarm(alarm))
-                        } catch {
-                            throw BethinkMeError("failed to coerce EKAlarm to BethinkeryRelativeTimeAlarm",
-                                                 from: error as NSError)
-                        }
-                    } else if alarm.structuredLocation != nil {
-                        do {
-                            try self.alarms.append(ProximityAlarm.fromEKAlarm(alarm))
-                        } catch {
-                            throw BethinkMeError("failed to coerce EKAlarm to BethinkeryProximityAlarm",
-                                                 from: error as NSError)
-                        }
+                    } catch {
+                        throw BethinkMeError("failed to coerce EKAlarm to BethinkeryAlarm",
+                                             from: error as NSError)
                     }
                 }
             }
         }
 
-        var deleteables: [Int] = []
-        for (idx, alarm) in self.alarms.enumerated() where alarm.baseAlarm == nil {
-            // we loaded this from storage but didn't find any current EKAlarms to attach
-            // so we assume it's no longer valid
+        let deleteables = self.alarms.filter({ $0.baseAlarm == nil })
+        self.alarms.removeAll(where: { $0.baseAlarm == nil })
+        for alarm in deleteables {
             modelContext?.delete(alarm)
-            deleteables.append(idx)
         }
-        self.alarms.remove(atOffsets: IndexSet(deleteables))
 
         self.synthesizeDueDateAlarm(from: reminder)
     }
 
     private func synthesizeDueDateAlarm(from reminder: EKReminder) {
-        if reminder.dueDateComponents != nil {
-            let due = reminder.dueDateComponents!
-            if !(self.alarms.contains { alarm in
-                if let timeAlarm = alarm as? AbsoluteTimeAlarm {
-                    let alarmComps = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute],
-                                                                     from: timeAlarm.time)
-                    return due.year == alarmComps.year
-                        && due.month == alarmComps.month
-                        && due.day == alarmComps.day
-                } else {
-                    return false
-                }
-            }) {
-                let ddDate = Calendar.current.date(from: reminder.dueDateComponents!)
-                if ddDate != nil {
-                    let ddAlarm = AbsoluteTimeAlarm(time: ddDate!, isAllDay: true)
-                    self.alarms.append(ddAlarm)
-                }
+        guard let due = reminder.dueDateComponents else { return }
+
+        if !(self.alarms.contains { alarm in
+            guard alarm.kind == .absoluteTimeAlarm, let alarmTime = alarm.time else { return false }
+
+            let alarmComps = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute],
+                                                             from: alarmTime)
+            return due.year == alarmComps.year
+                && due.month == alarmComps.month
+                && due.day == alarmComps.day
+
+        }) {
+            if let ddDate = Calendar.current.date(from: due) {
+                let ddAlarm: BethinkeryAlarm = .absoluteTime(time: ddDate, isAllDay: true)
+                self.alarms.append(ddAlarm)
             }
         }
     }

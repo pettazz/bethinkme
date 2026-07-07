@@ -1,10 +1,6 @@
 import Foundation
 
 
-private let kChangeGracePeriodSeconds = 3.0
-private let kForegroundedSyncGracePeriodSeconds = 60.0
-private let kSyncRequestDebounceMilliseconds = 300
-
 enum SyncReason {
     case initialized
     case EKChanged

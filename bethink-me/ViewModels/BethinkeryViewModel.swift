@@ -26,8 +26,8 @@ final class BethinkeryViewModel {
             sharedModel.modelContext.insert(newBethinkery)
             try sharedModel.saveContext()
 
-            for alarm in list.alarmTemplates {
-                try sharedModel.addAlarm(alarm.cloneAsTemplate(), to: newBethinkery)
+            for alarm in list.alarmTemplates.compactMap({ $0.toTemplate(newInstance: true) }) {
+                try sharedModel.addAlarm(alarm, to: newBethinkery)
             }
 
             try sharedModel.eventStore.save(newBethinkery.toReminder(), commit: true)
@@ -116,7 +116,9 @@ final class BethinkeryViewModel {
             reminder.calendar = try list.toCalendar()
 
             if inheritListAlarms {
-                try sharedModel.replaceAlarms(on: bethinkery, with: list.alarmTemplates)
+                try sharedModel.replaceAlarms(on: bethinkery,
+                                              with: list.alarmTemplates.compactMap(
+                                                { $0.toTemplate(newInstance: true) }))
             }
 
             try sharedModel.eventStore.save(reminder, commit: true)

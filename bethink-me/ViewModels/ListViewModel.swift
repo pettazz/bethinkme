@@ -122,7 +122,7 @@ final class ListViewModel {
             try sharedModel.eventStore.saveCalendar(newCalendar, commit: true)
 
             let newBethinkeryList = BethinkeryList(calendar: newCalendar)
-            newBethinkeryList.alarmTemplates = createCommand.alarmTemplates
+            newBethinkeryList.alarmTemplates = createCommand.alarmTemplates.map({ $0.toModel() })
 
             sharedModel.modelContext.insert(newBethinkeryList)
             sharedModel.resetOrdinals()
@@ -145,9 +145,10 @@ final class ListViewModel {
             bethinkeryList.alarmTemplates.removeAll(where: { $0.id == alarm.id })
             sharedModel.modelContext.delete(alarm)
         }
-        for alarm in updateCommand.alarmTemplates where !existingAlarmIDs.contains(alarm.id) {
-            bethinkeryList.alarmTemplates.append(alarm)
-            sharedModel.modelContext.insert(alarm)
+        for template in updateCommand.alarmTemplates where !existingAlarmIDs.contains(template.id) {
+            let model = template.toModel()
+            sharedModel.modelContext.insert(model)
+            bethinkeryList.alarmTemplates.append(model)
         }
 
         do {
@@ -159,8 +160,12 @@ final class ListViewModel {
 
         if replaceBethinkeryAlarms {
             do {
+                try sharedModel.refreshEK(for: bethinkeryList.liveBethinkeries)
                 for bethinkery in bethinkeryList.liveBethinkeries {
-                    try sharedModel.replaceAlarms(on: bethinkery, with: bethinkeryList.alarmTemplates)
+                    try sharedModel
+                        .replaceAlarms(on: bethinkery,
+                                       with: bethinkeryList.alarmTemplates.compactMap(
+                                        { $0.toTemplate(newInstance: true) }))
                 }
                 try sharedModel.saveContext()
             } catch {

@@ -75,6 +75,13 @@ final class SharedViewModel {
         unfilteredBethinkeriesCache = unfilteredBethinkeriesCacheUpdate
     }
 
+    func refreshEK(for bethinkeries: [Bethinkery]) throws {
+        for bethinkery in bethinkeries {
+            guard let reminder = eventStore.calendarItem(withIdentifier: bethinkery.id) as? EKReminder else { continue }
+            try bethinkery.load(from: reminder)
+        }
+    }
+
     func reload() {
         do {
             try fetchAll()
@@ -91,32 +98,33 @@ final class SharedViewModel {
         reload()
     }
 
-    func addAlarm(_ newAlarm: BethinkeryAlarm, to bethinkery: Bethinkery) throws {
-        guard newAlarm.baseAlarm == nil else {
-            throw BethinkMeError("tried to add a new alarm that was already associated with an EKAlarm")
-        }
+    func addAlarm(_ template: any BethinkeryAlarmTemplate, to bethinkery: Bethinkery) throws {
+        let newAlarm = template.toModel()
         let newBaseAlarm: EKAlarm?
-        if let newTimeAlarm = newAlarm as? AbsoluteTimeAlarm {
-            if !newTimeAlarm.isAllDay {
-                newBaseAlarm = EKAlarm(absoluteDate: newTimeAlarm.time)
-            } else {
-                newBaseAlarm = nil
-            }
-        } else if let newTimeAlarm = newAlarm as? RelativeTimeAlarm {
-            newBaseAlarm = EKAlarm(relativeOffset: newTimeAlarm.offset)
-        } else if let newProxAlarm = newAlarm as? ProximityAlarm {
-            let location = EKStructuredLocation(title: newProxAlarm.title)
-            location.geoLocation = CLLocation(latitude: newProxAlarm.location.lat, longitude: newProxAlarm.location.lng)
-            location.radius = newProxAlarm.radius
-            newBaseAlarm = EKAlarm(relativeOffset: 0)
-            newBaseAlarm!.structuredLocation = location
-            newBaseAlarm!.proximity = switch newProxAlarm.type {
-                case .enter: .enter
-                case .leave: .leave
-                case .nothing: .none
-            }
-        } else {
-            throw BethinkMeError("unable to coerce plain BethinkeryAlarm to any known type when saving: \(newAlarm)")
+
+        switch newAlarm.kind {
+            case .absoluteTimeAlarm:
+                if !newAlarm.isAllDay {
+                    guard let alarmTime = newAlarm.time else {
+                        throw BethinkMeError("tried to create absoluteTime BethinkeryAlarm from template missing time")
+                    }
+                    newBaseAlarm = EKAlarm(absoluteDate: alarmTime)
+                } else {
+                    newBaseAlarm = nil
+                }
+            case .relativeTimeAlarm:
+                newBaseAlarm = EKAlarm(relativeOffset: newAlarm.offset)
+            case .proximityAlarm:
+                let location = EKStructuredLocation(title: newAlarm.title)
+                location.geoLocation = CLLocation(latitude: newAlarm.location.lat, longitude: newAlarm.location.lng)
+                location.radius = newAlarm.radius
+                newBaseAlarm = EKAlarm(relativeOffset: 0)
+                newBaseAlarm!.structuredLocation = location
+                newBaseAlarm!.proximity = switch newAlarm.proximityType {
+                    case .enter: .enter
+                    case .leave: .leave
+                    case .nothing: .none
+                }
         }
 
         do {
@@ -137,23 +145,27 @@ final class SharedViewModel {
             bethinkery.alarms.removeAll(where: { $0.id == alarm.id })
             modelContext.delete(alarm)
 
-            let reminder = try bethinkery.toReminder()
-            if alarm.baseAlarm != nil {
-                reminder.removeAlarm(alarm.baseAlarm!)
+            if !(alarm.kind == .absoluteTimeAlarm && alarm.isAllDay) {
+                let reminder = try bethinkery.toReminder()
+                if let ekAlarm = alarm.baseAlarm ?? reminder.alarms?.first(where: { alarm == $0 }) {
+                    reminder.removeAlarm(ekAlarm)
+                }
             }
         } catch {
             throw BethinkMeError("failed to delete alarm", from: error as NSError)
         }
     }
 
-    func replaceAlarms(on bethinkery: Bethinkery, with alarms: [BethinkeryAlarm]) throws {
-        for oldAlarm in bethinkery.alarms {
+    func replaceAlarms(on bethinkery: Bethinkery, with templates: [any BethinkeryAlarmTemplate]) throws {
+        let oldAlarms = bethinkery.alarms
+
+        for oldAlarm in oldAlarms {
             try removeAlarm(oldAlarm, from: bethinkery)
         }
-
-        for newAlarm in alarms {
-            try addAlarm(try newAlarm.cloneAsTemplate(), to: bethinkery)
+        for newAlarm in templates {
+            try addAlarm(newAlarm, to: bethinkery)
         }
+
         do {
             try eventStore.save(bethinkery.toReminder(), commit: true)
         } catch {

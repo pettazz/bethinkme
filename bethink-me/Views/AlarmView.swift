@@ -30,8 +30,8 @@ struct AlarmView: View {
         return it
     }()
 
-    var relativeAlarm: AbsoluteTimeAlarm?
-    var alarm: BethinkeryAlarm
+    var relativeAlarm: AbsoluteTimeAlarmTemplate?
+    var alarm: any BethinkeryAlarmTemplate
 
     var relativeDateFormatted: String {
         if relativeAlarm != nil {
@@ -45,7 +45,7 @@ struct AlarmView: View {
 
     var body: some View {
         HStack {
-            if let timeAlarm = alarm as? AbsoluteTimeAlarm {
+            if let timeAlarm = alarm as? AbsoluteTimeAlarmTemplate {
                 if timeAlarm.isAllDay {
                     Image(systemName: "calendar")
                         .font(.headline)
@@ -57,7 +57,7 @@ struct AlarmView: View {
                         .accessibilityLabel(Text("Exact time alarm"))
                     Text(AlarmView.dateFormatter.string(from: timeAlarm.time))
                 }
-            } else if let timeAlarm = alarm as? RelativeTimeAlarm {
+            } else if let timeAlarm = alarm as? RelativeTimeAlarmTemplate {
                 let relativity = timeAlarm.offset > 0 ? "after" : "before"
 
                 VStack(alignment: .leading) {
@@ -80,11 +80,11 @@ struct AlarmView: View {
                         }
                     }
                 }
-            } else if let proxAlarm = alarm as? ProximityAlarm {
+            } else if let proxAlarm = alarm as? ProximityAlarmTemplate {
                 Image(systemName: "location.circle.fill")
                     .font(.headline)
                     .accessibilityLabel(Text("Location alarm"))
-                Text("\(proxAlarm.type.title) \(proxAlarm.title)")
+                Text("\(proxAlarm.proximityType.title) \(proxAlarm.title)")
             }
         }
     }

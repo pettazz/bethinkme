@@ -3,7 +3,7 @@ import SwiftUI
 
 struct AlarmsEditView: View {
     @State private var newAlarmFormVisible: Bool = false
-    @State private var newAlarmType: AvailableAlarmTypes = .absoluteTimeAlarm
+    @State private var newAlarmType: BethinkeryAlarmKind = .absoluteTimeAlarm
 
     @State private var newAlarmTime: Date = Date.now
     @State private var newAlarmIsAllDay: Bool = false
@@ -19,20 +19,20 @@ struct AlarmsEditView: View {
     @State private var newAlarmLocationLng: Double?
     @State private var newAlarmProxType: AlarmProximityType = .enter
 
-    @State var alarmList: [BethinkeryAlarm]
+    @State var alarmList: [any BethinkeryAlarmTemplate]
     let scrollProxy: ScrollViewProxy?
 
-    let onAdd: (BethinkeryAlarm) -> Void
-    let onDelete: (BethinkeryAlarm) -> Void
+    let onAdd: (any BethinkeryAlarmTemplate) -> Void
+    let onDelete: (any BethinkeryAlarmTemplate) -> Void
 
     var body: some View {
         Section {
             if !alarmList.isEmpty {
-                ForEach(alarmList.sortedAlarms) { alarm in
+                ForEach(alarmList.sortedAlarms, id: \.id) { alarm in
                     AlarmView(relativeAlarm: alarmList.earliestAlarm, alarm: alarm)
                         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                             Button(role: .destructive) {
-                                alarmList.removeAll(where: { $0 == alarm })
+                                alarmList.removeAll(where: { $0.id == alarm.id })
                                 onDelete(alarm)
                             } label: {
                                 Label("Delete", systemImage: "trash")
@@ -43,8 +43,8 @@ struct AlarmsEditView: View {
 
             if newAlarmFormVisible {
                 Picker("Type", selection: $newAlarmType) {
-                    ForEach(AvailableAlarmTypes.allCases, id: \.self) { alarmType in
-                        Text(alarmType.rawValue).tag(alarmType)
+                    ForEach(BethinkeryAlarmKind.allCases, id: \.self) { alarmType in
+                        Text(alarmType.title).tag(alarmType)
                     }
                 }
                 .id("newAlarmForm")
@@ -78,7 +78,7 @@ struct AlarmsEditView: View {
                             let offset = newAlarmOffsetAmount *
                             newAlarmOffsetUnit.rawValue *
                             TimeInterval(newAlarmOffsetDirection.rawValue)
-                            let newAlarm = RelativeTimeAlarm(offset: offset)
+                            let newAlarm = RelativeTimeAlarmTemplate(id: nil, offset: offset)
 
                             alarmList.append(newAlarm)
                             onAdd(newAlarm)
@@ -100,7 +100,8 @@ struct AlarmsEditView: View {
                         }
                         Toggle("All day", isOn: $newAlarmIsAllDay)
                         Button("Save") {
-                            let newAlarm = AbsoluteTimeAlarm(
+                            let newAlarm = AbsoluteTimeAlarmTemplate(
+                                id: nil,
                                 time: newAlarmTime,
                                 isAllDay: newAlarmIsAllDay)
 
@@ -145,11 +146,13 @@ struct AlarmsEditView: View {
                                     && newAlarmLocationLat != nil
                                     && newAlarmLocationLng != nil else { return }
                             let titleCleaned = newAlarmTitle!.trimmingCharacters(in: .whitespaces)
-                            let newAlarm = ProximityAlarm(
+                            let newAlarm = ProximityAlarmTemplate(
+                                id: nil,
                                 title: titleCleaned.isEmpty ? newAlarmAddress! : titleCleaned,
                                 radius: newAlarmRadius!,
-                                location: LatLng(lat: newAlarmLocationLat!, lng: newAlarmLocationLng!),
-                                type: newAlarmProxType
+                                locationLat: newAlarmLocationLat!,
+                                locationLng: newAlarmLocationLng!,
+                                proximityType: newAlarmProxType
                             )
 
                             alarmList.append(newAlarm)

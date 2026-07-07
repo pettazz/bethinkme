@@ -9,11 +9,11 @@ import SwiftUI
 class EditBethinkeryList: ObservableObject {
     @Published var title: String
     @Published var hexColor: String
-    @Published var alarmTemplates: [BethinkeryAlarm] = []
+    @Published var alarmTemplates: [any BethinkeryAlarmTemplate] = []
 
     init(title: String = "",
          hexColor: String = "",
-         alarmTemplates: [BethinkeryAlarm] = []) {
+         alarmTemplates: [any BethinkeryAlarmTemplate] = []) {
         self.title = title
         self.hexColor = hexColor
         self.alarmTemplates = alarmTemplates
@@ -23,7 +23,7 @@ class EditBethinkeryList: ObservableObject {
         return EditBethinkeryList(
             title: bethinkeryList.title,
             hexColor: bethinkeryList.hexColor,
-            alarmTemplates: bethinkeryList.alarmTemplates)
+            alarmTemplates: bethinkeryList.alarmTemplates.compactMap({ $0.toTemplate() }))
     }
 }
 
@@ -33,7 +33,7 @@ class EditBethinkery: ObservableObject {
     @Published var freshlyCompleted: Bool = false
     @Published var notesText: String = ""
     @Published var urlText: String = ""
-    @Published var alarms: [BethinkeryAlarm] = []
+    @Published var alarms: [any BethinkeryAlarmTemplate] = []
 
     var notes: String? {
         notesText.isEmpty ? nil : notesText
@@ -48,7 +48,7 @@ class EditBethinkery: ObservableObject {
          freshlyCompleted: Bool = false,
          notesText: String = "",
          urlText: String = "",
-         alarms: [BethinkeryAlarm] = []) {
+         alarms: [any BethinkeryAlarmTemplate] = []) {
         self.title = title
         self.isCompleted = isCompleted
         self.freshlyCompleted = freshlyCompleted
@@ -64,6 +64,6 @@ class EditBethinkery: ObservableObject {
             freshlyCompleted: bethinkery.freshlyCompleted,
             notesText: bethinkery.notes ?? "",
             urlText: bethinkery.url?.absoluteString ?? "",
-            alarms: bethinkery.alarms)
+            alarms: bethinkery.alarms.compactMap({ $0.toTemplate() }))
     }
 }

@@ -19,10 +19,21 @@ enum AlarmProximityType: Int, Codable, CaseIterable {
     }
 }
 
-enum AvailableAlarmTypes: String, CaseIterable {
-    case absoluteTimeAlarm = "Exact Time"
-    case relativeTimeAlarm = "Relative Time"
-    case proximityAlarm = "Location"
+enum BethinkeryAlarmKind: Int, Codable, CaseIterable {
+    case absoluteTimeAlarm = 1
+    case relativeTimeAlarm = 2
+    case proximityAlarm = 3
+
+    var title: String {
+        switch self {
+            case .absoluteTimeAlarm:
+                return "Exact Time"
+            case .relativeTimeAlarm:
+                return "Relative Time"
+            case .proximityAlarm:
+                return "Location"
+        }
+    }
 }
 
 enum Env: String {
