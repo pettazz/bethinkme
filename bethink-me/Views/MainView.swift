@@ -82,6 +82,7 @@ struct MainView: View {
                                     }
                                     .sheet(isPresented: $shouldPresentNewListSheet, content: {
                                         ListDetailView(sharedModel: sharedModel!, listModel: listModel!)
+                                            .textCase(.none)
                                     })
                                     .disabled(listsLoading)
                                 }
@@ -128,8 +129,14 @@ struct MainView: View {
                         if showDelayedSpinner {
                             Color.black.opacity(0.3)
                                 .ignoresSafeArea()
-                            LoadingSpinnerView()
-                                .glassEffect(in: .rect(cornerRadius: 16.0))
+                            if #available(iOS 26.0, *) {
+                                LoadingSpinnerView()
+                                    .glassEffect(in: .rect(cornerRadius: 16.0))
+                            } else {
+                                LoadingSpinnerView()
+                                    .background(RoundedRectangle(cornerRadius: 16.0)
+                                        .fill(Color.white))
+                            }
                         }
                     }
                     .animation(.snappy, value: showDelayedSpinner)
