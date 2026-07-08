@@ -221,8 +221,7 @@ struct MainView: View {
         .onChange(of: maxCompletedAgeDaysSetting) { _, _ in
             Task {
                 guard let sharedModel else { return }
-                guard sharedModel.syncCoordinator.synchronizer != nil else { return }
-                try await sharedModel.syncCoordinator.synchronizer!()
+                sharedModel.syncCoordinator.requestSync(reason: .EKChanged)
             }
         }
 
