@@ -75,9 +75,9 @@ struct AlarmsEditView: View {
                             .pickerStyle(.wheel)
                         }
                         Button("Save") {
-                            let offset = newAlarmOffsetAmount *
-                            newAlarmOffsetUnit.rawValue *
-                            TimeInterval(newAlarmOffsetDirection.rawValue)
+                            let offset: TimeInterval = newAlarmOffsetAmount *
+                                newAlarmOffsetUnit.rawValue *
+                                TimeInterval(newAlarmOffsetDirection.rawValue)
                             let newAlarm = RelativeTimeAlarmTemplate(id: nil, offset: offset)
 
                             alarmList.append(newAlarm)
@@ -155,7 +155,7 @@ struct AlarmsEditView: View {
                                 newAlarmFormVisible.toggle()
                             }
                         }
-                        .disabled(!((newAlarmTitle != nil || newAlarmAddress != nil)
+                        .disabled(!(newAlarmTitle != nil
                                     && newAlarmRadius != nil
                                     && newAlarmLocationLat != nil
                                     && newAlarmLocationLng != nil))
