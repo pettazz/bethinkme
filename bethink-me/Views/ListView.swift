@@ -104,7 +104,7 @@ struct ListView: View {
                                             Button {
                                                 withAnimation {
                                                     withErrorReporter {
-                                                        try doBethinkeryMove(bethinkery, destination: moveMenuList)
+                                                        try requestBethinkeryMove(bethinkery, destination: moveMenuList)
                                                     }
                                                 }
                                             } label: {
@@ -161,19 +161,17 @@ struct ListView: View {
             .alert("Moving List", isPresented: $isPresentingAlarmEditAlert) {
                 Button("Replace with List alarms", role: .destructive) {
                     withErrorReporter {
-                        guard let movingBethinkery, let destinationList else { return }
-                        try bethinkeryModel.moveBethinkery(movingBethinkery,
-                                                           to: destinationList,
-                                                           inheritListAlarms: true)
+                        try doBethinkeryMove(inheritListAlarms: false)
                     }
+                    movingBethinkery = nil
+                    destinationList = nil
                 }
                 Button("Keep existing alarms", role: .cancel) {
                     withErrorReporter {
-                        guard let movingBethinkery, let destinationList else { return }
-                        try bethinkeryModel.moveBethinkery(movingBethinkery,
-                                                           to: destinationList,
-                                                           inheritListAlarms: false)
+                        try doBethinkeryMove(inheritListAlarms: false)
                     }
+                    movingBethinkery = nil
+                    destinationList = nil
                 }
             } message: {
                 // swiftlint:disable:next line_length
@@ -190,6 +188,7 @@ struct ListView: View {
             Text(destination.title)
         }
     }
+
 
     private func saveNew() {
         withErrorReporter {
@@ -209,20 +208,27 @@ struct ListView: View {
         addInFocus = false
     }
 
-    private func doBethinkeryMove(_ bethinkery: Bethinkery, destination: BethinkeryList) throws {
+    private func doBethinkeryMove(inheritListAlarms: Bool) throws {
+        guard let movingBethinkery, let destinationList else { return }
+
+        try bethinkeryModel.moveBethinkery(movingBethinkery,
+                                           to: destinationList,
+                                           inheritListAlarms: inheritListAlarms)
+    }
+
+    private func requestBethinkeryMove(_ bethinkery: Bethinkery, destination: BethinkeryList) throws {
+        movingBethinkery = bethinkery
+        destinationList = destination
+
         if bethinkery.hasAlarms {
             if destination.hasAlarms {
                 isPresentingAlarmEditAlert = true
-                movingBethinkery = bethinkery
-                destinationList = destination
             } else {
                 // retain existing alarms and don't inherit []
-                try bethinkeryModel.moveBethinkery(bethinkery,
-                                                   to: destination,
-                                                   inheritListAlarms: false)
+                try doBethinkeryMove(inheritListAlarms: false)
             }
         } else {
-            try bethinkeryModel.moveBethinkery(bethinkery, to: destination)
+            try doBethinkeryMove(inheritListAlarms: true)
         }
     }
 }
