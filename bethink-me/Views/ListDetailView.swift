@@ -74,16 +74,19 @@ struct ListDetailView: View {
                                 withErrorReporter {
                                     editListCommand.hexColor = newColor.toHex()
                                     if isNew {
-                                        guard selectedSource != nil else {
+                                        guard let selectedSource else {
                                             throw BethinkMeError("tried to create a List on a nonexistent Source")
                                         }
-                                        try listModel.create(from: editListCommand, source: selectedSource!)
+                                        try listModel.create(from: editListCommand, source: selectedSource)
                                         dismiss()
                                     } else {
-                                        if !(list!.liveBethinkeries.isEmpty) {
+                                        guard let list else {
+                                            throw BethinkMeError("tried to update list that doesn't exist")
+                                        }
+                                        if !(list.liveBethinkeries.isEmpty) {
                                             isPresentingAlarmEditAlert = true
                                         } else {
-                                            try listModel.update(list!, with: editListCommand)
+                                            try listModel.update(list, with: editListCommand)
                                             dismiss()
                                         }
                                     }
@@ -101,13 +104,19 @@ struct ListDetailView: View {
             .alert("Editing List Alarms", isPresented: $isPresentingAlarmEditAlert) {
                 Button("Replace with List alarms", role: .destructive) {
                     withErrorReporter {
-                        try listModel.update(list!, with: editListCommand, replaceBethinkeryAlarms: true)
+                        guard let list else {
+                            throw BethinkMeError("tried to edit list without list value")
+                        }
+                        try listModel.update(list, with: editListCommand, replaceBethinkeryAlarms: true)
                         dismiss()
                     }
                 }
                 Button("Keep existing alarms", role: .cancel) {
                     withErrorReporter {
-                        try listModel.update(list!, with: editListCommand)
+                        guard let list else {
+                            throw BethinkMeError("tried to edit list without list value")
+                        }
+                        try listModel.update(list, with: editListCommand)
                         dismiss()
                     }
                 }
@@ -144,8 +153,8 @@ struct ListDetailView: View {
         self.sharedModel = sharedModel
         self.listModel = listModel
         self.list = list
-        if list != nil {
-            _editListCommand = StateObject(wrappedValue: .fromBethinkeryList(list!))
+        if let list {
+            _editListCommand = StateObject(wrappedValue: .fromBethinkeryList(list))
         }
     }
 }

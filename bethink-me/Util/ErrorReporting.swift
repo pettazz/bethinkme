@@ -103,8 +103,8 @@ struct ErrorDetailView: View {
                 ScrollView {
                     ErrorDetailViewRow(title: "msg", content: error.localizedDescription)
                     ErrorDetailViewRow(title: "loc", content: "\(error.function) \(error.file):\(error.line)")
-                    if error.from != nil {
-                        ErrorDetailViewRow(title: "frmdbg", content: error.from!.debugDescription)
+                    if let fromErr = error.from {
+                        ErrorDetailViewRow(title: "frmdbg", content: fromErr.debugDescription)
                     }
                     ErrorDetailViewRow(title: "build", content: Bundle.main.appGitReleaseVersion)
                     ErrorDetailViewRow(

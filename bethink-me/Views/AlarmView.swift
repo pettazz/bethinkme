@@ -34,10 +34,10 @@ struct AlarmView: View {
     var alarm: any BethinkeryAlarmTemplate
 
     var relativeDateFormatted: String {
-        if relativeAlarm != nil {
-            return relativeAlarm!.isAllDay
-                ? AlarmView.allDayFormatter.string(from: relativeAlarm!.time)
-                : AlarmView.dateFormatter.string(from: relativeAlarm!.time)
+        if let relativeAlarm {
+            return relativeAlarm.isAllDay
+                ? AlarmView.allDayFormatter.string(from: relativeAlarm.time)
+                : AlarmView.dateFormatter.string(from: relativeAlarm.time)
         } else {
             return "?"
         }

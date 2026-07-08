@@ -47,10 +47,10 @@ final class ListViewModel {
             let existingLists = sharedModel.bethinkeryLists.filter({ $0.id == ekcal.calendarIdentifier })
             let currentList: BethinkeryList
 
-            if existingLists.count == 1 {
+            if existingLists.count == 1, let firstList = existingLists.first {
                 // = yes reminder, yes storage
                 // make sure fields are in sync
-                currentList = existingLists.first!
+                currentList = firstList
                 currentList.load(from: ekcal)
             } else if existingLists.isEmpty {
                 // | yes reminder, no storage
@@ -65,10 +65,9 @@ final class ListViewModel {
             for ekrem in loadedReminders ?? [] {
                 let existingBethinkeries = currentList.bethinkeries.filter({ $0.id == ekrem.calendarItemIdentifier })
 
-                if existingBethinkeries.count == 1 {
+                if existingBethinkeries.count == 1, let existingBethinkery = existingBethinkeries.first {
                     // = yes reminder, yes storage
                     // make sure fields are in sync
-                    let existingBethinkery = existingBethinkeries.first!
                     try existingBethinkery.load(from: ekrem)
                 } else if existingBethinkeries.isEmpty {
                     // | yes reminder, no storage
@@ -110,8 +109,8 @@ final class ListViewModel {
 
         availableSources = sharedModel.eventStore.sources
             .filter({ validSourceTypes.contains($0.sourceType) })
-        if !calendars.isEmpty {
-            let defaultCal = sharedModel.eventStore.defaultCalendarForNewReminders() ?? calendars.first!
+        if !calendars.isEmpty, let firstCalendar = calendars.first {
+            let defaultCal = sharedModel.eventStore.defaultCalendarForNewReminders() ?? firstCalendar
             defaultSource = defaultCal.source
         }
 

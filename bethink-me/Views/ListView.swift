@@ -161,17 +161,17 @@ struct ListView: View {
             .alert("Moving List", isPresented: $isPresentingAlarmEditAlert) {
                 Button("Replace with List alarms", role: .destructive) {
                     withErrorReporter {
-                        guard movingBethinkery != nil && destinationList != nil else { return }
-                        try bethinkeryModel.moveBethinkery(movingBethinkery!,
-                                                           to: destinationList!,
+                        guard let movingBethinkery, let destinationList else { return }
+                        try bethinkeryModel.moveBethinkery(movingBethinkery,
+                                                           to: destinationList,
                                                            inheritListAlarms: true)
                     }
                 }
                 Button("Keep existing alarms", role: .cancel) {
                     withErrorReporter {
-                        guard movingBethinkery != nil && destinationList != nil else { return }
-                        try bethinkeryModel.moveBethinkery(movingBethinkery!,
-                                                           to: destinationList!,
+                        guard let movingBethinkery, let destinationList else { return }
+                        try bethinkeryModel.moveBethinkery(movingBethinkery,
+                                                           to: destinationList,
                                                            inheritListAlarms: false)
                     }
                 }

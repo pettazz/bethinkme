@@ -17,7 +17,12 @@ final class Bethinkery: Equatable, Identifiable {
     @Relationship(deleteRule: .cascade)
     var alarms: [BethinkeryAlarm] = []
 
-    var hasNotes: Bool { return self.notes != nil && !self.notes!.isEmpty }
+    var hasNotes: Bool {
+        if let notes = self.notes {
+            return !notes.isEmpty
+        }
+        return false
+    }
     var hasUrl: Bool { return self.url != nil }
     var hasAlarms: Bool { return !self.alarms.isEmpty }
     var hasAbsoluteTimeAlarm: Bool { return self.alarms.contains(where: { $0.kind == .absoluteTimeAlarm }) }

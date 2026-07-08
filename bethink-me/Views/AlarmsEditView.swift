@@ -132,30 +132,26 @@ struct AlarmsEditView: View {
                                            lat: $newAlarmLocationLat,
                                            lng: $newAlarmLocationLng)
                         } label: {
-                            if newAlarmTitle != nil || newAlarmAddress != nil {
-                                let titleCleaned = newAlarmTitle!.trimmingCharacters(in: .whitespaces)
+                            if let newAlarmTitle {
                                 HStack {
                                     Image(systemName: "location.circle.fill")
                                         .font(.headline)
                                         .accessibilityLabel(Text("Location alarm"))
-                                    Text(titleCleaned.isEmpty ? newAlarmAddress! : titleCleaned)
+                                    Text(newAlarmTitle)
                                 }
                             } else {
                                 Text("Select location")
                             }
                         }
                         Button("Save") {
-                            guard (newAlarmTitle != nil || newAlarmAddress != nil)
-                                    && newAlarmRadius != nil
-                                    && newAlarmLocationLat != nil
-                                    && newAlarmLocationLng != nil else { return }
-                            let titleCleaned = newAlarmTitle!.trimmingCharacters(in: .whitespaces)
+                            guard let newAlarmTitle, let newAlarmRadius,
+                                  let newAlarmLocationLat, let newAlarmLocationLng else { return }
                             let newAlarm = ProximityAlarmTemplate(
                                 id: nil,
-                                title: titleCleaned.isEmpty ? newAlarmAddress! : titleCleaned,
-                                radius: newAlarmRadius!,
-                                locationLat: newAlarmLocationLat!,
-                                locationLng: newAlarmLocationLng!,
+                                title: newAlarmTitle,
+                                radius: newAlarmRadius,
+                                locationLat: newAlarmLocationLat,
+                                locationLng: newAlarmLocationLng,
                                 proximityType: newAlarmProxType
                             )
 
@@ -183,15 +179,15 @@ struct AlarmsEditView: View {
             Text("Alarms")
         }
         .onChange(of: newAlarmFormVisible) { _, isVisible in
-            guard isVisible && scrollProxy != nil else { return }
+            guard isVisible, let scrollProxy else { return }
             withAnimation {
-                scrollProxy!.scrollTo("newAlarmForm", anchor: .top)
+                scrollProxy.scrollTo("newAlarmForm", anchor: .top)
             }
         }
         .onChange(of: newAlarmType) {
-            guard newAlarmFormVisible && scrollProxy != nil else { return }
+            guard newAlarmFormVisible, let scrollProxy else { return }
             withAnimation {
-                scrollProxy!.scrollTo("newAlarmForm", anchor: .top)
+                scrollProxy.scrollTo("newAlarmForm", anchor: .top)
             }
         }
     }

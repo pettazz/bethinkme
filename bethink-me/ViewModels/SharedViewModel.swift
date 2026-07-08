@@ -99,41 +99,48 @@ final class SharedViewModel {
         reload()
     }
 
-    func addAlarm(_ template: any BethinkeryAlarmTemplate, to bethinkery: Bethinkery) throws {
-        let newAlarm = template.toModel()
-        let newBaseAlarm: EKAlarm?
+    private func makeEKAlarm(for alarm: BethinkeryAlarm) throws -> EKAlarm? {
+        let newEKAlarm: EKAlarm?
 
-        switch newAlarm.kind {
+        switch alarm.kind {
             case .absoluteTimeAlarm:
-                if !newAlarm.isAllDay {
-                    guard let alarmTime = newAlarm.time else {
+                if !alarm.isAllDay {
+                    guard let alarmTime = alarm.time else {
                         throw BethinkMeError("tried to create absoluteTime BethinkeryAlarm from template missing time")
                     }
-                    newBaseAlarm = EKAlarm(absoluteDate: alarmTime)
+                    newEKAlarm = EKAlarm(absoluteDate: alarmTime)
                 } else {
-                    newBaseAlarm = nil
+                    newEKAlarm = nil
                 }
             case .relativeTimeAlarm:
-                newBaseAlarm = EKAlarm(relativeOffset: newAlarm.offset)
+                newEKAlarm = EKAlarm(relativeOffset: alarm.offset)
             case .proximityAlarm:
-                let location = EKStructuredLocation(title: newAlarm.title)
-                location.geoLocation = CLLocation(latitude: newAlarm.location.lat, longitude: newAlarm.location.lng)
-                location.radius = newAlarm.radius
-                newBaseAlarm = EKAlarm(relativeOffset: 0)
-                newBaseAlarm!.structuredLocation = location
-                newBaseAlarm!.proximity = switch newAlarm.proximityType {
+                let location = EKStructuredLocation(title: alarm.title)
+                location.geoLocation = CLLocation(latitude: alarm.location.lat, longitude: alarm.location.lng)
+                location.radius = alarm.radius
+                let newBaseAlarm = EKAlarm(relativeOffset: 0)
+                newBaseAlarm.structuredLocation = location
+                newBaseAlarm.proximity = switch alarm.proximityType {
                     case .enter: .enter
                     case .leave: .leave
                     case .nothing: .none
                 }
+                newEKAlarm = newBaseAlarm
         }
 
+        return newEKAlarm
+    }
+
+    func addAlarm(_ template: any BethinkeryAlarmTemplate, to bethinkery: Bethinkery) throws {
+        let newAlarm: BethinkeryAlarm = template.toModel()
+
         do {
+            let newBaseAlarm: EKAlarm? = try makeEKAlarm(for: newAlarm)
             bethinkery.alarms.append(newAlarm)
             modelContext.insert(newAlarm)
-            let reminder = try bethinkery.toReminder(in: eventStore)
-            if newBaseAlarm != nil {
-                reminder.addAlarm(newBaseAlarm!)
+            let reminder: EKReminder = try bethinkery.toReminder(in: eventStore)
+            if let newBaseAlarm {
+                reminder.addAlarm(newBaseAlarm)
             }
         } catch {
             throw BethinkMeError("failed to add alarm to Bethinkery", from: error as NSError)

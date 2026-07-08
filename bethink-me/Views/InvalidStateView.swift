@@ -7,7 +7,7 @@ struct InvalidStateView: View {
     let message: String
 
     var linkTitle: String?
-    var linkURL: URL? = URL(string: UIApplication.openSettingsURLString)!
+    var linkURL: URL? = URL(string: UIApplication.openSettingsURLString)
 
     var retry: (() async throws -> Void)?
 
@@ -26,8 +26,8 @@ struct InvalidStateView: View {
                 .font(.subheadline)
                 .foregroundColor(.gray)
 
-            if linkTitle != nil && linkURL != nil {
-                Link(linkTitle!, destination: linkURL!)
+            if let linkTitle, let linkURL {
+                Link(linkTitle, destination: linkURL)
             }
 
             if let retry {

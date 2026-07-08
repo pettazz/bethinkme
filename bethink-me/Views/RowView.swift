@@ -103,14 +103,14 @@ struct RowView: View {
                 if (displayNotes && bethinkery.hasNotes) || displayURLs && bethinkery.hasUrl {
                     HStack {
                         VStack {
-                            if displayNotes && bethinkery.hasNotes {
-                                Text(bethinkery.notes!)
+                            if displayNotes, let notes = bethinkery.notes {
+                                Text(notes)
                                     .font(.footnote)
                                     .foregroundColor(.secondary)
                                     .frame(maxWidth: .infinity, alignment: .leading)
                             }
-                            if displayURLs && bethinkery.hasUrl {
-                                Link(bethinkery.url!.absoluteString, destination: bethinkery.url!)
+                            if displayURLs, let url = bethinkery.url {
+                                Link(url.absoluteString, destination: url)
                                     .font(.footnote)
                                     .foregroundColor(.blue)
                                     .frame(maxWidth: .infinity, alignment: .leading)

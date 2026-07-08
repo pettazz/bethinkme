@@ -89,14 +89,14 @@ final class BethinkeryViewModel {
     }
 
     func moveBethinkeryPosition(from: IndexSet, to: Int, list: BethinkeryList) throws {
-        guard from.count == 1 else {
+        guard from.count == 1, let firstIdx = from.first else {
             throw BethinkMeError("invalid number of items sent to move: \(from.count)")
         }
         var tmpBethinkeries = sharedModel.bethinkeries.filter({ $0.list.id == list.id })
         tmpBethinkeries.move(fromOffsets: from, toOffset: to)
 
         // only reordinalize stuff in the affected range to limit weird moving of hidden items
-        for (idx, bethinkery) in tmpBethinkeries[..<(max(from.first!, to))].enumerated() {
+        for (idx, bethinkery) in tmpBethinkeries[..<(max(firstIdx, to))].enumerated() {
             bethinkery.ordinal = idx
         }
         try sharedModel.saveContext()
