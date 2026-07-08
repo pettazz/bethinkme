@@ -42,6 +42,9 @@ final class BethinkeryViewModel {
     }
 
     func update(_ bethinkery: Bethinkery, with updateCommand: EditBethinkery) throws {
+        guard bethinkery.modelContext != nil else {
+            throw BethinkMeError("lost model context for Bethinkery during edit")
+        }
         bethinkery.title = updateCommand.title
         bethinkery.isCompleted = updateCommand.isCompleted
         bethinkery.freshlyCompleted = updateCommand.freshlyCompleted
@@ -67,6 +70,9 @@ final class BethinkeryViewModel {
     }
 
     func delete(_ bethinkery: Bethinkery) throws {
+        guard bethinkery.modelContext != nil else {
+            throw BethinkMeError("lost model context for Bethinkery during delete")
+        }
         do {
             try sharedModel.eventStore.remove(bethinkery.toReminder(in: sharedModel.eventStore), commit: true)
             sharedModel.modelContext.delete(bethinkery)
