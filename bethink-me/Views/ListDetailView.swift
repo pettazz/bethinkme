@@ -55,14 +55,8 @@ struct ListDetailView: View {
                             }
 
                             AlarmsEditView(
-                                alarmList: editListCommand.alarmTemplates,
-                                scrollProxy: scrollProxy,
-                                onAdd: { alarm in
-                                    editListCommand.alarmTemplates.append(alarm)
-                                },
-                                onDelete: { alarm in
-                                    editListCommand.alarmTemplates.removeAll(where: { $0.id == alarm.id })
-                                }
+                                alarmList: $editListCommand.alarmTemplates,
+                                scrollProxy: scrollProxy
                             )
                         }
                     }

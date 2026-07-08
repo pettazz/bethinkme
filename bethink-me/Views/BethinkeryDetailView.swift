@@ -48,14 +48,8 @@ struct BethinkeryDetailView: View {
                         }
 
                         AlarmsEditView(
-                            alarmList: editBethinkeryCommand.alarms,
-                            scrollProxy: scrollProxy,
-                            onAdd: { alarm in
-                                editBethinkeryCommand.alarms.append(alarm)
-                            },
-                            onDelete: { alarm in
-                                editBethinkeryCommand.alarms.removeAll(where: { $0.id == alarm.id })
-                            }
+                            alarmList: $editBethinkeryCommand.alarms,
+                            scrollProxy: scrollProxy
                         )
                     }
                 }

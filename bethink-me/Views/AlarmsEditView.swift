@@ -19,11 +19,8 @@ struct AlarmsEditView: View {
     @State private var newAlarmLocationLng: Double?
     @State private var newAlarmProxType: AlarmProximityType = .enter
 
-    @State var alarmList: [any BethinkeryAlarmTemplate]
+    @Binding var alarmList: [any BethinkeryAlarmTemplate]
     let scrollProxy: ScrollViewProxy?
-
-    let onAdd: (any BethinkeryAlarmTemplate) -> Void
-    let onDelete: (any BethinkeryAlarmTemplate) -> Void
 
     @ViewBuilder private var alarmsList: some View {
         if !alarmList.isEmpty {
@@ -32,7 +29,6 @@ struct AlarmsEditView: View {
                     .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                         Button(role: .destructive) {
                             alarmList.removeAll(where: { $0.id == alarm.id })
-                            onDelete(alarm)
                         } label: {
                             Label("Delete", systemImage: "trash")
                         }
@@ -85,7 +81,6 @@ struct AlarmsEditView: View {
                             let newAlarm = RelativeTimeAlarmTemplate(id: nil, offset: offset)
 
                             alarmList.append(newAlarm)
-                            onAdd(newAlarm)
 
                             withAnimation {
                                 newAlarmFormVisible.toggle()
@@ -110,7 +105,6 @@ struct AlarmsEditView: View {
                                 isAllDay: newAlarmIsAllDay)
 
                             alarmList.append(newAlarm)
-                            onAdd(newAlarm)
 
                             withAnimation {
                                 newAlarmFormVisible.toggle()
@@ -156,7 +150,6 @@ struct AlarmsEditView: View {
                             )
 
                             alarmList.append(newAlarm)
-                            onAdd(newAlarm)
 
                             withAnimation {
                                 newAlarmFormVisible.toggle()
