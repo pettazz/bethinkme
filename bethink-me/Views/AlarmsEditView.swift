@@ -25,21 +25,25 @@ struct AlarmsEditView: View {
     let onAdd: (any BethinkeryAlarmTemplate) -> Void
     let onDelete: (any BethinkeryAlarmTemplate) -> Void
 
+    @ViewBuilder private var alarmsList: some View {
+        if !alarmList.isEmpty {
+            ForEach(alarmList.sortedAlarms, id: \.id) { alarm in
+                AlarmView(relativeAlarm: alarmList.earliestAlarm, alarm: alarm)
+                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                        Button(role: .destructive) {
+                            alarmList.removeAll(where: { $0.id == alarm.id })
+                            onDelete(alarm)
+                        } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
+                    }
+            }
+        }
+    }
+
     var body: some View {
         Section {
-            if !alarmList.isEmpty {
-                ForEach(alarmList.sortedAlarms, id: \.id) { alarm in
-                    AlarmView(relativeAlarm: alarmList.earliestAlarm, alarm: alarm)
-                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                            Button(role: .destructive) {
-                                alarmList.removeAll(where: { $0.id == alarm.id })
-                                onDelete(alarm)
-                            } label: {
-                                Label("Delete", systemImage: "trash")
-                            }
-                        }
-                }
-            }
+            self.alarmsList
 
             if newAlarmFormVisible {
                 Picker("Type", selection: $newAlarmType) {
