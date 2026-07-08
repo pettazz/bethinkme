@@ -96,7 +96,7 @@ final class BethinkeryViewModel {
         tmpBethinkeries.move(fromOffsets: from, toOffset: to)
 
         // only reordinalize stuff in the affected range to limit weird moving of hidden items
-        for (idx, bethinkery) in tmpBethinkeries[...(max(from.first!, to))].enumerated() {
+        for (idx, bethinkery) in tmpBethinkeries[..<(max(from.first!, to))].enumerated() {
             bethinkery.ordinal = idx
         }
         try sharedModel.saveContext()
