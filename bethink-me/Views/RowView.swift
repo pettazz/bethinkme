@@ -75,7 +75,7 @@ struct RowView: View {
                                 saveEdit()
                             }
                             .onChange(of: editFocus) {
-                                if !editFocus {
+                                if isEditing && !editFocus {
                                     saveEdit()
                                 }
                             }
