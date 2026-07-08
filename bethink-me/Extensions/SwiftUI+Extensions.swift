@@ -24,13 +24,19 @@ extension Color {
 
     func toHex() -> String {
         let uic = UIColor(self)
-        let components = uic.cgColor.components ?? [0.0, 0.0, 0.0]
         // swiftlint:disable identifier_name
-        let r = Float(components[0])
-        let g = Float(components[1])
-        let b = Float(components[2])
+        var r: CGFloat = 0
+        var g: CGFloat = 0
+        var b: CGFloat = 0
+        var a: CGFloat = 0
         // swiftlint:enable identifier_name
-        return String(format: "%02lX%02lX%02lX", lroundf(r * 255), lroundf(g * 255), lroundf(b * 255))
+        uic.getRed(&r, green: &g, blue: &b, alpha: &a)
+        return String(
+            format: "%02lX%02lX%02lX",
+            lroundf(Float(r) * 255),
+            lroundf(Float(g) * 255),
+            lroundf(Float(b) * 255)
+        )
     }
 }
 
