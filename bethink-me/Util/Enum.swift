@@ -50,6 +50,11 @@ enum SettingsKey: String {
     case displayAlarmIcons = "settings.displayAlarmIcons"
 }
 
+enum SyncStatus {
+    case ok
+    case unavailable
+}
+
 enum TimeAlarmIntervalDirection: Int, CaseIterable {
     case before = -1
     case after = 1

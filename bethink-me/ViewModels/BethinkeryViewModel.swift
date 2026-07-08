@@ -17,7 +17,7 @@ final class BethinkeryViewModel {
         let reminder = EKReminder(eventStore: sharedModel.eventStore)
         reminder.title = createCommand.title
         reminder.isCompleted = createCommand.isCompleted
-        reminder.calendar = try list.toCalendar()
+        reminder.calendar = try list.toCalendar(in: sharedModel.eventStore)
 
         do {
             try sharedModel.eventStore.save(reminder, commit: true)
@@ -30,7 +30,7 @@ final class BethinkeryViewModel {
                 try sharedModel.addAlarm(alarm, to: newBethinkery)
             }
 
-            try sharedModel.eventStore.save(newBethinkery.toReminder(), commit: true)
+            try sharedModel.eventStore.save(newBethinkery.toReminder(in: sharedModel.eventStore), commit: true)
             try sharedModel.saveContext()
 
             list.bethinkeries.insert(newBethinkery, at: 0)
@@ -59,7 +59,7 @@ final class BethinkeryViewModel {
         }
 
         do {
-            try sharedModel.eventStore.save(bethinkery.toReminder(), commit: true)
+            try sharedModel.eventStore.save(bethinkery.toReminder(in: sharedModel.eventStore), commit: true)
             try sharedModel.saveContext()
         } catch {
             throw BethinkMeError("failed to commit Bethinkery update", from: error as NSError)
@@ -68,7 +68,7 @@ final class BethinkeryViewModel {
 
     func delete(_ bethinkery: Bethinkery) throws {
         do {
-            try sharedModel.eventStore.remove(bethinkery.toReminder(), commit: true)
+            try sharedModel.eventStore.remove(bethinkery.toReminder(in: sharedModel.eventStore), commit: true)
             sharedModel.modelContext.delete(bethinkery)
             try sharedModel.saveContext()
         } catch {
@@ -107,13 +107,13 @@ final class BethinkeryViewModel {
         guard currentList != list else { return }
 
         do {
-            let reminder = try bethinkery.toReminder()
+            let reminder = try bethinkery.toReminder(in: sharedModel.eventStore)
             bethinkery.list.bethinkeries.removeAll(where: { $0.id == bethinkery.id })
 
             bethinkery.ordinal = -1
             bethinkery.list = list
             bethinkery.list.bethinkeries.insert(bethinkery, at: 0)
-            reminder.calendar = try list.toCalendar()
+            reminder.calendar = try list.toCalendar(in: sharedModel.eventStore)
 
             if inheritListAlarms {
                 try sharedModel.replaceAlarms(on: bethinkery,

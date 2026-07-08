@@ -14,10 +14,9 @@ final class BethinkeryList: Equatable, Identifiable {
     var hexColor: String
     @Relationship(deleteRule: .cascade)
     var alarmTemplates: [BethinkeryAlarm] = []
-    @Transient private var calendar: EKCalendar?
+    var sourceId: String = ""
 
     var hasAlarms: Bool { return !self.alarmTemplates.isEmpty }
-    var hasCalendar: Bool { return self.calendar != nil }
 
     var liveBethinkeries: [Bethinkery] {
         bethinkeries.filter({ !$0.isCompleted })
@@ -28,7 +27,7 @@ final class BethinkeryList: Equatable, Identifiable {
         self.id = id
         self.title = title
         self.hexColor = hexColor
-        self.calendar = calendar
+        self.sourceId = calendar.source.sourceIdentifier
     }
 
     convenience init(calendar: EKCalendar) {
@@ -48,16 +47,19 @@ final class BethinkeryList: Equatable, Identifiable {
         self.id = calendar.calendarIdentifier
         self.title = calendar.title
         self.hexColor = Color(cgColor: calendar.cgColor).toHex()
-        self.calendar = calendar
+        self.sourceId = calendar.source.sourceIdentifier
     }
 
-    func toCalendar() throws -> EKCalendar {
-        guard self.hasCalendar else { throw BethinkMeError("tried to access EKCalendar before it was set") }
-        self.calendar!.title = self.title
+    func toCalendar(in eventStore: EKEventStore) throws -> EKCalendar {
+        guard let calendar = eventStore.calendar(withIdentifier: id) else {
+            throw BethinkMeError("cannot find EKCalendar for BethinkeryList \(id)")
+        }
+
+        calendar.title = self.title
         // yes we are constantly going back and forth between Color and cgColor and String,
         // but SwiftData doesn't want to save Color/UIColor so okay whatever man
-        self.calendar!.cgColor = Color(hex: self.hexColor).cgColor
+        calendar.cgColor = Color(hex: self.hexColor).cgColor
 
-        return self.calendar!
+        return calendar
     }
 }

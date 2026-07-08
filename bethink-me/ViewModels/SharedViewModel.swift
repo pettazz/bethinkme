@@ -7,6 +7,7 @@ import SwiftData
 final class SharedViewModel {
     let modelContext: ModelContext
     let syncCoordinator = SyncCoordinator()
+    var syncStatus: SyncStatus = .ok
     nonisolated final let eventStore = EKEventStore()
 
     private var eventStoreChangedTask: Task<Void, Never>?
@@ -128,10 +129,9 @@ final class SharedViewModel {
         }
 
         do {
-            newAlarm.baseAlarm = newBaseAlarm
             bethinkery.alarms.append(newAlarm)
             modelContext.insert(newAlarm)
-            let reminder = try bethinkery.toReminder()
+            let reminder = try bethinkery.toReminder(in: eventStore)
             if newBaseAlarm != nil {
                 reminder.addAlarm(newBaseAlarm!)
             }
@@ -146,8 +146,8 @@ final class SharedViewModel {
             modelContext.delete(alarm)
 
             if !(alarm.kind == .absoluteTimeAlarm && alarm.isAllDay) {
-                let reminder = try bethinkery.toReminder()
-                if let ekAlarm = alarm.baseAlarm ?? reminder.alarms?.first(where: { alarm == $0 }) {
+                let reminder = try bethinkery.toReminder(in: eventStore)
+                if let ekAlarm = reminder.alarms?.first(where: { alarm == $0 }) {
                     reminder.removeAlarm(ekAlarm)
                 }
             }
@@ -167,7 +167,7 @@ final class SharedViewModel {
         }
 
         do {
-            try eventStore.save(bethinkery.toReminder(), commit: true)
+            try eventStore.save(bethinkery.toReminder(in: eventStore), commit: true)
         } catch {
             throw BethinkMeError("failed to save Bethinkery after replacing alarms", from: error as NSError)
         }

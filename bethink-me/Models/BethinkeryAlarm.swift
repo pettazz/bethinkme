@@ -24,8 +24,6 @@ final class BethinkeryAlarm: Equatable, Identifiable {
     var locationLng: Double = 0
     var proximityType: AlarmProximityType = AlarmProximityType.nothing
 
-    @Transient var baseAlarm: EKAlarm?
-
     var location: LatLng {
         get {
             LatLng(lat: locationLat, lng: locationLng)
@@ -37,17 +35,15 @@ final class BethinkeryAlarm: Equatable, Identifiable {
     }
 
 
-    init(id: String? = nil, kind: BethinkeryAlarmKind, baseAlarm: EKAlarm?) {
+    init(id: String? = nil, kind: BethinkeryAlarmKind) {
         self.id = id ?? UUID().uuidString
         self.kind = kind
-        self.baseAlarm = baseAlarm
     }
 
     static func absoluteTime(id: String? = nil,
                              time: Date,
-                             isAllDay: Bool,
-                             baseAlarm: EKAlarm? = nil) -> BethinkeryAlarm {
-        let alarm = BethinkeryAlarm(id: id, kind: .absoluteTimeAlarm, baseAlarm: baseAlarm)
+                             isAllDay: Bool) -> BethinkeryAlarm {
+        let alarm = BethinkeryAlarm(id: id, kind: .absoluteTimeAlarm)
         alarm.time = time
         alarm.isAllDay = isAllDay
 
@@ -55,9 +51,8 @@ final class BethinkeryAlarm: Equatable, Identifiable {
     }
 
     static func relativeTime(id: String? = nil,
-                             offset: TimeInterval,
-                             baseAlarm: EKAlarm? = nil) -> BethinkeryAlarm {
-        let alarm = BethinkeryAlarm(id: id, kind: .relativeTimeAlarm, baseAlarm: baseAlarm)
+                             offset: TimeInterval) -> BethinkeryAlarm {
+        let alarm = BethinkeryAlarm(id: id, kind: .relativeTimeAlarm)
         alarm.offset = offset
 
         return alarm
@@ -67,9 +62,8 @@ final class BethinkeryAlarm: Equatable, Identifiable {
                           title: String,
                           radius: Double,
                           location: LatLng,
-                          proximityType: AlarmProximityType,
-                          baseAlarm: EKAlarm? = nil) -> BethinkeryAlarm {
-        let alarm = BethinkeryAlarm(id: id, kind: .proximityAlarm, baseAlarm: baseAlarm)
+                          proximityType: AlarmProximityType) -> BethinkeryAlarm {
+        let alarm = BethinkeryAlarm(id: id, kind: .proximityAlarm)
         alarm.title = title
         alarm.radius = radius
         alarm.location = location
@@ -108,11 +102,9 @@ final class BethinkeryAlarm: Equatable, Identifiable {
             }
 
             return .absoluteTime(time: absoluteDate,
-                                 isAllDay: false,
-                                 baseAlarm: alarm)
+                                 isAllDay: false)
         } else if alarm.relativeOffset != 0 {
-            return .relativeTime(offset: alarm.relativeOffset,
-                                 baseAlarm: alarm)
+            return .relativeTime(offset: alarm.relativeOffset)
         } else if let loc = alarm.structuredLocation, let geoLoc = loc.geoLocation {
             let proxType: AlarmProximityType = switch alarm.proximity {
                 case .enter: .enter
@@ -124,8 +116,7 @@ final class BethinkeryAlarm: Equatable, Identifiable {
                               radius: loc.radius,
                               location: LatLng(lat: geoLoc.coordinate.latitude,
                                                lng: geoLoc.coordinate.longitude),
-                              proximityType: proxType,
-                              baseAlarm: alarm)
+                              proximityType: proxType)
         }
 
         return nil

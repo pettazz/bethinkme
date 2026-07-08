@@ -9,6 +9,8 @@ struct InvalidStateView: View {
     var linkTitle: String?
     var linkURL: URL? = URL(string: UIApplication.openSettingsURLString)!
 
+    var retry: (() async throws -> Void)?
+
     var body: some View {
         // TODO: it also uggly
         VStack {
@@ -28,14 +30,18 @@ struct InvalidStateView: View {
                 Link(linkTitle!, destination: linkURL!)
             }
 
-            if ErrorState.instance.currentError?.retry != nil {
+            if let retry {
                 Button {
                     Task { @MainActor in
-                        await ErrorState.instance.doRetry()
+                        try await retry()
                     }
                 } label: {
                     Text("Retry")
                 }
+
+            }
+
+            if ErrorState.instance.currentError?.retry != nil {
             }
 
             Spacer()

@@ -19,6 +19,7 @@ final class ListViewModel {
         self.sharedModel = sharedModel
     }
 
+    // swiftlint:disable:next cyclomatic_complexity
     func loadLists() async throws {
 //        try await Task.sleep(for: .milliseconds(1500))
         guard await sharedModel.checkPermissions() else {
@@ -29,6 +30,11 @@ final class ListViewModel {
         let calendars = sharedModel.eventStore
             .calendars(for: .reminder)
             .filter({ validSourceTypes.contains($0.source.sourceType) })
+
+        guard !calendars.isEmpty || sharedModel.bethinkeryLists.isEmpty else {
+            sharedModel.syncStatus = .unavailable
+            return
+        }
 
         // reconcile the stored data with Reminders
         // assume EK is always the real source of truth and update ours accordingly
@@ -56,7 +62,7 @@ final class ListViewModel {
             }
 
             let loadedReminders = await loadRemindersForCalendar(ekcal)
-            for ekrem in loadedReminders {
+            for ekrem in loadedReminders ?? [] {
                 let existingBethinkeries = currentList.bethinkeries.filter({ $0.id == ekrem.calendarItemIdentifier })
 
                 if existingBethinkeries.count == 1 {
@@ -75,21 +81,22 @@ final class ListViewModel {
                 }
             }
 
-            for danglingReminder in currentList.bethinkeries.filter({ savedBethinkery in
-                // we never found an ekreminder to attach to this
-                !savedBethinkery.hasReminder ||
-                // the stored reminder's ekreminder no longer exists in the ekreminders for this list
-                !loadedReminders.contains(where: { $0.calendarItemIdentifier == savedBethinkery.id })
-            }) {
-                // X no reminder, yes storage
-                // remove it
-                sharedModel.modelContext.delete(danglingReminder)
+            if let loadedReminders {
+                for danglingReminder in currentList.bethinkeries.filter({ savedBethinkery in
+                    // the stored reminder no longer exists in the ekreminders for this list
+                    !loadedReminders.contains(where: { $0.calendarItemIdentifier == savedBethinkery.id })
+                }) {
+                    // X no reminder, yes storage
+                    // remove it
+                    sharedModel.modelContext.delete(danglingReminder)
+                }
             }
         }
 
+        let liveSourceIds = Set(sharedModel.eventStore.sources.map(\.sourceIdentifier))
         for danglingList in sharedModel.bethinkeryLists.filter({ savedList in
-            // we never found an ekcal to attach to this
-            !savedList.hasCalendar ||
+            // the source is not unavailable to load
+            liveSourceIds.contains(savedList.sourceId) &&
             // the stored list's ekcal no longer exists in the cals for this list
             !calendars.contains(where: { $0.calendarIdentifier == savedList.id })
         }) {
@@ -109,6 +116,7 @@ final class ListViewModel {
         }
 
         try sharedModel.modelContext.save()
+        sharedModel.syncStatus = .ok
         sharedModel.reload()
     }
 
@@ -152,7 +160,7 @@ final class ListViewModel {
         }
 
         do {
-            try sharedModel.eventStore.saveCalendar(bethinkeryList.toCalendar(), commit: true)
+            try sharedModel.eventStore.saveCalendar(bethinkeryList.toCalendar(in: sharedModel.eventStore), commit: true)
             try sharedModel.saveContext()
         } catch {
             throw BethinkMeError("failed to commit List update", from: error as NSError)
@@ -176,7 +184,8 @@ final class ListViewModel {
 
     func delete(_ bethinkeryList: BethinkeryList) throws {
         do {
-            try sharedModel.eventStore.removeCalendar(bethinkeryList.toCalendar(), commit: true)
+            try sharedModel.eventStore.removeCalendar(bethinkeryList.toCalendar(in: sharedModel.eventStore),
+                                                      commit: true)
             sharedModel.modelContext.delete(bethinkeryList)
             try sharedModel.saveContext()
         } catch {
@@ -195,7 +204,9 @@ final class ListViewModel {
         try sharedModel.saveContext()
     }
 
-    private func loadRemindersForCalendar(_ calendar: EKCalendar) async -> [EKReminder] {
+    // returns [] when successfully fetched an empty list,
+    // vs. nil when there was an error fetching
+    private func loadRemindersForCalendar(_ calendar: EKCalendar) async -> [EKReminder]? {
         var ageLimitDateComponents = DateComponents()
         ageLimitDateComponents.day = -1 * maxCompletedAgeDaysSetting
         let ageLimitDate = Calendar.current.date(
@@ -209,7 +220,7 @@ final class ListViewModel {
                 withCompletionDateStarting: ageLimitDate,
                 ending: Date.now,
                 calendars: [calendar])) { reminders in
-                    continuation.resume(returning: reminders ?? [])
+                    continuation.resume(returning: reminders)
             }
         }
         async let incompleteds = withCheckedContinuation { continuation in
@@ -217,11 +228,14 @@ final class ListViewModel {
                 withDueDateStarting: nil,
                 ending: nil,
                 calendars: [calendar])) { reminders in
-                    continuation.resume(returning: reminders ?? [])
+                    continuation.resume(returning: reminders)
             }
         }
 
-        let (fetchedCompleteds, fetchedIncompleteds) = await (completeds, incompleteds)
+        guard let fetchedCompleteds = await completeds,
+              let fetchedIncompleteds = await incompleteds else {
+                return nil
+        }
         return fetchedCompleteds + fetchedIncompleteds
     }
 

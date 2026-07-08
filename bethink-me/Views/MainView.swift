@@ -32,123 +32,134 @@ struct MainView: View {
     var body: some View {
         ZStack {
             NavigationStack {
-                ZStack {
-                    VStack {
-                        if sharedModel != nil && listModel != nil && bethinkeryModel != nil {
-                            if !sharedModel!.hasAccess {
-                                InvalidStateView(icon: "hand.raised.square.on.square",
-                                                 title: "No Permission",
-                                                 message: "u gotta let me look at them toedeos",
-                                                 linkTitle: "Enable me in settings!")
-                            } else if sharedModel!.bethinkeryLists.isEmpty {
-                                InvalidStateView(icon: "checklist",
-                                                 title: "oh no",
-                                                 message: "no toedoes?")
-                            } else {
-                                List {
-                                    ForEach(sharedModel!.bethinkeryLists) { list in
-                                        ListView(
-                                            selectedBethinkeryForEdit: $selectedBethinkeryForEdit,
-                                            sharedModel: sharedModel!,
-                                            listModel: listModel!,
-                                            bethinkeryModel: bethinkeryModel!,
-                                            list: list,
-                                            onListDelete: { list in
-                                                selectedListForDelete = list
-                                                isPresentingDeleteConfirmation = true
+                if let sharedModel, !sharedModel.hasAccess {
+                        InvalidStateView(icon: "hand.raised.square.on.square",
+                                         title: "No Permission",
+                                         message: "u gotta let me look at them toedeos",
+                                         linkTitle: "Enable me in settings!")
+                } else if let sharedModel, sharedModel.syncStatus == .unavailable {
+                    InvalidStateView(icon: "wifi.exclamationmark",
+                                     title: "Can't connect to Reminders",
+                                     message: "One or more of your accounts may be offline",
+                                     retry: {
+                                         let coordinator = sharedModel.syncCoordinator
+                                         coordinator.requestSync(reason: .initialized)
+                                     })
+
+                } else {
+                    ZStack {
+                        VStack {
+                            if let sharedModel, let listModel, let bethinkeryModel {
+                                if sharedModel.bethinkeryLists.isEmpty {
+                                    InvalidStateView(icon: "checklist",
+                                                     title: "oh no",
+                                                     message: "no toedoes?")
+                                } else {
+                                    List {
+                                        ForEach(sharedModel.bethinkeryLists) { list in
+                                            ListView(
+                                                selectedBethinkeryForEdit: $selectedBethinkeryForEdit,
+                                                sharedModel: sharedModel,
+                                                listModel: listModel,
+                                                bethinkeryModel: bethinkeryModel,
+                                                list: list,
+                                                onListDelete: { list in
+                                                    selectedListForDelete = list
+                                                    isPresentingDeleteConfirmation = true
+                                                }
+                                            )
+                                        }
+                                        .onMove { from, to in
+                                            withErrorReporter {
+                                                try listModel.moveListPosition(from: from, to: to)
                                             }
-                                        )
-                                    }
-                                    .onMove { from, to in
-                                        withErrorReporter {
-                                            try listModel!.moveListPosition(from: from, to: to)
                                         }
                                     }
+                                    .environment(\.editMode, $listEditMode)
                                 }
-                                .environment(\.editMode, $listEditMode)
                             }
                         }
-                    }
-                    .navigationTitle("Lists")
-                    .toolbar {
-                        if sharedModel != nil && listModel != nil {
-                            if listEditMode != .active {
-                                ToolbarItem(placement: .primaryAction) {
-                                    Button {
-                                        shouldPresentNewListSheet.toggle()
-                                    } label: {
-                                        Image(systemName: "rectangle.stack.fill.badge.plus")
-                                            .accessibilityLabel(Text("Add a new list"))
+                        .navigationTitle("Lists")
+                        .toolbar {
+                            if let sharedModel, let listModel {
+                                if listEditMode != .active {
+                                    ToolbarItem(placement: .primaryAction) {
+                                        Button {
+                                            shouldPresentNewListSheet.toggle()
+                                        } label: {
+                                            Image(systemName: "rectangle.stack.fill.badge.plus")
+                                                .accessibilityLabel(Text("Add a new list"))
+                                        }
+                                        .sheet(isPresented: $shouldPresentNewListSheet, content: {
+                                            ListDetailView(sharedModel: sharedModel, listModel: listModel)
+                                                .textCase(.none)
+                                        })
+                                        .disabled(listsLoading)
                                     }
-                                    .sheet(isPresented: $shouldPresentNewListSheet, content: {
-                                        ListDetailView(sharedModel: sharedModel!, listModel: listModel!)
-                                            .textCase(.none)
-                                    })
-                                    .disabled(listsLoading)
                                 }
-                            }
-                            ToolbarItem(placement: .primaryAction) {
-                                Button {
-                                    withAnimation {
-                                        listEditMode = listEditMode.isEditing ? .inactive : .active
-                                    }
-                                } label: {
-                                    Image(systemName: listEditMode == .active
-                                          ? "checkmark.circle.fill"
-                                          : "arrow.up.arrow.down.square.fill")
-                                    .accessibilityLabel(Text(listEditMode == .active
-                                                             ? "Done editing lists"
-                                                             : "Edit lists"))
-                                }
-                                .disabled(listsLoading)
-                            }
-                            if listEditMode != .active {
                                 ToolbarItem(placement: .primaryAction) {
                                     Button {
                                         withAnimation {
-                                            sharedModel!.showCompleted.toggle()
-                                            sharedModel!.reload()
-                                            sharedModel!.resetOrdinals()
+                                            listEditMode = listEditMode.isEditing ? .inactive : .active
                                         }
                                     } label: {
-                                        if sharedModel!.showCompleted {
-                                            Image(systemName: "eye.slash.fill")
-                                                .accessibilityLabel(Text("Hide completed Bethinkeries"))
-                                        } else {
-                                            Image(systemName: "eye.fill")
-                                                .accessibilityLabel(Text("Show completed Bethinkeries"))
-                                        }
+                                        Image(systemName: listEditMode == .active
+                                              ? "checkmark.circle.fill"
+                                              : "arrow.up.arrow.down.square.fill")
+                                        .accessibilityLabel(Text(listEditMode == .active
+                                                                 ? "Done editing lists"
+                                                                 : "Edit lists"))
                                     }
                                     .disabled(listsLoading)
                                 }
+                                if listEditMode != .active {
+                                    ToolbarItem(placement: .primaryAction) {
+                                        Button {
+                                            withAnimation {
+                                                sharedModel.showCompleted.toggle()
+                                                sharedModel.reload()
+                                                sharedModel.resetOrdinals()
+                                            }
+                                        } label: {
+                                            if sharedModel.showCompleted {
+                                                Image(systemName: "eye.slash.fill")
+                                                    .accessibilityLabel(Text("Hide completed Bethinkeries"))
+                                            } else {
+                                                Image(systemName: "eye.fill")
+                                                    .accessibilityLabel(Text("Show completed Bethinkeries"))
+                                            }
+                                        }
+                                        .disabled(listsLoading)
+                                    }
+                                }
                             }
                         }
-                    }
 
-                    ZStack {
-                        if showDelayedSpinner {
-                            Color.black.opacity(0.3)
-                                .ignoresSafeArea()
-                            if #available(iOS 26.0, *) {
-                                LoadingSpinnerView()
-                                    .glassEffect(in: .rect(cornerRadius: 16.0))
-                            } else {
-                                LoadingSpinnerView()
-                                    .background(RoundedRectangle(cornerRadius: 16.0)
-                                        .fill(Color.white))
+                        ZStack {
+                            if showDelayedSpinner {
+                                Color.black.opacity(0.3)
+                                    .ignoresSafeArea()
+                                if #available(iOS 26.0, *) {
+                                    LoadingSpinnerView()
+                                        .glassEffect(in: .rect(cornerRadius: 16.0))
+                                } else {
+                                    LoadingSpinnerView()
+                                        .background(RoundedRectangle(cornerRadius: 16.0)
+                                            .fill(Color.white))
+                                }
                             }
                         }
-                    }
-                    .animation(.snappy, value: showDelayedSpinner)
-                    .task(id: listsLoading) {
-                        showDelayedSpinner = false
+                        .animation(.snappy, value: showDelayedSpinner)
+                        .task(id: listsLoading) {
+                            showDelayedSpinner = false
 
-                        guard listsLoading else { return }
-                        try? await Task.sleep(for: .seconds(1))
-                        guard !Task.isCancelled, listsLoading else { return }
+                            guard listsLoading else { return }
+                            try? await Task.sleep(for: .seconds(1))
+                            guard !Task.isCancelled, listsLoading else { return }
 
-                        withAnimation(.snappy) {
-                            showDelayedSpinner = true
+                            withAnimation(.snappy) {
+                                showDelayedSpinner = true
+                            }
                         }
                     }
                 }
@@ -156,9 +167,9 @@ struct MainView: View {
             .confirmationDialog("Are you sure?",
                                 isPresented: $isPresentingDeleteConfirmation) {
                 Button("Delete List", role: .destructive) {
-                    guard selectedListForDelete != nil else { return }
                     withErrorReporter {
-                        try listModel!.delete(selectedListForDelete!)
+                        guard let listModel, let selectedListForDelete else { return }
+                        try listModel.delete(selectedListForDelete)
                     }
                     isPresentingDeleteConfirmation = false
                     selectedListForDelete = nil
@@ -201,7 +212,8 @@ struct MainView: View {
             if let activeError = errorState.currentError {
                 InvalidStateView(icon: "exclamationmark.triangle.fill",
                                  title: "We've run into an error",
-                                 message: activeError.error.message)
+                                 message: activeError.error.message,
+                                 retry: ErrorState.instance.doRetry)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(Color(.systemBackground))
             }
