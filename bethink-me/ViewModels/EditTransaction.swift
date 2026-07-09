@@ -125,10 +125,9 @@ final class EditTransaction {
     }
 
     func reconcileIDs() {
-        for (bethinkery, reminder) in bethinkeriesNeedingIDReconcile {
-            if bethinkery.id != reminder.calendarItemIdentifier {
-                bethinkery.updateID(to: reminder.calendarItemIdentifier)
-            }
+        for (bethinkery, reminder) in bethinkeriesNeedingIDReconcile
+        where bethinkery.id != reminder.calendarItemIdentifier {
+            bethinkery.updateID(to: reminder.calendarItemIdentifier)
         }
         bethinkeriesNeedingIDReconcile.removeAll()
     }

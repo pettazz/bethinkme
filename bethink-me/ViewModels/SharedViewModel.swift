@@ -150,7 +150,7 @@ final class SharedViewModel {
             let newBaseAlarm: EKAlarm? = try makeEKAlarm(for: newAlarm)
             bethinkery.alarms.append(newAlarm)
             transaction.insertModel(newAlarm)
-            
+
             let reminder: EKReminder = try transaction.liveReminder(for: bethinkery)
             if let newBaseAlarm {
                 reminder.addAlarm(newBaseAlarm)
