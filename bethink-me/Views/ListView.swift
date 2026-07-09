@@ -161,7 +161,7 @@ struct ListView: View {
             .alert("Moving List", isPresented: $isPresentingAlarmEditAlert) {
                 Button("Replace with List alarms", role: .destructive) {
                     withErrorReporter {
-                        try doBethinkeryMove(inheritListAlarms: false)
+                        try doBethinkeryMove(inheritListAlarms: true)
                     }
                     movingBethinkery = nil
                     destinationList = nil
