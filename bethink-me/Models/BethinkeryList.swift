@@ -62,4 +62,11 @@ final class BethinkeryList: Equatable, Identifiable {
 
         return calendar
     }
+
+    func apply(to calendar: EKCalendar) {
+        calendar.title = self.title
+        // yes we are constantly going back and forth between Color and cgColor and String,
+        // but SwiftData doesn't want to save Color/UIColor so okay whatever man
+        calendar.cgColor = Color(hex: self.hexColor).cgColor
+    }
 }

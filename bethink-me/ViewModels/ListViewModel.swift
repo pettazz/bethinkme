@@ -121,19 +121,20 @@ final class ListViewModel {
 
     func create(from createCommand: EditBethinkeryList, source: EKSource) throws {
         do {
-            let newCalendar = EKCalendar(for: .reminder, eventStore: sharedModel.eventStore)
-            newCalendar.source = source
-            newCalendar.title = createCommand.title
-            newCalendar.cgColor = Color(hex: createCommand.hexColor).cgColor
+            try sharedModel.withTransaction { transaction in
+                let newCalendar = EKCalendar(for: .reminder, eventStore: sharedModel.eventStore)
+                newCalendar.source = source
+                newCalendar.title = createCommand.title
+                newCalendar.cgColor = Color(hex: createCommand.hexColor).cgColor
 
-            try sharedModel.eventStore.saveCalendar(newCalendar, commit: true)
+                try transaction.stage(newCalendar)
 
-            let newBethinkeryList = BethinkeryList(calendar: newCalendar)
-            newBethinkeryList.alarmTemplates = createCommand.alarmTemplates.map({ $0.toModel() })
+                let newBethinkeryList = BethinkeryList(calendar: newCalendar)
+                newBethinkeryList.alarmTemplates = createCommand.alarmTemplates.map({ $0.toModel() })
 
-            sharedModel.modelContext.insert(newBethinkeryList)
-            sharedModel.resetOrdinals()
-            try sharedModel.saveContext()
+                transaction.insertModel(newBethinkeryList)
+                sharedModel.resetOrdinals()
+            }
         } catch {
             throw BethinkMeError("failed to save new List", from: error as NSError)
         }
@@ -142,65 +143,66 @@ final class ListViewModel {
     func update(_ bethinkeryList: BethinkeryList,
                 with updateCommand: EditBethinkeryList,
                 replaceBethinkeryAlarms: Bool = false) throws {
-        bethinkeryList.title = updateCommand.title
-        bethinkeryList.hexColor = updateCommand.hexColor
-
-        let existingAlarmIDs = Set(bethinkeryList.alarmTemplates.map(\.id))
-        let updatedAlarmIDs = Set(updateCommand.alarmTemplates.map(\.id))
-
-        for alarm in bethinkeryList.alarmTemplates where !updatedAlarmIDs.contains(alarm.id) {
-            bethinkeryList.alarmTemplates.removeAll(where: { $0.id == alarm.id })
-            sharedModel.modelContext.delete(alarm)
-        }
-        for template in updateCommand.alarmTemplates where !existingAlarmIDs.contains(template.id) {
-            let model = template.toModel()
-            sharedModel.modelContext.insert(model)
-            bethinkeryList.alarmTemplates.append(model)
-        }
-
         do {
-            try sharedModel.eventStore.saveCalendar(bethinkeryList.toCalendar(in: sharedModel.eventStore), commit: true)
-            try sharedModel.saveContext()
-        } catch {
-            throw BethinkMeError("failed to commit List update", from: error as NSError)
-        }
+            try sharedModel.withTransaction { transaction in
+                bethinkeryList.title = updateCommand.title
+                bethinkeryList.hexColor = updateCommand.hexColor
 
-        if replaceBethinkeryAlarms {
-            do {
-                try sharedModel.refreshEK(for: bethinkeryList.liveBethinkeries)
-                for bethinkery in bethinkeryList.liveBethinkeries {
-                    try sharedModel
-                        .replaceAlarms(on: bethinkery,
-                                       with: bethinkeryList.alarmTemplates.compactMap(
-                                        { $0.toTemplate(newInstance: true) }))
+                let existingAlarmIDs = Set(bethinkeryList.alarmTemplates.map(\.id))
+                let updatedAlarmIDs = Set(updateCommand.alarmTemplates.map(\.id))
+
+                for alarm in bethinkeryList.alarmTemplates where !updatedAlarmIDs.contains(alarm.id) {
+                    bethinkeryList.alarmTemplates.removeAll(where: { $0.id == alarm.id })
+                    transaction.deleteModel(alarm)
                 }
-                try sharedModel.saveContext()
-            } catch {
-                throw BethinkMeError("failed to replace alarms on Bethinkery after list update", from: error as NSError)
+                for template in updateCommand.alarmTemplates where !existingAlarmIDs.contains(template.id) {
+                    let model = template.toModel()
+                    transaction.insertModel(model)
+                    bethinkeryList.alarmTemplates.append(model)
+                }
+
+                try transaction.stage(transaction.liveCalendar(for: bethinkeryList))
+
+                if replaceBethinkeryAlarms {
+                    do {
+                        for bethinkery in bethinkeryList.liveBethinkeries {
+                            try sharedModel
+                                .replaceAlarms(on: bethinkery,
+                                               with: bethinkeryList.alarmTemplates.compactMap(
+                                                { $0.toTemplate(newInstance: true) }),
+                                               within: transaction)
+                        }
+                    } catch {
+                        throw BethinkMeError("failed to replace alarms on Bethinkery after list update",
+                                             from: error as NSError)
+                    }
+                }
             }
+        } catch {
+            throw BethinkMeError("failed to create new BethinkeryList", from: error as NSError)
         }
     }
 
     func delete(_ bethinkeryList: BethinkeryList) throws {
         do {
-            try sharedModel.eventStore.removeCalendar(bethinkeryList.toCalendar(in: sharedModel.eventStore),
-                                                      commit: true)
-            sharedModel.modelContext.delete(bethinkeryList)
-            try sharedModel.saveContext()
+            try sharedModel.withTransaction { transaction in
+                try transaction.stageRemove(transaction.liveCalendar(for: bethinkeryList))
+                transaction.deleteModel(bethinkeryList)
+            }
         } catch {
             throw BethinkMeError("failed to delete List", from: error as NSError)
         }
     }
 
     func moveListPosition(from: IndexSet, to: Int) throws {
-        var tmpLists = sharedModel.bethinkeryLists
-        tmpLists.move(fromOffsets: from, toOffset: to)
+        try sharedModel.withTransaction { _ in
+            var tmpLists = sharedModel.bethinkeryLists
+            tmpLists.move(fromOffsets: from, toOffset: to)
 
-        for (idx, list) in tmpLists.enumerated() {
-            list.ordinal = idx
+            for (idx, list) in tmpLists.enumerated() {
+                list.ordinal = idx
+            }
         }
-
-        try sharedModel.saveContext()
     }
 
     // returns [] when successfully fetched an empty list,

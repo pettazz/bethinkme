@@ -25,6 +25,7 @@ final class SharedViewModel {
 
 
     init(modelContext: ModelContext) async {
+        modelContext.autosaveEnabled = false
         self.modelContext = modelContext
         self.hasAccess = await checkPermissions()
         self.reload()
@@ -76,13 +77,6 @@ final class SharedViewModel {
         unfilteredBethinkeriesCache = unfilteredBethinkeriesCacheUpdate
     }
 
-    func refreshEK(for bethinkeries: [Bethinkery]) throws {
-        for bethinkery in bethinkeries {
-            guard let reminder = eventStore.calendarItem(withIdentifier: bethinkery.id) as? EKReminder else { continue }
-            try bethinkery.load(from: reminder)
-        }
-    }
-
     func reload() {
         do {
             try fetchAll()
@@ -97,6 +91,22 @@ final class SharedViewModel {
         try modelContext.save()
         syncCoordinator.iJustMadeAChange()
         reload()
+    }
+
+    func withTransaction<T>(_ action: (EditTransaction) throws -> T) throws -> T {
+        let transaction = EditTransaction(eventStore: eventStore, modelContext: modelContext)
+
+        do {
+            let result = try action(transaction)
+            try transaction.commit()
+            syncCoordinator.iJustMadeAChange()
+            reload()
+            return result
+        } catch {
+            transaction.rollback()
+            reload()
+            throw error
+        }
     }
 
     private func makeEKAlarm(for alarm: BethinkeryAlarm) throws -> EKAlarm? {
@@ -131,50 +141,59 @@ final class SharedViewModel {
         return newEKAlarm
     }
 
-    func addAlarm(_ template: any BethinkeryAlarmTemplate, to bethinkery: Bethinkery) throws {
+    func addAlarm(_ template: any BethinkeryAlarmTemplate,
+                  to bethinkery: Bethinkery,
+                  within transaction: EditTransaction) throws {
         let newAlarm: BethinkeryAlarm = template.toModel()
 
         do {
             let newBaseAlarm: EKAlarm? = try makeEKAlarm(for: newAlarm)
             bethinkery.alarms.append(newAlarm)
-            modelContext.insert(newAlarm)
-            let reminder: EKReminder = try bethinkery.toReminder(in: eventStore)
+            transaction.insertModel(newAlarm)
+            
+            let reminder: EKReminder = try transaction.liveReminder(for: bethinkery)
             if let newBaseAlarm {
                 reminder.addAlarm(newBaseAlarm)
             }
+            try transaction.stage(reminder)
         } catch {
             throw BethinkMeError("failed to add alarm to Bethinkery", from: error as NSError)
         }
     }
 
-    func removeAlarm(_ alarm: BethinkeryAlarm, from bethinkery: Bethinkery) throws {
+    func removeAlarm(_ alarm: BethinkeryAlarm,
+                     from bethinkery: Bethinkery,
+                     within transaction: EditTransaction) throws {
         do {
             bethinkery.alarms.removeAll(where: { $0.id == alarm.id })
-            modelContext.delete(alarm)
+            transaction.deleteModel(alarm)
 
             if !(alarm.kind == .absoluteTimeAlarm && alarm.isAllDay) {
-                let reminder = try bethinkery.toReminder(in: eventStore)
+                let reminder = try transaction.liveReminder(for: bethinkery)
                 if let ekAlarm = reminder.alarms?.first(where: { alarm == $0 }) {
                     reminder.removeAlarm(ekAlarm)
                 }
+                try transaction.stage(reminder)
             }
         } catch {
             throw BethinkMeError("failed to delete alarm", from: error as NSError)
         }
     }
 
-    func replaceAlarms(on bethinkery: Bethinkery, with templates: [any BethinkeryAlarmTemplate]) throws {
-        let oldAlarms = bethinkery.alarms
-
-        for oldAlarm in oldAlarms {
-            try removeAlarm(oldAlarm, from: bethinkery)
-        }
-        for newAlarm in templates {
-            try addAlarm(newAlarm, to: bethinkery)
-        }
-
+    func replaceAlarms(on bethinkery: Bethinkery,
+                       with templates: [any BethinkeryAlarmTemplate],
+                       within transaction: EditTransaction) throws {
         do {
-            try eventStore.save(bethinkery.toReminder(in: eventStore), commit: true)
+            let oldAlarms = bethinkery.alarms
+
+            for oldAlarm in oldAlarms {
+                try removeAlarm(oldAlarm, from: bethinkery, within: transaction)
+            }
+            for newAlarm in templates {
+                try addAlarm(newAlarm, to: bethinkery, within: transaction)
+            }
+
+            try transaction.stage(transaction.liveReminder(for: bethinkery))
         } catch {
             throw BethinkMeError("failed to save Bethinkery after replacing alarms", from: error as NSError)
         }

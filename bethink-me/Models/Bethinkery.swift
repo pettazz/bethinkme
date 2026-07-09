@@ -103,6 +103,29 @@ final class Bethinkery: Equatable, Identifiable {
         return reminder
     }
 
+    func apply(to reminder: EKReminder) throws {
+        reminder.title = self.title
+        reminder.isCompleted = self.isCompleted
+        reminder.notes = self.notes
+        reminder.url = self.url
+        if let implicitDueDate = self.alarms.earliestAlarm {
+            guard let implicitTime = implicitDueDate.time else {
+                throw BethinkMeError("Bethinkery with implicit Due Date has no Time value")
+            }
+            let dateComps = Calendar.current.dateComponents(
+                implicitDueDate.isAllDay
+                    ? [.day, .month, .year]
+                    : [.day, .month, .year, .hour, .minute],
+                from: implicitTime
+            )
+            reminder.dueDateComponents = dateComps
+            reminder.startDateComponents = dateComps
+        } else {
+            reminder.dueDateComponents = nil
+            reminder.startDateComponents = nil
+        }
+    }
+
     private func loadAlarms(from reminder: EKReminder) throws {
         var knownAlarmIDs = Set<String>()
 

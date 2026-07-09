@@ -14,28 +14,25 @@ final class BethinkeryViewModel {
     }
 
     func create(from createCommand: EditBethinkery, list: BethinkeryList) throws {
-        let reminder = EKReminder(eventStore: sharedModel.eventStore)
-        reminder.title = createCommand.title
-        reminder.isCompleted = createCommand.isCompleted
-        reminder.calendar = try list.toCalendar(in: sharedModel.eventStore)
-
         do {
-            try sharedModel.eventStore.save(reminder, commit: true)
+            try sharedModel.withTransaction { transaction in
+                let reminder = try transaction.newReminder(on: try transaction.liveCalendar(for: list))
 
-            let newBethinkery = try Bethinkery(reminder: reminder, list: list)
-            sharedModel.modelContext.insert(newBethinkery)
-            try sharedModel.saveContext()
+                reminder.title = createCommand.title
+                reminder.isCompleted = createCommand.isCompleted
 
-            for alarm in list.alarmTemplates.compactMap({ $0.toTemplate(newInstance: true) }) {
-                try sharedModel.addAlarm(alarm, to: newBethinkery)
+                let newBethinkery = try Bethinkery(reminder: reminder, list: list)
+                transaction.insertModel(newBethinkery)
+
+                for alarm in list.alarmTemplates.compactMap({ $0.toTemplate(newInstance: true) }) {
+                    try sharedModel.addAlarm(alarm, to: newBethinkery, within: transaction)
+                }
+
+                list.bethinkeries.insert(newBethinkery, at: 0)
+                sharedModel.resetOrdinals()
+
+                try transaction.stage(transaction.liveReminder(for: newBethinkery))
             }
-
-            try sharedModel.eventStore.save(newBethinkery.toReminder(in: sharedModel.eventStore), commit: true)
-            try sharedModel.saveContext()
-
-            list.bethinkeries.insert(newBethinkery, at: 0)
-            sharedModel.resetOrdinals()
-
         } catch {
             throw BethinkMeError("failed to create new Bethinkery", from: error as NSError)
         }
@@ -45,27 +42,28 @@ final class BethinkeryViewModel {
         guard bethinkery.modelContext != nil else {
             throw BethinkMeError("lost model context for Bethinkery during edit")
         }
-        bethinkery.title = updateCommand.title
-        bethinkery.isCompleted = updateCommand.isCompleted
-        bethinkery.freshlyCompleted = updateCommand.freshlyCompleted
-        bethinkery.notes = updateCommand.notes
-        bethinkery.url = updateCommand.url
-
-        let existingAlarmIDs = Set(bethinkery.alarms.map(\.id))
-        let updatedAlarmIDs = Set(updateCommand.alarms.map(\.id))
-
-        for alarm in bethinkery.alarms where !updatedAlarmIDs.contains(alarm.id) {
-            try sharedModel.removeAlarm(alarm, from: bethinkery)
-        }
-        for alarm in updateCommand.alarms where !existingAlarmIDs.contains(alarm.id) {
-            try sharedModel.addAlarm(alarm, to: bethinkery)
-        }
-
         do {
-            try sharedModel.eventStore.save(bethinkery.toReminder(in: sharedModel.eventStore), commit: true)
-            try sharedModel.saveContext()
+            try sharedModel.withTransaction { transaction in
+                bethinkery.title = updateCommand.title
+                bethinkery.isCompleted = updateCommand.isCompleted
+                bethinkery.freshlyCompleted = updateCommand.freshlyCompleted
+                bethinkery.notes = updateCommand.notes
+                bethinkery.url = updateCommand.url
+
+                let existingAlarmIDs = Set(bethinkery.alarms.map(\.id))
+                let updatedAlarmIDs = Set(updateCommand.alarms.map(\.id))
+
+                for alarm in bethinkery.alarms where !updatedAlarmIDs.contains(alarm.id) {
+                    try sharedModel.removeAlarm(alarm, from: bethinkery, within: transaction)
+                }
+                for alarm in updateCommand.alarms where !existingAlarmIDs.contains(alarm.id) {
+                    try sharedModel.addAlarm(alarm, to: bethinkery, within: transaction)
+                }
+
+                try transaction.stage(transaction.liveReminder(for: bethinkery))
+            }
         } catch {
-            throw BethinkMeError("failed to commit Bethinkery update", from: error as NSError)
+            throw BethinkMeError("failed to update Bethinkery", from: error as NSError)
         }
     }
 
@@ -74,9 +72,10 @@ final class BethinkeryViewModel {
             throw BethinkMeError("lost model context for Bethinkery during delete")
         }
         do {
-            try sharedModel.eventStore.remove(bethinkery.toReminder(in: sharedModel.eventStore), commit: true)
-            sharedModel.modelContext.delete(bethinkery)
-            try sharedModel.saveContext()
+            try sharedModel.withTransaction { transaction in
+                try transaction.stageRemove(transaction.liveReminder(for: bethinkery))
+                transaction.deleteModel(bethinkery)
+            }
         } catch {
             throw BethinkMeError("failed to delete Bethinkery", from: error as NSError)
         }
@@ -98,14 +97,15 @@ final class BethinkeryViewModel {
         guard from.count == 1, let firstIdx = from.first else {
             throw BethinkMeError("invalid number of items sent to move: \(from.count)")
         }
-        var tmpBethinkeries = sharedModel.bethinkeries.filter({ $0.list.id == list.id })
-        tmpBethinkeries.move(fromOffsets: from, toOffset: to)
+        try sharedModel.withTransaction { _ in
+            var tmpBethinkeries = sharedModel.bethinkeries.filter({ $0.list.id == list.id })
+            tmpBethinkeries.move(fromOffsets: from, toOffset: to)
 
-        // only reordinalize stuff in the affected range to limit weird moving of hidden items
-        for (idx, bethinkery) in tmpBethinkeries[..<(max(firstIdx, to))].enumerated() {
-            bethinkery.ordinal = idx
+            // only reordinalize stuff in the affected range to limit weird moving of hidden items
+            for (idx, bethinkery) in tmpBethinkeries[..<(max(firstIdx, to))].enumerated() {
+                bethinkery.ordinal = idx
+            }
         }
-        try sharedModel.saveContext()
     }
 
     func moveBethinkery(_ bethinkery: Bethinkery, to list: BethinkeryList, inheritListAlarms: Bool = true) throws {
@@ -113,22 +113,24 @@ final class BethinkeryViewModel {
         guard currentList != list else { return }
 
         do {
-            let reminder = try bethinkery.toReminder(in: sharedModel.eventStore)
-            bethinkery.list.bethinkeries.removeAll(where: { $0.id == bethinkery.id })
+            try sharedModel.withTransaction { transaction in
+                let reminder = try transaction.liveReminder(for: bethinkery)
+                bethinkery.list.bethinkeries.removeAll(where: { $0.id == bethinkery.id })
 
-            bethinkery.ordinal = -1
-            bethinkery.list = list
-            bethinkery.list.bethinkeries.insert(bethinkery, at: 0)
-            reminder.calendar = try list.toCalendar(in: sharedModel.eventStore)
+                bethinkery.ordinal = -1
+                bethinkery.list = list
+                bethinkery.list.bethinkeries.insert(bethinkery, at: 0)
+                reminder.calendar = try transaction.liveCalendar(for: list)
 
-            if inheritListAlarms {
-                try sharedModel.replaceAlarms(on: bethinkery,
-                                              with: list.alarmTemplates.compactMap(
-                                                { $0.toTemplate(newInstance: true) }))
+                if inheritListAlarms {
+                    try sharedModel.replaceAlarms(on: bethinkery,
+                                                  with: list.alarmTemplates.compactMap(
+                                                    { $0.toTemplate(newInstance: true) }),
+                                                  within: transaction)
+                }
+
+                try transaction.stage(reminder)
             }
-
-            try sharedModel.eventStore.save(reminder, commit: true)
-            try sharedModel.saveContext()
         } catch {
             throw BethinkMeError("failed to move Bethinkery", from: error as NSError)
         }
