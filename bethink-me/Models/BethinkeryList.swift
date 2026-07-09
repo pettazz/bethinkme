@@ -50,19 +50,6 @@ final class BethinkeryList: Equatable, Identifiable {
         self.sourceId = calendar.source.sourceIdentifier
     }
 
-    func toCalendar(in eventStore: EKEventStore) throws -> EKCalendar {
-        guard let calendar = eventStore.calendar(withIdentifier: id) else {
-            throw BethinkMeError("cannot find EKCalendar for BethinkeryList \(id)")
-        }
-
-        calendar.title = self.title
-        // yes we are constantly going back and forth between Color and cgColor and String,
-        // but SwiftData doesn't want to save Color/UIColor so okay whatever man
-        calendar.cgColor = Color(hex: self.hexColor).cgColor
-
-        return calendar
-    }
-
     func apply(to calendar: EKCalendar) {
         calendar.title = self.title
         // yes we are constantly going back and forth between Color and cgColor and String,
