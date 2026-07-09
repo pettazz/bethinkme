@@ -98,6 +98,14 @@ final class Bethinkery: Equatable, Identifiable {
         }
     }
 
+    func updateID(to newID: String) {
+        let oldSynthID = "synth-\(self.id)"
+        self.id = newID
+        for alarm in self.alarms where alarm.id == oldSynthID {
+            alarm.id = "synth-\(newID)"
+        }
+    }
+
     private func loadAlarms(from reminder: EKReminder) throws {
         var knownAlarmIDs = Set<String>()
 

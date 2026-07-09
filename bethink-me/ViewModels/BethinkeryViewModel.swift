@@ -130,6 +130,7 @@ final class BethinkeryViewModel {
                 }
 
                 try transaction.stage(reminder)
+                transaction.rememberToReconcileID(of: bethinkery, against: reminder)
             }
         } catch {
             throw BethinkMeError("failed to move Bethinkery", from: error as NSError)

@@ -10,6 +10,8 @@ final class EditTransaction {
     private var calendarCache: [String: EKCalendar] = [:]
     private var reminderCache: [String: EKReminder] = [:]
 
+    private var bethinkeriesNeedingIDReconcile: [(Bethinkery, EKReminder)] = []
+
     private var isDirty = false
 
 
@@ -97,6 +99,7 @@ final class EditTransaction {
             if isDirty {
                 try eventStore.commit()
                 isDirty = false
+                reconcileIDs()
             }
             try modelContext.save()
         } catch {
@@ -109,8 +112,24 @@ final class EditTransaction {
             eventStore.reset()
         }
         modelContext.rollback()
+        invalidateCache()
+    }
 
+    func invalidateCache() {
         calendarCache.removeAll()
         reminderCache.removeAll()
+    }
+
+    func rememberToReconcileID(of bethinkery: Bethinkery, against reminder: EKReminder) {
+        bethinkeriesNeedingIDReconcile.append((bethinkery, reminder))
+    }
+
+    func reconcileIDs() {
+        for (bethinkery, reminder) in bethinkeriesNeedingIDReconcile {
+            if bethinkery.id != reminder.calendarItemIdentifier {
+                bethinkery.updateID(to: reminder.calendarItemIdentifier)
+            }
+        }
+        bethinkeriesNeedingIDReconcile.removeAll()
     }
 }
