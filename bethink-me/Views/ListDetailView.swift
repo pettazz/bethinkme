@@ -9,12 +9,12 @@ struct ListDetailView: View {
     @Environment(\.dismiss)
     private var dismiss
 
+    @State private var alertDialogModel: AlertDialogModel = AlertDialogModel()
+
     @StateObject private var editListCommand: EditBethinkeryList = EditBethinkeryList()
 
     @State private var newColor: Color = Color.accentColor
     @State private var newSourceId: String = ""
-
-    @State private var isPresentingAlarmEditAlert: Bool = false
 
     var sharedModel: SharedViewModel
     var listModel: ListViewModel
@@ -78,7 +78,7 @@ struct ListDetailView: View {
                                             throw BethinkMeError("tried to update list that doesn't exist")
                                         }
                                         if !(list.liveBethinkeries.isEmpty) {
-                                            isPresentingAlarmEditAlert = true
+                                            displayAlarmEditAlertDialog(list: list, editListCommand: editListCommand)
                                         } else {
                                             try listModel.update(list, with: editListCommand)
                                             dismiss()
@@ -95,29 +95,6 @@ struct ListDetailView: View {
                     }
                 }
             }
-            .alert("Editing List Alarms", isPresented: $isPresentingAlarmEditAlert) {
-                Button("Replace with List alarms", role: .destructive) {
-                    withErrorReporter {
-                        guard let list else {
-                            throw BethinkMeError("tried to edit list without list value")
-                        }
-                        try listModel.update(list, with: editListCommand, replaceBethinkeryAlarms: true)
-                        dismiss()
-                    }
-                }
-                Button("Keep existing alarms", role: .cancel) {
-                    withErrorReporter {
-                        guard let list else {
-                            throw BethinkMeError("tried to edit list without list value")
-                        }
-                        try listModel.update(list, with: editListCommand)
-                        dismiss()
-                    }
-                }
-            } message: {
-                // swiftlint:disable:next line_length
-                Text("This list already contains Reminders. Do you want to discard any existing alarms they have set and replace them with the alarms from this list?")
-            }
             .task {
                 if isNew {
                     newSourceId = listModel.defaultSource?.sourceIdentifier ??
@@ -126,6 +103,7 @@ struct ListDetailView: View {
                     newColor = Color(hex: editListCommand.hexColor)
                 }
             }
+            .alertDialogPresentable(alertModel: $alertDialogModel)
         } else {
             NavigationStack {
                 InvalidStateView(icon: "arrow.down.app.dashed.trianglebadge.exclamationmark",
@@ -150,5 +128,28 @@ struct ListDetailView: View {
         if let list {
             _editListCommand = StateObject(wrappedValue: .fromBethinkeryList(list))
         }
+    }
+
+    private func displayAlarmEditAlertDialog(list: BethinkeryList, editListCommand: EditBethinkeryList) {
+        alertDialogModel.title = "Editing List Alarms"
+        // swiftlint:disable:next line_length
+        alertDialogModel.message = "This list already contains Reminders. Do you want to discard any existing alarms they have set and replace them with the alarms from this list?"
+        let actions = [
+            ActionButton(title: "Replace with List alarms", role: .destructive, action: {
+                withErrorReporter {
+                    try listModel.update(list, with: editListCommand, replaceBethinkeryAlarms: true)
+                    dismiss()
+                }
+            }),
+            ActionButton(title: "Keep existing alarms", action: {
+                withErrorReporter {
+                    try listModel.update(list, with: editListCommand)
+                    dismiss()
+                }
+            })
+        ]
+        alertDialogModel.actions = actions
+        alertDialogModel.showDefaultCancel = true
+        alertDialogModel.isPresenting = true
     }
 }

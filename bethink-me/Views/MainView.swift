@@ -29,6 +29,8 @@ struct MainView: View {
     @State private var isPresentingDeleteConfirmation: Bool = false
     @State private var selectedListForDelete: BethinkeryList?
 
+    @State private var alertDialogModel: AlertDialogModel = AlertDialogModel()
+
     var body: some View {
         ZStack {
             NavigationStack {
@@ -224,6 +226,8 @@ struct MainView: View {
                 sharedModel.syncCoordinator.requestSync(reason: .EKChanged)
             }
         }
+        .environment(alertDialogModel)
+        .alertDialogPresentable(alertModel: $alertDialogModel)
 
     }
 

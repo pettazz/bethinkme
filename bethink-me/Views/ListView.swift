@@ -8,14 +8,13 @@ struct ListView: View {
     @Environment(\.editMode)
     private var editMode
 
+    @Environment(AlertDialogModel.self)
+    private var alertDialogModel
+
     @FocusState private var addInFocus: Bool
     @State private var isAdding: Bool = false
     @State private var newTitle: String = ""
     @State private var isPresentingEditListSheet: Bool = false
-
-    @State private var isPresentingAlarmEditAlert: Bool = false
-    @State private var movingBethinkery: Bethinkery?
-    @State private var destinationList: BethinkeryList?
 
     @Binding var selectedBethinkeryForEdit: Bethinkery?
 
@@ -102,10 +101,8 @@ struct ListView: View {
                                     ForEach(sharedModel.bethinkeryLists) { moveMenuList in
                                         if moveMenuList != list {
                                             Button {
-                                                withAnimation {
-                                                    withErrorReporter {
-                                                        try requestBethinkeryMove(bethinkery, destination: moveMenuList)
-                                                    }
+                                                withErrorReporter {
+                                                    try requestBethinkeryMove(bethinkery, destination: moveMenuList)
                                                 }
                                             } label: {
                                                 moveDestinationLabel(moveMenuList)
@@ -158,27 +155,9 @@ struct ListView: View {
                     closeAdding()
                 }
             }
-            .alert("Moving List", isPresented: $isPresentingAlarmEditAlert) {
-                Button("Replace with List alarms", role: .destructive) {
-                    withErrorReporter {
-                        try doBethinkeryMove(inheritListAlarms: true)
-                    }
-                    movingBethinkery = nil
-                    destinationList = nil
-                }
-                Button("Keep existing alarms", role: .cancel) {
-                    withErrorReporter {
-                        try doBethinkeryMove(inheritListAlarms: false)
-                    }
-                    movingBethinkery = nil
-                    destinationList = nil
-                }
-            } message: {
-                // swiftlint:disable:next line_length
-                Text("This Reminder has alarms and is being moved to a List with different alarms. Do you want to discard the existing alarms and replace them with the alarms from the new list?")
-            }
         }
     }
+
     @ViewBuilder
     private func moveDestinationLabel(_ destination: BethinkeryList) -> some View {
         HStack(spacing: 12) {
@@ -188,7 +167,6 @@ struct ListView: View {
             Text(destination.title)
         }
     }
-
 
     private func saveNew() {
         withErrorReporter {
@@ -208,27 +186,41 @@ struct ListView: View {
         addInFocus = false
     }
 
-    private func doBethinkeryMove(inheritListAlarms: Bool) throws {
-        guard let movingBethinkery, let destinationList else { return }
-
-        try bethinkeryModel.moveBethinkery(movingBethinkery,
-                                           to: destinationList,
+    private func doBethinkeryMove(_ bethinkery: Bethinkery,
+                                  destination: BethinkeryList,
+                                  inheritListAlarms: Bool) throws {
+        try bethinkeryModel.moveBethinkery(bethinkery,
+                                           to: destination,
                                            inheritListAlarms: inheritListAlarms)
     }
 
     private func requestBethinkeryMove(_ bethinkery: Bethinkery, destination: BethinkeryList) throws {
-        movingBethinkery = bethinkery
-        destinationList = destination
-
         if bethinkery.hasAlarms {
             if destination.hasAlarms {
-                isPresentingAlarmEditAlert = true
+                alertDialogModel.title = "Moving Reminder"
+                // swiftlint:disable:next line_length
+                alertDialogModel.message = "This Reminder has alarms and is being moved to a List with different alarms. Do you want to discard the existing alarms and replace them with the alarms from the new list?"
+                let actions = [
+                    ActionButton(title: "Replace with List alarms", role: .destructive, action: {
+                        withErrorReporter {
+                            try doBethinkeryMove(bethinkery, destination: destination, inheritListAlarms: true)
+                        }
+                    }),
+                    ActionButton(title: "Keep existing alarms", action: {
+                        withErrorReporter {
+                            try doBethinkeryMove(bethinkery, destination: destination, inheritListAlarms: false)
+                        }
+                    })
+                ]
+                alertDialogModel.actions = actions
+                alertDialogModel.showDefaultCancel = true
+                alertDialogModel.isPresenting = true
             } else {
                 // retain existing alarms and don't inherit []
-                try doBethinkeryMove(inheritListAlarms: false)
+                try doBethinkeryMove(bethinkery, destination: destination, inheritListAlarms: false)
             }
         } else {
-            try doBethinkeryMove(inheritListAlarms: true)
+            try doBethinkeryMove(bethinkery, destination: destination, inheritListAlarms: true)
         }
     }
 }
