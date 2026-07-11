@@ -114,12 +114,9 @@ final class BethinkeryViewModel {
 
         do {
             try sharedModel.withTransaction { transaction in
-                let reminder = try transaction.liveReminder(for: bethinkery)
-                bethinkery.list.bethinkeries.removeAll(where: { $0.id == bethinkery.id })
-
                 bethinkery.ordinal = -1
                 bethinkery.list = list
-                bethinkery.list.bethinkeries.insert(bethinkery, at: 0)
+                let reminder = try transaction.liveReminder(for: bethinkery)
                 reminder.calendar = try transaction.liveCalendar(for: list)
 
                 if inheritListAlarms {
@@ -131,6 +128,7 @@ final class BethinkeryViewModel {
 
                 try transaction.stage(reminder)
                 transaction.rememberToReconcileID(of: bethinkery, against: reminder)
+                sharedModel.resetOrdinals()
             }
         } catch {
             throw BethinkMeError("failed to move Bethinkery", from: error as NSError)
