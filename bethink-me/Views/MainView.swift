@@ -26,9 +26,6 @@ struct MainView: View {
 
     @State private var selectedBethinkeryForEdit: Bethinkery?
 
-    @State private var isPresentingDeleteConfirmation: Bool = false
-    @State private var selectedListForDelete: BethinkeryList?
-
     @State private var alertDialogModel: AlertDialogModel = AlertDialogModel()
 
     var body: some View {
@@ -66,8 +63,7 @@ struct MainView: View {
                                                 bethinkeryModel: bethinkeryModel,
                                                 list: list,
                                                 onListDelete: { list in
-                                                    selectedListForDelete = list
-                                                    isPresentingDeleteConfirmation = true
+                                                    displayListDeleteConfirmation(selectedListForDelete: list)
                                                 }
                                             )
                                         }
@@ -166,24 +162,6 @@ struct MainView: View {
                     }
                 }
             }
-            .confirmationDialog("Are you sure?",
-                                isPresented: $isPresentingDeleteConfirmation) {
-                Button("Delete List", role: .destructive) {
-                    withErrorReporter {
-                        guard let listModel, let selectedListForDelete else { return }
-                        try listModel.delete(selectedListForDelete)
-                    }
-                    isPresentingDeleteConfirmation = false
-                    selectedListForDelete = nil
-                }
-                Button("Cancel", role: .cancel) {
-                    isPresentingDeleteConfirmation = false
-                    selectedListForDelete = nil
-                }
-            } message: {
-                // swiftlint:disable:next line_length
-                Text("Are you sure you want to delete **\(selectedListForDelete?.title ?? "this list")** and all Reminders on it? This cannot be undone.")
-            }
             .task(id: scenePhase) {
                 guard scenePhase == .active else { return }
                 do {
@@ -254,5 +232,22 @@ struct MainView: View {
             sharedModel.syncCoordinator.start()
             sharedModel.startEventStoreObserver()
         }
+    }
+
+    private func displayListDeleteConfirmation(selectedListForDelete: BethinkeryList) {
+        alertDialogModel.title = "Delete List"
+        // swiftlint:disable:next line_length
+        alertDialogModel.message = "Are you sure you want to delete **\(selectedListForDelete.title)** and all \(selectedListForDelete.bethinkeries.count) Reminders on it? This cannot be undone."
+        let actions = [
+            ActionButton(title: "Delete List", role: .destructive, action: {
+                withErrorReporter {
+                    guard let listModel else { return }
+                    try listModel.delete(selectedListForDelete)
+                }
+            })
+        ]
+        alertDialogModel.actions = actions
+        alertDialogModel.showDefaultCancel = true
+        alertDialogModel.isPresenting = true
     }
 }
