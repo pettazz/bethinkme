@@ -2,60 +2,74 @@ import SwiftUI
 
 
 struct AlertDialogView: View {
+    @Environment(\.colorScheme)
+    var colorScheme
+
     let alertModel: AlertDialogModel
 
     var body: some View {
-        Spacer()
-        VStack(alignment: .leading) {
+        VStack(spacing: 0) {
+            VStack(alignment: .leading) {
+                Text(alertModel.title)
+                    .font(.headline)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(Color(uiColor: .label))
+                    .padding(.top, 30)
 
-            Text(alertModel.title)
-                .font(.headline)
-                .padding(.vertical, 15)
-
-            Text(alertModel.message)
-                .padding(.bottom, 10)
-        }
-        .frame(maxWidth: .infinity)
-        .background(.clear, in: RoundedRectangle(cornerRadius: 45))
-        .padding(.horizontal, 25)
-        .presentationBackground(.clear)
-        .presentationCornerRadius(45)
-
-        VStack(alignment: .center) {
-            ForEach(Array(alertModel.actions.enumerated()), id: \.offset) { _, action in
-                Button(role: action.role) {
-                    action.action()
-                    alertModel.dismiss()
-                } label: {
-                    Text(action.title)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 5)
-                }
-                .buttonStyle(.bordered)
-                .padding(.horizontal, 30)
-                .padding(.bottom, 5)
+                Text(alertModel.message)
+                    .padding(.vertical, 10)
+                    .fontWeight(.regular)
+                    .foregroundStyle(Color(uiColor: .label))
+                    .multilineTextAlignment(.leading)
             }
+            .font(.body)
+            .fontWeight(.regular)
+            .foregroundStyle(.primary)
+            .tint(.accentColor)
+            .frame(maxWidth: .infinity)
+            .presentationBackground(.clear)
 
-            if alertModel.showDefaultCancel {
-                Button(role: .cancel) {
-                    alertModel.dismiss()
-                } label: {
-                    Text("Cancel")
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 5)
+//            VStack(spacing: 0) {
+//                Text("diff stuff goes here!")
+//            }
+//            .padding(.horizontal, 25)
+//            .background(Color(.systemBackground), in: RoundedRectangle(cornerRadius: 45))
+
+            VStack(alignment: .center) {
+                ForEach(Array(alertModel.actions.enumerated()), id: \.offset) { _, action in
+                    Button(role: action.role) {
+                        action.action()
+                        alertModel.dismiss()
+                    } label: {
+                        Text(action.title)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 5)
+                    }
+                    .buttonStyle(.bordered)
+                    .padding(.horizontal, 30)
+                    .padding(.vertical, 5)
                 }
-                .buttonStyle(.bordered)
-                .padding(.horizontal, 30)
-                .padding(.top, 20)
-                .padding(.bottom, 5)
-                .tint(.secondary)
+
+                if alertModel.showDefaultCancel {
+                    Button(role: .cancel) {
+                        alertModel.dismiss()
+                    } label: {
+                        Text("Cancel")
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 5)
+                            .foregroundStyle(colorScheme == .dark ? .gray : .black)
+                    }
+                    .buttonStyle(.bordered)
+                    .padding(.horizontal, 30)
+                    .padding(.top, 15)
+                    .padding(.bottom, 10)
+
+                }
             }
+            .frame(maxWidth: .infinity)
+            .presentationBackground(.clear)
         }
-        .frame(maxWidth: .infinity)
-        .background(.clear, in: RoundedRectangle(cornerRadius: 45))
         .padding(.horizontal, 25)
-        .presentationBackground(.clear)
-        .presentationCornerRadius(45)
     }
 }
 
