@@ -14,7 +14,7 @@ class AlertDialogModel {
     var title: String = ""
     var message: String = ""
     var actions: [ActionButton] = []
-    var showDefaultCancel: Bool? = false
+    var showDefaultCancel: Bool = false
 
     func dismiss() {
         self.isPresenting = false

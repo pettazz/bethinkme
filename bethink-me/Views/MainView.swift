@@ -221,7 +221,7 @@ struct MainView: View {
         if bethinkeryModel == nil {
             bethinkeryModel = BethinkeryViewModel(sharedModel: sharedModel)
         }
-        guard let bethinkeryModel else { throw BethinkMeError("failed to set up Bethinkery ViewModel") }
+        guard bethinkeryModel != nil else { throw BethinkMeError("failed to set up Bethinkery ViewModel") }
 
         if sharedModel.syncCoordinator.synchronizer == nil {
             sharedModel.syncCoordinator.synchronizer = {

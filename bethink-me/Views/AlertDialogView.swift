@@ -36,7 +36,7 @@ struct AlertDialogView: View {
                 .padding(.bottom, 5)
             }
 
-            if let showCancel = alertModel.showDefaultCancel, showCancel {
+            if alertModel.showDefaultCancel {
                 Button(role: .cancel) {
                     alertModel.dismiss()
                 } label: {

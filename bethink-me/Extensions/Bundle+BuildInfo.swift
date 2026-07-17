@@ -19,7 +19,8 @@ extension Bundle {
     fileprivate func getInfo(_ str: String) -> String { infoDictionary?[str] as? String ?? "⚠️" }
     // swiftlint:enable all
 
-    private static let isTestFlight = Bundle.main.appStoreReceiptURL?.lastPathComponent == "sandboxReceipt"
+    private static let isTestFlight = FileManager.default.fileExists(
+        atPath: Bundle.main.bundlePath + "/StoreKit/sandboxReceipt")
 
     private static var isDebug: Bool {
         #if DEBUG
