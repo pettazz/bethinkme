@@ -93,6 +93,12 @@ struct RowView: View {
                                 }
                             }
                             .accessibilityAddTraits(.isButton)
+                            .padding(.trailing, displayAlarmIcons ? 40 : 0)
+                            .overlay(alignment: .topTrailing) {
+                                if displayAlarmIcons {
+                                    alarmIconStack()
+                                }
+                            }
                     }
                 }
                 .containerRelativeFrame(.horizontal, count: 10, span: 8, spacing: 5, alignment: .trailing)
@@ -119,28 +125,42 @@ struct RowView: View {
                         .containerRelativeFrame(.horizontal, count: 10, span: 8, spacing: 5, alignment: .trailing)
                     }
                 }
-                if displayAlarmIcons {
-                    HStack {
-                        if bethinkery.hasAbsoluteTimeAlarm {
-                            Image(systemName: "calendar")
-                                .accessibilityLabel(Text("Has at least one absolute time alarm set"))
-                                .foregroundColor(Color(hex: bethinkery.list.hexColor))
-                        }
-                        if bethinkery.hasRelativeTimeAlarm {
-                            Image(systemName: "alarm.fill")
-                                .accessibilityLabel(Text("Has at least one relative time alarm set"))
-                                .foregroundColor(Color(hex: bethinkery.list.hexColor))
-                        }
-                        if bethinkery.hasProximityAlarm {
-                            Image(systemName: "location.circle.fill")
-                                .accessibilityLabel(Text("Has at least one location alarm set"))
-                                .foregroundColor(Color(hex: bethinkery.list.hexColor))
-                        }
-                    }
-                }
             }
         }
         .sensoryFeedback(.selection, trigger: isEditing)
+    }
+
+    @ViewBuilder
+    private func alarmIconStack() -> some View {
+        HStack(spacing: -10) {
+            if bethinkery.hasAbsoluteTimeAlarm {
+                stackedAlarmIcon(name: "calendar",
+                                 color: bethinkery.list.hexColor,
+                                 label: "Has at least one absolute time alarm set")
+            }
+            if bethinkery.hasRelativeTimeAlarm {
+                stackedAlarmIcon(name: "alarm.fill",
+                                 color: bethinkery.list.hexColor,
+                                 label: "Has at least one relative time alarm set")
+            }
+            if bethinkery.hasProximityAlarm {
+                stackedAlarmIcon(name: "location.circle.fill",
+                                 color: bethinkery.list.hexColor,
+                                 label: "Has at least one location alarm set")
+            }
+        }
+        .font(.footnote)
+        .fixedSize()
+    }
+
+    @ViewBuilder
+    private func stackedAlarmIcon(name: String, color: String, label: String) -> some View {
+        Image(systemName: name)
+            .foregroundColor(Color(hex: color))
+            .padding(4)
+            .background(Circle().fill(Color(.systemBackground)))
+            .overlay(Circle().stroke(Color(.separator).opacity(0.75), lineWidth: 1))
+            .accessibilityLabel(Text(label))
     }
 
     private func cancelEdit() {
