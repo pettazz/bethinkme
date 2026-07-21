@@ -213,6 +213,8 @@ struct ListView: View {
                     })
                 ]
                 alertDialogModel.actions = actions
+                alertDialogModel.currentAlarms = bethinkery.alarms.compactMap({ $0.toTemplate() })
+                alertDialogModel.diffAlarms = destination.alarmTemplates.compactMap({ $0.toTemplate() })
                 alertDialogModel.showDefaultCancel = true
                 alertDialogModel.isPresenting = true
             } else {

@@ -149,6 +149,7 @@ struct ListDetailView: View {
             })
         ]
         alertDialogModel.actions = actions
+        alertDialogModel.diffAlarms = editListCommand.alarmTemplates
         alertDialogModel.showDefaultCancel = true
         alertDialogModel.isPresenting = true
     }

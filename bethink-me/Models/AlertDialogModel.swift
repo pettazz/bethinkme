@@ -16,6 +16,9 @@ class AlertDialogModel {
     var actions: [ActionButton] = []
     var showDefaultCancel: Bool = false
 
+    var currentAlarms: [BethinkeryAlarmTemplate]?
+    var diffAlarms: [BethinkeryAlarmTemplate]?
+
     func dismiss() {
         self.isPresenting = false
         self.title = ""

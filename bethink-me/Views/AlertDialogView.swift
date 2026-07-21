@@ -29,11 +29,46 @@ struct AlertDialogView: View {
             .frame(maxWidth: .infinity)
             .presentationBackground(.clear)
 
-//            VStack(spacing: 0) {
-//                Text("diff stuff goes here!")
-//            }
-//            .padding(.horizontal, 25)
-//            .background(Color(.systemBackground), in: RoundedRectangle(cornerRadius: 45))
+            if let diffAlarms = alertModel.diffAlarms {
+                ScrollView {
+                    HStack(alignment: .top, spacing: 20) {
+                        if let currentAlarms = alertModel.currentAlarms,
+                           !currentAlarms.isEmpty {
+                            VStack(alignment: .leading, spacing: 10) {
+                                Text("Current")
+                                    .font(.headline)
+                                    .foregroundStyle(Color(uiColor: .label))
+                                ForEach(currentAlarms, id: \.id) { alarm in
+                                    AlarmView(relativeAlarm: currentAlarms.earliestAlarm, alarm: alarm)
+                                        .fontWeight(.regular)
+                                        .foregroundStyle(Color(uiColor: .label))
+                                }
+                            }
+                            .padding()
+                            .frame(maxWidth: .infinity)
+                            .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 10))
+                        }
+                        if !diffAlarms.isEmpty {
+                            VStack(alignment: .leading, spacing: 10) {
+                                Text("New")
+                                    .font(.headline)
+                                    .foregroundStyle(Color(uiColor: .label))
+                                ForEach(diffAlarms, id: \.id) { alarm in
+                                    AlarmView(relativeAlarm: diffAlarms.earliestAlarm, alarm: alarm)
+                                        .fontWeight(.regular)
+                                        .foregroundStyle(Color(uiColor: .label))
+                                }
+                            }
+                            .padding()
+                            .frame(maxWidth: .infinity)
+                            .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 10))
+                        }
+                    }
+                    .padding(.vertical, 20)
+                    .frame(maxWidth: .infinity)
+                }
+                .frame(maxHeight: 400)
+            }
 
             VStack(alignment: .center) {
                 ForEach(Array(alertModel.actions.enumerated()), id: \.offset) { _, action in
@@ -84,5 +119,9 @@ struct AlertDialogView: View {
         ActionButton(title: "Do not click me", action: { print("no!") })
     ]
     model.showDefaultCancel = true
+    model.diffAlarms = [
+        AbsoluteTimeAlarmTemplate(id: "123", time: Date.now.addingTimeInterval(-1000), isAllDay: false),
+        AbsoluteTimeAlarmTemplate(id: "234", time: Date.now.addingTimeInterval(278934), isAllDay: true)
+    ]
     return AlertDialogView(alertModel: model)
 }
