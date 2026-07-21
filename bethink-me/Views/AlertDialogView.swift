@@ -38,7 +38,7 @@ struct AlertDialogView: View {
                                 Text("Current")
                                     .font(.headline)
                                     .foregroundStyle(Color(uiColor: .label))
-                                ForEach(currentAlarms, id: \.id) { alarm in
+                                ForEach(currentAlarms.sortedAlarms, id: \.id) { alarm in
                                     AlarmView(relativeAlarm: currentAlarms.earliestAlarm, alarm: alarm)
                                         .fontWeight(.regular)
                                         .foregroundStyle(Color(uiColor: .label))
@@ -53,7 +53,7 @@ struct AlertDialogView: View {
                                 Text("New")
                                     .font(.headline)
                                     .foregroundStyle(Color(uiColor: .label))
-                                ForEach(diffAlarms, id: \.id) { alarm in
+                                ForEach(diffAlarms.sortedAlarms, id: \.id) { alarm in
                                     AlarmView(relativeAlarm: diffAlarms.earliestAlarm, alarm: alarm)
                                         .fontWeight(.regular)
                                         .foregroundStyle(Color(uiColor: .label))
