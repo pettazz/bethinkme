@@ -48,21 +48,30 @@ struct AlertDialogView: View {
                             .frame(maxWidth: .infinity)
                             .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 10))
                         }
-                        if !diffAlarms.isEmpty {
-                            VStack(alignment: .leading, spacing: 10) {
-                                Text("New")
-                                    .font(.headline)
-                                    .foregroundStyle(Color(uiColor: .label))
-                                ForEach(diffAlarms.sortedAlarms, id: \.id) { alarm in
-                                    AlarmView(relativeAlarm: diffAlarms.earliestAlarm, alarm: alarm)
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("New")
+                                .font(.headline)
+                                .foregroundStyle(Color(uiColor: .label))
+                            if diffAlarms.isEmpty {
+                                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                                    Image(systemName: "calendar.badge.minus")
+                                        .font(.headline)
+                                        .accessibilityHidden(true)
+                                        .frame(width: 24, alignment: .center)
+                                    Text("Remove all alarms")
+                                        .frame(maxWidth: .infinity, alignment: .leading)
                                         .fontWeight(.regular)
-                                        .foregroundStyle(Color(uiColor: .label))
                                 }
                             }
-                            .padding()
-                            .frame(maxWidth: .infinity)
-                            .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 10))
+                            ForEach(diffAlarms.sortedAlarms, id: \.id) { alarm in
+                                AlarmView(relativeAlarm: diffAlarms.earliestAlarm, alarm: alarm)
+                                    .fontWeight(.regular)
+                            }
                         }
+                        .foregroundStyle(Color(uiColor: .label))
+                        .padding()
+                        .frame(maxWidth: .infinity)
+                        .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 10))
                     }
                     .padding(.vertical, 20)
                     .frame(maxWidth: .infinity)
