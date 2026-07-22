@@ -31,87 +31,37 @@ struct ListDetailView: View {
 
     var body: some View {
         if !listModel.availableSources.isEmpty {
-            NavigationStack {
-                VStack(spacing: 0) {
-                    Text(editListCommand.title.isEmpty ? "New List" : editListCommand.title)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .foregroundColor(newColor)
-                        .font(.largeTitle)
-                        .bold()
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 10)
+            DetailEditor(title: editListCommand.title.isEmpty ? "New List" : editListCommand.title,
+                         color: newColor,
+                         onSave: save) {
+                Section {
+                    TextField(editListCommand.title.isEmpty ? "New List" : editListCommand.title,
+                              text: $editListCommand.title)
+                    .autocorrectionDisabled(!enableAutocorrectSetting)
 
-                    Form {
-                        Section {
-                            TextField(editListCommand.title.isEmpty ? "New List" : editListCommand.title,
-                                      text: $editListCommand.title)
-                                .autocorrectionDisabled(!enableAutocorrectSetting)
-                            ColorPicker("List color", selection: $newColor)
-                            if isNew {
-                                Picker("Save to", selection: $newSourceId) {
-                                    ForEach(listModel.availableSources, id: \.sourceIdentifier) { source in
-                                        Text(source.title).tag(source.sourceIdentifier)
-                                    }
-                                }
+                    ColorPicker("List color", selection: $newColor)
+
+                    if isNew {
+                        Picker("Save to", selection: $newSourceId) {
+                            ForEach(listModel.availableSources, id: \.sourceIdentifier) { source in
+                                Text(source.title).tag(source.sourceIdentifier)
                             }
                         }
-
-                        AlarmsListView(alarmList: $editListCommand.alarmTemplates)
-                    }
-                    .contentMargins(.top, 10, for: .scrollContent)
-
-                    Button {
-                        isPresentingEditAlarmsView = true
-                    } label: {
-                        Text("Add alarm")
-                            .padding(5)
-                    }
-                    .buttonStyle(.bordered)
-                    .tint(newColor)
-                    .padding(.vertical, 15)
-                }
-                .toolbar {
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button("Save") {
-                            withAnimation {
-                                withErrorReporter {
-                                    editListCommand.hexColor = newColor.toHex()
-                                    if isNew {
-                                        guard let selectedSource else {
-                                            throw BethinkMeError("tried to create a List on a nonexistent Source")
-                                        }
-                                        try listModel.create(from: editListCommand, source: selectedSource)
-                                        dismiss()
-                                    } else {
-                                        guard let list else {
-                                            throw BethinkMeError("tried to update list that doesn't exist")
-                                        }
-                                        if !(list.liveBethinkeries.isEmpty) {
-                                            displayAlarmEditAlertDialog(list: list, editListCommand: editListCommand)
-                                        } else {
-                                            try listModel.update(list, with: editListCommand)
-                                            dismiss()
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        .buttonStyle(.borderedProminent)
-                    }
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button("Cancel", role: .cancel) {
-                            dismiss()
-                        }
                     }
                 }
-                .sheet(isPresented: $isPresentingEditAlarmsView) {
-                    AlarmsEditView(alarmList: $editListCommand.alarmTemplates, color: newColor)
+                AlarmsListView(alarmList: $editListCommand.alarmTemplates)
+            } footer: {
+                AddAlarmButton(color: newColor) {
+                    isPresentingEditAlarmsView = true
                 }
+            }
+            .sheet(isPresented: $isPresentingEditAlarmsView) {
+                AlarmsEditView(alarmList: $editListCommand.alarmTemplates, color: newColor)
             }
             .task {
                 if isNew {
                     newSourceId = listModel.defaultSource?.sourceIdentifier ??
-                                  listModel.availableSources.first?.sourceIdentifier ?? ""
+                    listModel.availableSources.first?.sourceIdentifier ?? ""
                 } else {
                     newColor = Color(hex: editListCommand.hexColor)
                 }
@@ -165,5 +115,30 @@ struct ListDetailView: View {
         alertDialogModel.diffAlarms = editListCommand.alarmTemplates
         alertDialogModel.showDefaultCancel = true
         alertDialogModel.isPresenting = true
+    }
+
+    private func save() {
+        withAnimation {
+            withErrorReporter {
+                editListCommand.hexColor = newColor.toHex()
+                if isNew {
+                    guard let selectedSource else {
+                        throw BethinkMeError("tried to create a List on a nonexistent Source")
+                    }
+                    try listModel.create(from: editListCommand, source: selectedSource)
+                    dismiss()
+                } else {
+                    guard let list else {
+                        throw BethinkMeError("tried to update list that doesn't exist")
+                    }
+                    if !(list.liveBethinkeries.isEmpty) {
+                        displayAlarmEditAlertDialog(list: list, editListCommand: editListCommand)
+                    } else {
+                        try listModel.update(list, with: editListCommand)
+                        dismiss()
+                    }
+                }
+            }
+        }
     }
 }

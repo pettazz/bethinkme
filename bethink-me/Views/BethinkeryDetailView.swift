@@ -16,73 +16,40 @@ struct BethinkeryDetailView: View {
     var bethinkery: Bethinkery
 
     var body: some View {
-        NavigationStack {
-            VStack(spacing: 0) {
-                Text(editBethinkeryCommand.title)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .foregroundColor(Color(hex: bethinkery.list.hexColor))
-                    .font(.largeTitle)
-                    .bold()
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 10)
+        DetailEditor(title: editBethinkeryCommand.title,
+                     color: Color(hex: bethinkery.list.hexColor),
+                     onSave: save) {
+            Section {
+                TextField(
+                    editBethinkeryCommand.title,
+                    text: $editBethinkeryCommand.title,
+                    prompt: Text("Title"))
+                .autocorrectionDisabled(!enableAutocorrectSetting)
 
-                Form {
-                    Section {
-                        TextField(
-                            editBethinkeryCommand.title,
-                            text: $editBethinkeryCommand.title,
-                            prompt: Text("Title"))
-                        .autocorrectionDisabled(!enableAutocorrectSetting)
+                TextField(
+                    "Notes",
+                    text: $editBethinkeryCommand.notesText,
+                    prompt: Text("Notes"),
+                    axis: .vertical)
 
-                        TextField(
-                            "Notes",
-                            text: $editBethinkeryCommand.notesText,
-                            prompt: Text("Notes"),
-                            axis: .vertical)
-
-                        TextField(
-                            "URL",
-                            text: $editBethinkeryCommand.urlText,
-                            prompt: Text("URL"))
-                        .keyboardType(.URL)
-                        .autocorrectionDisabled(true)
-                        .textInputAutocapitalization(.never)
-                    }
-
-                    AlarmsListView(alarmList: $editBethinkeryCommand.alarms)
-                }
-                .contentMargins(.top, 10, for: .scrollContent)
-
-                Button {
-                    isPresentingEditAlarmsView = true
-                } label: {
-                    Text("Add alarm")
-                        .padding(5)
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(Color(hex: bethinkery.list.hexColor))
-                .padding(.vertical, 15)
-
+                TextField(
+                    "URL",
+                    text: $editBethinkeryCommand.urlText,
+                    prompt: Text("URL"))
+                .keyboardType(.URL)
+                .autocorrectionDisabled(true)
+                .textInputAutocapitalization(.never)
             }
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        withErrorReporter {
-                            try bethinkeryModel.update(bethinkery, with: editBethinkeryCommand)
-                            dismiss()
-                        }
-                    }
-                    .buttonStyle(.borderedProminent)
-                }
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel", role: .cancel) {
-                        dismiss()
-                    }
-                }
+
+            AlarmsListView(alarmList: $editBethinkeryCommand.alarms)
+        } footer: {
+            AddAlarmButton(color: Color(hex: bethinkery.list.hexColor)) {
+                isPresentingEditAlarmsView = true
             }
-            .sheet(isPresented: $isPresentingEditAlarmsView) {
-                AlarmsEditView(alarmList: $editBethinkeryCommand.alarms, color: Color(hex: bethinkery.list.hexColor))
-            }
+        }
+        .sheet(isPresented: $isPresentingEditAlarmsView) {
+            AlarmsEditView(alarmList: $editBethinkeryCommand.alarms,
+                           color: Color(hex: bethinkery.list.hexColor))
         }
     }
 
@@ -90,5 +57,12 @@ struct BethinkeryDetailView: View {
         self.bethinkeryModel = bethinkeryModel
         self.bethinkery = bethinkery
         _editBethinkeryCommand = StateObject(wrappedValue: .fromBethinkery(bethinkery))
+    }
+
+    private func save() {
+        withErrorReporter {
+            try bethinkeryModel.update(bethinkery, with: editBethinkeryCommand)
+            dismiss()
+        }
     }
 }
