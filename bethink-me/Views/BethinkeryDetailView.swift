@@ -10,49 +10,59 @@ struct BethinkeryDetailView: View {
 
     @StateObject private var editBethinkeryCommand: EditBethinkery = EditBethinkery()
 
+    @State private var isPresentingEditAlarmsView: Bool = false
+
     var bethinkeryModel: BethinkeryViewModel
     var bethinkery: Bethinkery
 
     var body: some View {
         NavigationStack {
-            VStack {
-                // TODO: make this less ugly, see also BethinkeryListDetailView
+            VStack(spacing: 0) {
                 Text(editBethinkeryCommand.title)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .foregroundColor(Color(hex: bethinkery.list.hexColor))
                     .font(.largeTitle)
                     .bold()
-                    .padding(20)
-                ScrollViewReader { scrollProxy in
-                    Form {
-                        Section {
-                            TextField(
-                                editBethinkeryCommand.title,
-                                text: $editBethinkeryCommand.title,
-                                prompt: Text("Title"))
-                            .autocorrectionDisabled(!enableAutocorrectSetting)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 10)
 
-                            TextField(
-                                "Notes",
-                                text: $editBethinkeryCommand.notesText,
-                                prompt: Text("Notes"),
-                                axis: .vertical)
+                Form {
+                    Section {
+                        TextField(
+                            editBethinkeryCommand.title,
+                            text: $editBethinkeryCommand.title,
+                            prompt: Text("Title"))
+                        .autocorrectionDisabled(!enableAutocorrectSetting)
 
-                            TextField(
-                                "URL",
-                                text: $editBethinkeryCommand.urlText,
-                                prompt: Text("URL"))
-                            .keyboardType(.URL)
-                            .autocorrectionDisabled(true)
-                            .textInputAutocapitalization(.never)
-                        }
+                        TextField(
+                            "Notes",
+                            text: $editBethinkeryCommand.notesText,
+                            prompt: Text("Notes"),
+                            axis: .vertical)
 
-                        AlarmsEditView(
-                            alarmList: $editBethinkeryCommand.alarms,
-                            scrollProxy: scrollProxy
-                        )
+                        TextField(
+                            "URL",
+                            text: $editBethinkeryCommand.urlText,
+                            prompt: Text("URL"))
+                        .keyboardType(.URL)
+                        .autocorrectionDisabled(true)
+                        .textInputAutocapitalization(.never)
                     }
+
+                    AlarmsListView(alarmList: $editBethinkeryCommand.alarms)
                 }
+                .contentMargins(.top, 10, for: .scrollContent)
+
+                Button {
+                    isPresentingEditAlarmsView = true
+                } label: {
+                    Text("Add alarm")
+                        .padding(5)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(Color(hex: bethinkery.list.hexColor))
+                .padding(.vertical, 15)
+
             }
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
@@ -62,12 +72,16 @@ struct BethinkeryDetailView: View {
                             dismiss()
                         }
                     }
+                    .buttonStyle(.borderedProminent)
                 }
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
+                    Button("Cancel", role: .cancel) {
                         dismiss()
                     }
                 }
+            }
+            .sheet(isPresented: $isPresentingEditAlarmsView) {
+                AlarmsEditView(alarmList: $editBethinkeryCommand.alarms, color: Color(hex: bethinkery.list.hexColor))
             }
         }
     }

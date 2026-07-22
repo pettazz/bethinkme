@@ -16,6 +16,8 @@ struct ListDetailView: View {
     @State private var newColor: Color = Color.accentColor
     @State private var newSourceId: String = ""
 
+    @State private var isPresentingEditAlarmsView: Bool = false
+
     var sharedModel: SharedViewModel
     var listModel: ListViewModel
     var list: BethinkeryList?
@@ -29,37 +31,44 @@ struct ListDetailView: View {
 
     var body: some View {
         if !listModel.availableSources.isEmpty {
-            // TODO: make this less ugly, see also BethinkeryDetailView
             NavigationStack {
-                VStack {
+                VStack(spacing: 0) {
                     Text(editListCommand.title.isEmpty ? "New List" : editListCommand.title)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .foregroundColor(newColor)
                         .font(.largeTitle)
                         .bold()
-                        .padding(20)
-                    ScrollViewReader { scrollProxy in
-                        Form {
-                            Section {
-                                TextField(editListCommand.title.isEmpty ? "New List" : editListCommand.title,
-                                          text: $editListCommand.title)
-                                    .autocorrectionDisabled(!enableAutocorrectSetting)
-                                ColorPicker("List color", selection: $newColor)
-                                if isNew {
-                                    Picker("Save to", selection: $newSourceId) {
-                                        ForEach(listModel.availableSources, id: \.sourceIdentifier) { source in
-                                            Text(source.title).tag(source.sourceIdentifier)
-                                        }
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 10)
+
+                    Form {
+                        Section {
+                            TextField(editListCommand.title.isEmpty ? "New List" : editListCommand.title,
+                                      text: $editListCommand.title)
+                                .autocorrectionDisabled(!enableAutocorrectSetting)
+                            ColorPicker("List color", selection: $newColor)
+                            if isNew {
+                                Picker("Save to", selection: $newSourceId) {
+                                    ForEach(listModel.availableSources, id: \.sourceIdentifier) { source in
+                                        Text(source.title).tag(source.sourceIdentifier)
                                     }
                                 }
                             }
-
-                            AlarmsEditView(
-                                alarmList: $editListCommand.alarmTemplates,
-                                scrollProxy: scrollProxy
-                            )
                         }
+
+                        AlarmsListView(alarmList: $editListCommand.alarmTemplates)
                     }
+                    .contentMargins(.top, 10, for: .scrollContent)
+
+                    Button {
+                        isPresentingEditAlarmsView = true
+                    } label: {
+                        Text("Add alarm")
+                            .padding(5)
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(newColor)
+                    .padding(.vertical, 15)
                 }
                 .toolbar {
                     ToolbarItem(placement: .confirmationAction) {
@@ -87,12 +96,16 @@ struct ListDetailView: View {
                                 }
                             }
                         }
+                        .buttonStyle(.borderedProminent)
                     }
                     ToolbarItem(placement: .cancellationAction) {
-                        Button("Cancel") {
+                        Button("Cancel", role: .cancel) {
                             dismiss()
                         }
                     }
+                }
+                .sheet(isPresented: $isPresentingEditAlarmsView) {
+                    AlarmsEditView(alarmList: $editListCommand.alarmTemplates, color: newColor)
                 }
             }
             .task {
