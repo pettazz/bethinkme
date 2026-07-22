@@ -62,10 +62,11 @@ struct AlertDialogView: View {
                                         .frame(maxWidth: .infinity, alignment: .leading)
                                         .fontWeight(.regular)
                                 }
-                            }
-                            ForEach(diffAlarms.sortedAlarms, id: \.id) { alarm in
-                                AlarmView(relativeAlarm: diffAlarms.earliestAlarm, alarm: alarm)
-                                    .fontWeight(.regular)
+                            } else {
+                                ForEach(diffAlarms.sortedAlarms, id: \.id) { alarm in
+                                    AlarmView(relativeAlarm: diffAlarms.earliestAlarm, alarm: alarm)
+                                        .fontWeight(.regular)
+                                }
                             }
                         }
                         .foregroundStyle(Color(uiColor: .label))
