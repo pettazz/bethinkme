@@ -3,7 +3,7 @@ import SwiftUI
 
 struct ListView: View {
     @AppStorage(SettingsKey.enableAutocorrect.rawValue)
-    private var enableAutocorrectSetting: Bool = true
+    private var enableAutocorrectSetting: Bool = kEnableAutocorrectDefault
 
     @Environment(\.editMode)
     private var editMode

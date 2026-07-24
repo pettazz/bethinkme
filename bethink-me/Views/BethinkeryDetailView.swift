@@ -3,7 +3,7 @@ import SwiftUI
 
 struct BethinkeryDetailView: View {
     @AppStorage(SettingsKey.enableAutocorrect.rawValue)
-    private var enableAutocorrectSetting: Bool = true
+    private var enableAutocorrectSetting: Bool = kEnableAutocorrectDefault
 
     @Environment(\.dismiss)
     private var dismiss

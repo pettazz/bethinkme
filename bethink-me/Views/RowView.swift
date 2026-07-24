@@ -3,13 +3,13 @@ import SwiftUI
 
 struct RowView: View {
     @AppStorage(SettingsKey.enableAutocorrect.rawValue)
-    private var enableAutocorrectSetting: Bool = true
+    private var enableAutocorrectSetting: Bool = kEnableAutocorrectDefault
     @AppStorage(SettingsKey.displayNotes.rawValue)
-    private var displayNotes: Bool = false
+    private var displayNotes: Bool = kDisplayNotesDefault
     @AppStorage(SettingsKey.displayURLs.rawValue)
-    private var displayURLs: Bool = false
+    private var displayURLs: Bool = kDisplayURLsDefault
     @AppStorage(SettingsKey.displayAlarmIcons.rawValue)
-    private var displayAlarmIcons: Bool = false
+    private var displayAlarmIcons: Bool = kDisplayAlarmIconsDefault
 
     @FocusState private var editFocus: Bool
     @State private var isEditing: Bool = false
