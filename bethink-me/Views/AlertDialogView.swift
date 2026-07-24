@@ -8,6 +8,7 @@ struct AlertDialogView: View {
     let alertModel: AlertDialogModel
 
     var body: some View {
+        // TODO: factor out a ton of this stuff
         VStack(spacing: 0) {
             VStack(alignment: .leading) {
                 Text(alertModel.title)
@@ -89,7 +90,7 @@ struct AlertDialogView: View {
                                 .foregroundStyle(Color(uiColor: .label))
                             ForEach(reminderList, id: \.id) { reminder in
                                 HStack(alignment: .firstTextBaseline, spacing: 8) {
-                                    Image(systemName: "circle")
+                                    Image(systemName: reminder.isCompleted ? "checkmark.circle.fill" : "circle")
                                         .font(.headline)
                                         .accessibilityHidden(true)
                                         .frame(width: 24, alignment: .center)
@@ -144,6 +145,7 @@ struct AlertDialogView: View {
             .frame(maxWidth: .infinity)
         }
         .padding(.horizontal, 25)
+        .padding(.top, 25)
         .presentationBackground(.ultraThinMaterial)
     }
 }

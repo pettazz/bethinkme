@@ -238,7 +238,11 @@ struct MainView: View {
         alertDialogModel.title = "Delete List"
         alertDialogModel.message = "This will permanently delete the list\n\n**\(selectedListForDelete.title)**\n\n"
         if !selectedListForDelete.bethinkeries.isEmpty {
-            alertDialogModel.message += "and all of its **\(selectedListForDelete.bethinkeries.count) Reminders** "
+            if selectedListForDelete.bethinkeries.count == 1 {
+                alertDialogModel.message += "and its **Reminder.** "
+            } else {
+                alertDialogModel.message += "and all of its **\(selectedListForDelete.bethinkeries.count) Reminders.** "
+            }
         }
         alertDialogModel.message += "This cannot be undone."
         let actions = [
@@ -249,7 +253,7 @@ struct MainView: View {
                 }
             })
         ]
-        alertDialogModel.reminderList = selectedListForDelete.liveBethinkeries
+        alertDialogModel.reminderList = selectedListForDelete.bethinkeries
         alertDialogModel.actions = actions
         alertDialogModel.showDefaultCancel = true
         alertDialogModel.isPresenting = true
