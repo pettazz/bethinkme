@@ -5,6 +5,8 @@ import UniformTypeIdentifiers
 struct SettingsView: View {
     @AppStorage(SettingsKey.enableAutocorrect.rawValue)
     private var enableAutocorrect: Bool = kEnableAutocorrectDefault
+    @AppStorage(SettingsKey.enableDedupe.rawValue)
+    private var enableDedupe: Bool = kEnableDedupeDefault
     @AppStorage(SettingsKey.maxCompletedAgeDays.rawValue)
     private var maxCompletedAgeDays: Int = kMaxCompletedAgeDaysDefault
     @AppStorage(SettingsKey.displayNotes.rawValue)
@@ -21,6 +23,14 @@ struct SettingsView: View {
             Form {
                 Section {
                     Toggle("Enable autocorrection", isOn: $enableAutocorrect)
+                    Toggle(isOn: $enableDedupe) {
+                        VStack(alignment: .leading) {
+                            Text("Enable deuplication")
+                            Text("Ignore new Reminders when they are identical to an existing one on the same list")
+                                .font(.caption)
+                        }
+                        .containerRelativeFrame(.horizontal, count: 4, span: 2, spacing: 0)
+                    }
                 } header: {
                     Text("Editing")
                 }
