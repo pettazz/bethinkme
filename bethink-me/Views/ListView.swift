@@ -54,7 +54,9 @@ struct ListView: View {
                             .textFieldStyle(.plain)
                             .focused($addInFocus)
                             .onAppear {
-                                addInFocus = true
+                                Task { @MainActor in
+                                    addInFocus = true
+                                }
                             }
                             .toolbar {
                                 ToolbarItem(placement: .cancellationAction) {
