@@ -41,9 +41,6 @@ struct InvalidStateView: View {
 
             }
 
-            if ErrorState.instance.currentError?.retry != nil {
-            }
-
             Spacer()
         }
     }

@@ -4,7 +4,7 @@ import SwiftUI
 struct DetailHeader: View {
     let title: String
     let color: Color
-    
+
     var body: some View {
         Text(title)
             .frame(maxWidth: .infinity, alignment: .leading)
