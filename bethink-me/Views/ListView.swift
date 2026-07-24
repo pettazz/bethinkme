@@ -33,6 +33,9 @@ struct ListView: View {
                     Image(systemName: "minus.circle.fill")
                         .accessibilityLabel(Text("Delete List"))
                 }
+                .buttonStyle(.borderless)
+                .fixedSize()
+
                 Text(list.title)
                     .font(.headline)
                     .foregroundColor(Color(hex: list.hexColor))
