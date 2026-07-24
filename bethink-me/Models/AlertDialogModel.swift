@@ -24,6 +24,8 @@ class AlertDialogModel {
         self.title = ""
         self.message = ""
         self.actions = []
+        self.currentAlarms = nil
+        self.diffAlarms = nil
         self.showDefaultCancel = false
     }
 }
