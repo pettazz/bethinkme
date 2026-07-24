@@ -16,7 +16,7 @@ struct AlertDialogView: View {
                     .foregroundStyle(Color(uiColor: .label))
                     .padding(.top, 30)
 
-                Text(alertModel.message)
+                Text(.init(alertModel.message))
                     .padding(.vertical, 10)
                     .fontWeight(.regular)
                     .foregroundStyle(Color(uiColor: .label))
@@ -46,7 +46,7 @@ struct AlertDialogView: View {
                             }
                             .padding()
                             .frame(maxWidth: .infinity)
-                            .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 10))
+                            .background(Color(.systemGroupedBackground), in: RoundedRectangle(cornerRadius: 10))
                         }
                         VStack(alignment: .leading, spacing: 10) {
                             Text("New")
@@ -72,7 +72,7 @@ struct AlertDialogView: View {
                         .foregroundStyle(Color(uiColor: .label))
                         .padding()
                         .frame(maxWidth: .infinity)
-                        .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 10))
+                        .background(Color(.systemGroupedBackground), in: RoundedRectangle(cornerRadius: 10))
                     }
                     .padding(.vertical, 20)
                     .frame(maxWidth: .infinity)
@@ -112,9 +112,9 @@ struct AlertDialogView: View {
                 }
             }
             .frame(maxWidth: .infinity)
-            .presentationBackground(.clear)
         }
         .padding(.horizontal, 25)
+        .presentationBackground(.ultraThinMaterial)
     }
 }
 
