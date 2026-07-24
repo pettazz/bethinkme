@@ -236,8 +236,11 @@ struct MainView: View {
 
     private func displayListDeleteConfirmation(selectedListForDelete: BethinkeryList) {
         alertDialogModel.title = "Delete List"
-        // swiftlint:disable:next line_length
-        alertDialogModel.message = "Are you sure you want to delete **\(selectedListForDelete.title)** and all \(selectedListForDelete.bethinkeries.count) Reminders on it? This cannot be undone."
+        alertDialogModel.message = "This will permanently delete the list\n\n**\(selectedListForDelete.title)**\n\n"
+        if !selectedListForDelete.bethinkeries.isEmpty {
+            alertDialogModel.message += "and all of its **\(selectedListForDelete.bethinkeries.count) Reminders** "
+        }
+        alertDialogModel.message += "This cannot be undone."
         let actions = [
             ActionButton(title: "Delete List", role: .destructive, action: {
                 withErrorReporter {
@@ -246,6 +249,7 @@ struct MainView: View {
                 }
             })
         ]
+        alertDialogModel.reminderList = selectedListForDelete.liveBethinkeries
         alertDialogModel.actions = actions
         alertDialogModel.showDefaultCancel = true
         alertDialogModel.isPresenting = true

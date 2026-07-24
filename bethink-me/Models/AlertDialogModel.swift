@@ -19,6 +19,8 @@ class AlertDialogModel {
     var currentAlarms: [BethinkeryAlarmTemplate]?
     var diffAlarms: [BethinkeryAlarmTemplate]?
 
+    var reminderList: [Bethinkery]?
+
     func dismiss() {
         self.isPresenting = false
         self.title = ""
@@ -26,6 +28,7 @@ class AlertDialogModel {
         self.actions = []
         self.currentAlarms = nil
         self.diffAlarms = nil
+        self.reminderList = nil
         self.showDefaultCancel = false
     }
 }
