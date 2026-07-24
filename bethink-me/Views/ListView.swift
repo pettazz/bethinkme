@@ -178,8 +178,18 @@ struct ListView: View {
             let cleanTitle = newTitle.trimmingCharacters(in: .whitespaces)
             guard !cleanTitle.isEmpty else { return }
 
-            let newBethinkery = EditBethinkery(title: cleanTitle, isCompleted: false)
-            try bethinkeryModel.create(from: newBethinkery, list: list)
+            let listBethinkeries = sharedModel.bethinkeries.filter { $0.list.id == list.id }
+            if let dupeIdx = listBethinkeries.firstIndex(where: { bethinkery in
+                !bethinkery.isCompleted &&
+                bethinkery.title == cleanTitle
+            }) {
+                // dupe found, pop it to the top and ignore the new one
+                try bethinkeryModel.moveBethinkeryPosition(from: IndexSet(integer: dupeIdx), to: 0, list: list)
+            } else {
+                // no existing dupe, continue adding new
+                let newBethinkery = EditBethinkery(title: cleanTitle, isCompleted: false)
+                try bethinkeryModel.create(from: newBethinkery, list: list)
+            }
         }
         newTitle = ""
         addInFocus = true
