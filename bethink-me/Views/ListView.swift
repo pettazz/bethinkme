@@ -53,11 +53,6 @@ struct ListView: View {
                             .autocorrectionDisabled(!enableAutocorrectSetting)
                             .textFieldStyle(.plain)
                             .focused($addInFocus)
-                            .onAppear {
-                                Task { @MainActor in
-                                    addInFocus = true
-                                }
-                            }
                             .toolbar {
                                 ToolbarItem(placement: .cancellationAction) {
                                     Button("Cancel") {
@@ -147,6 +142,10 @@ struct ListView: View {
                         withAnimation {
                             isAdding = true
                         }
+                        Task { @MainActor in
+                            try? await Task.sleep(for: .milliseconds(50))
+                            addInFocus = true
+                        }
                     } label: {
                         Image(systemName: "plus.circle.fill")
                             .font(.title)
@@ -155,9 +154,13 @@ struct ListView: View {
                     }
                 }
             })
-            .onChange(of: addInFocus) {
-                if !addInFocus && isAdding {
-                    closeAdding()
+            .onChange(of: addInFocus) { _, isFocused in
+                guard !isFocused, isAdding else { return }
+                Task { @MainActor in
+                    try? await Task.sleep(for: .milliseconds(150))
+                    if !addInFocus {
+                        closeAdding()
+                    }
                 }
             }
         }
