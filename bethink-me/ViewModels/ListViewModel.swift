@@ -165,7 +165,7 @@ final class ListViewModel {
 
                 if replaceBethinkeryAlarms {
                     do {
-                        for bethinkery in bethinkeryList.liveBethinkeries {
+                        for bethinkery in bethinkeryList.liveOrderedBethinkeries {
                             try sharedModel
                                 .replaceAlarms(on: bethinkery,
                                                with: bethinkeryList.alarmTemplates.compactMap(

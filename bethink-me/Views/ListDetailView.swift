@@ -131,7 +131,7 @@ struct ListDetailView: View {
                     guard let list else {
                         throw BethinkMeError("tried to update list that doesn't exist")
                     }
-                    if !(list.liveBethinkeries.isEmpty) {
+                    if !(list.liveOrderedBethinkeries.isEmpty) {
                         displayAlarmEditAlertDialog(list: list, editListCommand: editListCommand)
                     } else {
                         try listModel.update(list, with: editListCommand)

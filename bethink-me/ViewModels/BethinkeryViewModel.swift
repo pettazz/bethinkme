@@ -28,7 +28,7 @@ final class BethinkeryViewModel {
                     try sharedModel.addAlarm(alarm, to: newBethinkery, within: transaction)
                 }
 
-                list.bethinkeries.insert(newBethinkery, at: 0)
+                list.bethinkeries.append(newBethinkery)
                 sharedModel.resetOrdinals()
 
                 try transaction.stage(transaction.liveReminder(for: newBethinkery))
@@ -98,7 +98,7 @@ final class BethinkeryViewModel {
             throw BethinkMeError("invalid number of items sent to move: \(from.count)")
         }
         try sharedModel.withTransaction { _ in
-            var tmpBethinkeries = sharedModel.bethinkeries.filter({ $0.list.id == list.id })
+            var tmpBethinkeries = list.orderedBethinkeries
             tmpBethinkeries.move(fromOffsets: from, toOffset: to)
 
             // only reordinalize stuff in the affected range to limit weird moving of hidden items

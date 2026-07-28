@@ -18,8 +18,12 @@ final class BethinkeryList: Equatable, Identifiable {
 
     var hasAlarms: Bool { return !self.alarmTemplates.isEmpty }
 
-    var liveBethinkeries: [Bethinkery] {
-        bethinkeries.filter({ !$0.isCompleted })
+    var orderedBethinkeries: [Bethinkery] {
+        bethinkeries.sorted(by: { $0.ordinal < $1.ordinal })
+    }
+
+    var liveOrderedBethinkeries: [Bethinkery] {
+        orderedBethinkeries.filter({ !$0.isCompleted })
     }
 
 

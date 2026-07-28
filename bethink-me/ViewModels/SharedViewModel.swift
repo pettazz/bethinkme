@@ -20,8 +20,6 @@ final class SharedViewModel {
     private var unfilteredBethinkeriesCache: [Bethinkery] = []
 
     var bethinkeryLists: [BethinkeryList] { bethinkeryListsCache }
-    var bethinkeries: [Bethinkery] { bethinkeriesCache }
-    var unfilteredBethinkeries: [Bethinkery] { unfilteredBethinkeriesCache }
 
 
     init(modelContext: ModelContext) async {
@@ -51,8 +49,7 @@ final class SharedViewModel {
         for (idx, list) in bethinkeryLists.enumerated() {
             list.ordinal = idx
 
-            for (iidx, bethinkery) in unfilteredBethinkeries.enumerated()
-                .filter({ $0.1.list.id == list.id }) {
+            for (iidx, bethinkery) in list.orderedBethinkeries.enumerated() {
                 bethinkery.ordinal = iidx
                 bethinkery.freshlyCompleted = false // hehehehe side effects
             }

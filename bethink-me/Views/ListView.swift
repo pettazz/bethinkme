@@ -77,9 +77,7 @@ struct ListView: View {
                     }
                 }
 
-                let orderedBethinkeries = sharedModel.bethinkeries.filter({ $0.list.id == list.id })
-
-                ForEach(orderedBethinkeries) { bethinkery in
+                ForEach(list.orderedBethinkeries) { bethinkery in
                     RowView(bethinkeryModel: bethinkeryModel, bethinkery: bethinkery)
                         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                             Button(role: .destructive) {
@@ -182,9 +180,7 @@ struct ListView: View {
             let cleanTitle = newTitle.trimmingCharacters(in: .whitespaces)
             guard !cleanTitle.isEmpty else { return }
 
-            let listBethinkeries = sharedModel.bethinkeries.filter { $0.list.id == list.id }
-            if let dupeIdx = listBethinkeries.firstIndex(where: { bethinkery in
-                !bethinkery.isCompleted &&
+            if let dupeIdx = list.liveOrderedBethinkeries.firstIndex(where: { bethinkery in
                 bethinkery.title == cleanTitle &&
                 bethinkery.title != lastDuplicatedTitle
             }) {
