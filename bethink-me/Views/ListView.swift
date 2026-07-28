@@ -184,7 +184,7 @@ struct ListView: View {
             let cleanTitle = newTitle.trimmingCharacters(in: .whitespaces)
             guard !cleanTitle.isEmpty else { return }
 
-            if let dupeIdx = list.orderedBethinkeries.firstIndex(where: { bethinkery in
+            if enableDedupe, let dupeIdx = list.orderedBethinkeries.firstIndex(where: { bethinkery in
                 !bethinkery.isCompleted &&
                 bethinkery.title == cleanTitle &&
                 bethinkery.title != lastDuplicatedTitle
