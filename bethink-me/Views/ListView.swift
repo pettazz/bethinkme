@@ -25,6 +25,7 @@ struct ListView: View {
     var listModel: ListViewModel
     var bethinkeryModel: BethinkeryViewModel
     var list: BethinkeryList
+    var scrollProxy: ScrollViewProxy?
     var onListDelete: (BethinkeryList) -> Void
 
     var body: some View {
@@ -53,6 +54,7 @@ struct ListView: View {
                             .foregroundColor(.gray)
                             .accessibilityHidden(true)
                         TextField("", text: $newTitle)
+                            .id("adding-to-\(list.id)")
                             .autocorrectionDisabled(!enableAutocorrectSetting)
                             .textFieldStyle(.plain)
                             .focused($addInFocus)
@@ -75,6 +77,7 @@ struct ListView: View {
                             .submitLabel(.next)
                             .onSubmit {
                                 saveNew()
+                                scrollToAdd()
                             }
                     }
                 }
@@ -83,6 +86,7 @@ struct ListView: View {
                             list.orderedBethinkeries :
                             list.liveOrderedBethinkeries) { bethinkery in
                     RowView(bethinkeryModel: bethinkeryModel, bethinkery: bethinkery)
+                        .id(bethinkery.id)
                         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                             Button(role: .destructive) {
                                 withErrorReporter {
@@ -144,6 +148,7 @@ struct ListView: View {
                     Button {
                         withAnimation {
                             isAdding = true
+                            scrollToAdd()
                         }
                         Task { @MainActor in
                             try? await Task.sleep(for: .milliseconds(50))
@@ -163,6 +168,8 @@ struct ListView: View {
                     try? await Task.sleep(for: .milliseconds(150))
                     if !addInFocus {
                         closeAdding()
+                    } else {
+                        scrollToAdd()
                     }
                 }
             }
@@ -176,6 +183,24 @@ struct ListView: View {
                 .accessibilityHidden(true)
                 .foregroundStyle(.white, .secondary, Color(hex: destination.hexColor))
             Text(destination.title)
+        }
+    }
+
+    private func scrollToAdd() {
+        guard isAdding, let scrollProxy else { return }
+        Task { @MainActor in
+            withAnimation {
+                let visible = sharedModel.showCompleted ?
+                                list.orderedBethinkeries :
+                                list.liveOrderedBethinkeries
+                if visible.count >= 2 {
+                    scrollProxy.scrollTo(visible[1].id, anchor: .bottom)
+                } else if let first = visible.first {
+                    scrollProxy.scrollTo(first.id, anchor: .bottom)
+                } else {
+                    scrollProxy.scrollTo("adding-to-\(list.id)", anchor: .top)
+                }
+            }
         }
     }
 

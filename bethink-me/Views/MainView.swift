@@ -28,6 +28,8 @@ struct MainView: View {
 
     @State private var alertDialogModel: AlertDialogModel = AlertDialogModel()
 
+    @State private var keyboardHeight: CGFloat = 0
+
     var body: some View {
         ZStack {
             NavigationStack {
@@ -54,26 +56,41 @@ struct MainView: View {
                                                      title: "oh no",
                                                      message: "no toedoes?")
                                 } else {
-                                    List {
-                                        ForEach(sharedModel.bethinkeryLists) { list in
-                                            ListView(
-                                                selectedBethinkeryForEdit: $selectedBethinkeryForEdit,
-                                                sharedModel: sharedModel,
-                                                listModel: listModel,
-                                                bethinkeryModel: bethinkeryModel,
-                                                list: list,
-                                                onListDelete: { list in
-                                                    displayListDeleteConfirmation(selectedListForDelete: list)
+                                    ScrollViewReader { scrollProxy in
+                                        List {
+                                            ForEach(sharedModel.bethinkeryLists) { list in
+                                                ListView(
+                                                    selectedBethinkeryForEdit: $selectedBethinkeryForEdit,
+                                                    sharedModel: sharedModel,
+                                                    listModel: listModel,
+                                                    bethinkeryModel: bethinkeryModel,
+                                                    list: list,
+                                                    scrollProxy: scrollProxy,
+                                                    onListDelete: { list in
+                                                        displayListDeleteConfirmation(selectedListForDelete: list)
+                                                    })
+                                                .id(list.id)
+                                            }
+                                            .onMove { from, to in
+                                                withErrorReporter {
+                                                    try listModel.moveListPosition(from: from, to: to)
                                                 }
-                                            )
-                                        }
-                                        .onMove { from, to in
-                                            withErrorReporter {
-                                                try listModel.moveListPosition(from: from, to: to)
                                             }
                                         }
+                                        .environment(\.editMode, $listEditMode)
+                                        .contentMargins(.bottom, keyboardHeight, for: .scrollContent)
+                                        .onReceive(NotificationCenter.default.publisher(
+                                            for: UIResponder.keyboardWillShowNotification)) { note in
+                                                if let frame = note.userInfo?[UIResponder.keyboardFrameEndUserInfoKey]
+                                                    as? CGRect {
+                                                        keyboardHeight = frame.height
+                                                }
+                                        }
+                                        .onReceive(NotificationCenter.default.publisher(
+                                            for: UIResponder.keyboardWillHideNotification)) { _ in
+                                                keyboardHeight = 0
+                                        }
                                     }
-                                    .environment(\.editMode, $listEditMode)
                                 }
                             }
                         }
