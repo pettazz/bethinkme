@@ -14,6 +14,7 @@ struct ListView: View {
     @FocusState private var addInFocus: Bool
     @State private var isAdding: Bool = false
     @State private var newTitle: String = ""
+    @State private var lastDuplicatedTitle: String = ""
     @State private var isPresentingEditListSheet: Bool = false
 
     @Binding var selectedBethinkeryForEdit: Bethinkery?
@@ -184,10 +185,12 @@ struct ListView: View {
             let listBethinkeries = sharedModel.bethinkeries.filter { $0.list.id == list.id }
             if let dupeIdx = listBethinkeries.firstIndex(where: { bethinkery in
                 !bethinkery.isCompleted &&
-                bethinkery.title == cleanTitle
+                bethinkery.title == cleanTitle &&
+                bethinkery.title != lastDuplicatedTitle
             }) {
                 // dupe found, pop it to the top and ignore the new one
                 try bethinkeryModel.moveBethinkeryPosition(from: IndexSet(integer: dupeIdx), to: 0, list: list)
+                lastDuplicatedTitle = cleanTitle
             } else {
                 // no existing dupe, continue adding new
                 let newBethinkery = EditBethinkery(title: cleanTitle, isCompleted: false)
