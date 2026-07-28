@@ -23,7 +23,7 @@ final class BethinkeryList: Equatable, Identifiable {
     }
 
     var liveOrderedBethinkeries: [Bethinkery] {
-        orderedBethinkeries.filter({ !$0.isCompleted })
+        orderedBethinkeries.filter({ !$0.isCompleted || $0.freshlyCompleted })
     }
 
 
