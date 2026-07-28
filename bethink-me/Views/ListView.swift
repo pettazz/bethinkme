@@ -4,6 +4,8 @@ import SwiftUI
 struct ListView: View {
     @AppStorage(SettingsKey.enableAutocorrect.rawValue)
     private var enableAutocorrectSetting: Bool = kEnableAutocorrectDefault
+    @AppStorage(SettingsKey.enableDedupe.rawValue)
+    private var enableDedupe: Bool = kEnableDedupeDefault
 
     @Environment(\.editMode)
     private var editMode
@@ -77,7 +79,9 @@ struct ListView: View {
                     }
                 }
 
-                ForEach(list.orderedBethinkeries) { bethinkery in
+                ForEach(sharedModel.showCompleted ?
+                            list.orderedBethinkeries :
+                            list.liveOrderedBethinkeries) { bethinkery in
                     RowView(bethinkeryModel: bethinkeryModel, bethinkery: bethinkery)
                         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                             Button(role: .destructive) {
@@ -180,7 +184,8 @@ struct ListView: View {
             let cleanTitle = newTitle.trimmingCharacters(in: .whitespaces)
             guard !cleanTitle.isEmpty else { return }
 
-            if let dupeIdx = list.liveOrderedBethinkeries.firstIndex(where: { bethinkery in
+            if let dupeIdx = list.orderedBethinkeries.firstIndex(where: { bethinkery in
+                !bethinkery.isCompleted &&
                 bethinkery.title == cleanTitle &&
                 bethinkery.title != lastDuplicatedTitle
             }) {
