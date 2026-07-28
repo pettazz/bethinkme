@@ -3,6 +3,7 @@ import SwiftData
 import SwiftUI
 
 
+// swiftlint:disable:next type_body_length
 struct MainView: View {
     @AppStorage(SettingsKey.maxCompletedAgeDays.rawValue)
     private var maxCompletedAgeDaysSetting: Int = kMaxCompletedAgeDaysDefault
@@ -29,6 +30,7 @@ struct MainView: View {
     @State private var alertDialogModel: AlertDialogModel = AlertDialogModel()
 
     @State private var keyboardHeight: CGFloat = 0
+    @State private var createdListID: String?
 
     var body: some View {
         ZStack {
@@ -58,6 +60,16 @@ struct MainView: View {
                                 } else {
                                     ScrollViewReader { scrollProxy in
                                         List {
+                                            Section {
+                                                Color.clear
+                                                    .frame(height: 0)
+                                                    .listRowInsets(EdgeInsets())
+                                                    .listRowSeparator(.hidden)
+                                                    .listRowBackground(Color.clear)
+                                                    .id("lists-top")
+                                            }
+                                            .listSectionSpacing(0)
+
                                             ForEach(sharedModel.bethinkeryLists) { list in
                                                 ListView(
                                                     selectedBethinkeryForEdit: $selectedBethinkeryForEdit,
@@ -69,7 +81,6 @@ struct MainView: View {
                                                     onListDelete: { list in
                                                         displayListDeleteConfirmation(selectedListForDelete: list)
                                                     })
-                                                .id(list.id)
                                             }
                                             .onMove { from, to in
                                                 withErrorReporter {
@@ -77,6 +88,7 @@ struct MainView: View {
                                                 }
                                             }
                                         }
+                                        .environment(\.defaultMinListRowHeight, 0)
                                         .environment(\.editMode, $listEditMode)
                                         .contentMargins(.bottom, keyboardHeight, for: .scrollContent)
                                         .onReceive(NotificationCenter.default.publisher(
@@ -89,6 +101,17 @@ struct MainView: View {
                                         .onReceive(NotificationCenter.default.publisher(
                                             for: UIResponder.keyboardWillHideNotification)) { _ in
                                                 keyboardHeight = 0
+                                        }
+                                        .onChange(of: createdListID) {
+                                            Task { @MainActor in
+                                                if createdListID != nil {
+                                                    try? await Task.sleep(for: .milliseconds(50))
+                                                    withAnimation {
+                                                        scrollProxy.scrollTo("lists-top", anchor: .top)
+                                                    }
+                                                    createdListID = nil
+                                                }
+                                            }
                                         }
                                     }
                                 }
@@ -105,10 +128,14 @@ struct MainView: View {
                                             Image(systemName: "rectangle.stack.fill.badge.plus")
                                                 .accessibilityLabel(Text("Add a new list"))
                                         }
-                                        .sheet(isPresented: $shouldPresentNewListSheet, content: {
-                                            ListDetailView(sharedModel: sharedModel, listModel: listModel)
-                                                .textCase(.none)
-                                        })
+                                        .sheet(
+                                            isPresented: $shouldPresentNewListSheet,
+                                            content: {
+                                                ListDetailView(sharedModel: sharedModel,
+                                                               listModel: listModel,
+                                                               onListCreated: { createdListID = $0 })
+                                                    .textCase(.none)
+                                            })
                                         .disabled(listsLoading)
                                     }
                                 }

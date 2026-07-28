@@ -119,9 +119,9 @@ final class ListViewModel {
         sharedModel.reload()
     }
 
-    func create(from createCommand: EditBethinkeryList, source: EKSource) throws {
+    func create(from createCommand: EditBethinkeryList, source: EKSource) throws -> BethinkeryList {
         do {
-            try sharedModel.withTransaction { transaction in
+            return try sharedModel.withTransaction { transaction in
                 let newCalendar = EKCalendar(for: .reminder, eventStore: sharedModel.eventStore)
                 newCalendar.source = source
                 newCalendar.title = createCommand.title
@@ -134,6 +134,8 @@ final class ListViewModel {
 
                 transaction.insertModel(newBethinkeryList)
                 sharedModel.resetOrdinals()
+
+                return newBethinkeryList
             }
         } catch {
             throw BethinkMeError("failed to save new List", from: error as NSError)

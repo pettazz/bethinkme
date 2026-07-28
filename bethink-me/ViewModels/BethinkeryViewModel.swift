@@ -13,9 +13,9 @@ final class BethinkeryViewModel {
         self.sharedModel = sharedModel
     }
 
-    func create(from createCommand: EditBethinkery, list: BethinkeryList) throws {
+    func create(from createCommand: EditBethinkery, list: BethinkeryList) throws -> Bethinkery {
         do {
-            try sharedModel.withTransaction { transaction in
+            return try sharedModel.withTransaction { transaction in
                 let reminder = try transaction.newReminder(on: try transaction.liveCalendar(for: list))
 
                 reminder.title = createCommand.title
@@ -32,6 +32,8 @@ final class BethinkeryViewModel {
                 sharedModel.resetOrdinals()
 
                 try transaction.stage(transaction.liveReminder(for: newBethinkery))
+
+                return newBethinkery
             }
         } catch {
             throw BethinkMeError("failed to create new Bethinkery", from: error as NSError)

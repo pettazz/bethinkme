@@ -161,6 +161,7 @@ struct ListView: View {
                             .accessibilityLabel(Text("Add a new Bethinkery to the \(list.title) list"))
                     }
                 }
+                .id(list.id)
             })
             .onChange(of: addInFocus) { _, isFocused in
                 guard !isFocused, isAdding else { return }
@@ -220,7 +221,7 @@ struct ListView: View {
             } else {
                 // no existing dupe, continue adding new
                 let newBethinkery = EditBethinkery(title: cleanTitle, isCompleted: false)
-                try bethinkeryModel.create(from: newBethinkery, list: list)
+                _ = try bethinkeryModel.create(from: newBethinkery, list: list)
             }
         }
         newTitle = ""

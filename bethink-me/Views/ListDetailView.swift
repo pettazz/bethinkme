@@ -22,6 +22,8 @@ struct ListDetailView: View {
     var listModel: ListViewModel
     var list: BethinkeryList?
 
+    var onListCreated: ((String) -> Void)?
+
 
     private var isNew: Bool { list == nil }
 
@@ -84,10 +86,14 @@ struct ListDetailView: View {
         }
     }
 
-    init(sharedModel: SharedViewModel, listModel: ListViewModel, list: BethinkeryList? = nil) {
+    init(sharedModel: SharedViewModel,
+         listModel: ListViewModel,
+         list: BethinkeryList? = nil,
+         onListCreated: ((String) -> Void)? = nil) {
         self.sharedModel = sharedModel
         self.listModel = listModel
         self.list = list
+        self.onListCreated = onListCreated
         if let list {
             _editListCommand = StateObject(wrappedValue: .fromBethinkeryList(list))
         }
@@ -118,25 +124,24 @@ struct ListDetailView: View {
     }
 
     private func save() {
-        withAnimation {
-            withErrorReporter {
-                editListCommand.hexColor = newColor.toHex()
-                if isNew {
-                    guard let selectedSource else {
-                        throw BethinkMeError("tried to create a List on a nonexistent Source")
-                    }
-                    try listModel.create(from: editListCommand, source: selectedSource)
-                    dismiss()
+        withErrorReporter {
+            editListCommand.hexColor = newColor.toHex()
+            if isNew {
+                guard let selectedSource else {
+                    throw BethinkMeError("tried to create a List on a nonexistent Source")
+                }
+                let newList = try listModel.create(from: editListCommand, source: selectedSource)
+                onListCreated?(newList.id)
+                dismiss()
+            } else {
+                guard let list else {
+                    throw BethinkMeError("tried to update list that doesn't exist")
+                }
+                if !(list.liveOrderedBethinkeries.isEmpty) {
+                    displayAlarmEditAlertDialog(list: list, editListCommand: editListCommand)
                 } else {
-                    guard let list else {
-                        throw BethinkMeError("tried to update list that doesn't exist")
-                    }
-                    if !(list.liveOrderedBethinkeries.isEmpty) {
-                        displayAlarmEditAlertDialog(list: list, editListCommand: editListCommand)
-                    } else {
-                        try listModel.update(list, with: editListCommand)
-                        dismiss()
-                    }
+                    try listModel.update(list, with: editListCommand)
+                    dismiss()
                 }
             }
         }
