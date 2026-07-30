@@ -5,6 +5,9 @@ import SwiftUI
 
 @Model
 final class Bethinkery: Equatable, Identifiable {
+    @AppStorage(SettingsKey.dedupeCaseSensitive.rawValue)
+    @Transient private var dedupeCaseSensitive: Bool = kDedupeCaseSensitiveDefault
+
     @Attribute(.unique)
     var id: String
     var list: BethinkeryList
@@ -107,7 +110,10 @@ final class Bethinkery: Equatable, Identifiable {
     }
 
     func isDuplicate(of bethinkery: Bethinkery) -> Bool {
-        guard title == bethinkery.title &&
+        let titleText = dedupeCaseSensitive ? title : title.lowercased()
+        let compareText = dedupeCaseSensitive ? bethinkery.title : bethinkery.title.lowercased()
+
+        guard titleText == compareText &&
               notes == bethinkery.notes &&
               // TODO: url field is going away, priority will replace it
               alarms.count == bethinkery.alarms.count

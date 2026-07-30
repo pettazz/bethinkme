@@ -45,6 +45,7 @@ enum Env: String {
 enum SettingsKey: String {
     case enableAutocorrect = "settings.enableAutocorrect"
     case enableDedupe = "settings.enableDedupe"
+    case dedupeCaseSensitive = "settings.dedupeCaseSensitive"
     case dedupeRunOnSync = "settings.dedupeRunOnSync"
     case maxCompletedAgeDays = "settings.maxCompletedAgeDays"
     case displayNotes = "settings.displayNotes"

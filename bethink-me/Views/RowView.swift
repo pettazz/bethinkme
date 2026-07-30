@@ -4,8 +4,6 @@ import SwiftUI
 struct RowView: View {
     @AppStorage(SettingsKey.enableAutocorrect.rawValue)
     private var enableAutocorrectSetting: Bool = kEnableAutocorrectDefault
-    @AppStorage(SettingsKey.enableDedupe.rawValue)
-    private var enableDedupe: Bool = kEnableDedupeDefault
     @AppStorage(SettingsKey.displayNotes.rawValue)
     private var displayNotes: Bool = kDisplayNotesDefault
     @AppStorage(SettingsKey.displayURLs.rawValue)

@@ -6,6 +6,8 @@ struct ListView: View {
     private var enableAutocorrectSetting: Bool = kEnableAutocorrectDefault
     @AppStorage(SettingsKey.enableDedupe.rawValue)
     private var enableDedupe: Bool = kEnableDedupeDefault
+    @AppStorage(SettingsKey.dedupeCaseSensitive.rawValue)
+    private var dedupeCaseSensitive: Bool = kDedupeCaseSensitiveDefault
 
     @Environment(\.editMode)
     private var editMode
@@ -212,9 +214,13 @@ struct ListView: View {
 
             let bethinkeries = sharedModel.showCompleted ? list.orderedBethinkeries : list.liveOrderedBethinkeries
             if enableDedupe, let dupeIdx = bethinkeries.firstIndex(where: { bethinkery in
-                !bethinkery.isCompleted &&
-                bethinkery.title == cleanTitle &&
-                bethinkery.title != lastDuplicatedTitle
+                let titleText = dedupeCaseSensitive ? bethinkery.title : bethinkery.title.lowercased()
+                let newText = dedupeCaseSensitive ? cleanTitle : cleanTitle.lowercased()
+                let lastText = dedupeCaseSensitive ? lastDuplicatedTitle : lastDuplicatedTitle.lowercased()
+                
+                return !bethinkery.isCompleted &&
+                        titleText == newText &&
+                        titleText != lastText
             }) {
                 // dupe found, pop it to the top and ignore the new one
                 try bethinkeryModel.moveBethinkeryPosition(from: IndexSet(integer: dupeIdx), to: 0, list: list)

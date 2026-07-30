@@ -7,6 +7,8 @@ struct SettingsView: View {
     private var enableAutocorrect: Bool = kEnableAutocorrectDefault
     @AppStorage(SettingsKey.enableDedupe.rawValue)
     private var enableDedupe: Bool = kEnableDedupeDefault
+    @AppStorage(SettingsKey.dedupeCaseSensitive.rawValue)
+    private var dedupeCaseSensitive: Bool = kDedupeCaseSensitiveDefault
     @AppStorage(SettingsKey.dedupeRunOnSync.rawValue)
     private var dedupeRunOnSync: Bool = kDedupeRunOnSyncDefault
     @AppStorage(SettingsKey.maxCompletedAgeDays.rawValue)
@@ -44,6 +46,15 @@ struct SettingsView: View {
                                 Text("Deduplicate on sync")
                                 // swiftlint:disable:next line_length
                                 Text("When synchronizing changes made outside the app, delete new copies of existing Reminders")
+                                    .font(.caption)
+                            }
+                            .containerRelativeFrame(.horizontal, count: 4, span: 2, spacing: 0)
+                        }
+                        Toggle(isOn: $dedupeCaseSensitive) {
+                            VStack(alignment: .leading) {
+                                Text("Case sensitive titles")
+                                // swiftlint:disable:next line_length
+                                Text("Whether to consider the same text in upper and lower case titles different when checking for duplicates")
                                     .font(.caption)
                             }
                             .containerRelativeFrame(.horizontal, count: 4, span: 2, spacing: 0)
