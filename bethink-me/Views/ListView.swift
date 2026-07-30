@@ -210,7 +210,8 @@ struct ListView: View {
             let cleanTitle = newTitle.trimmingCharacters(in: .whitespaces)
             guard !cleanTitle.isEmpty else { return }
 
-            if enableDedupe, let dupeIdx = list.orderedBethinkeries.firstIndex(where: { bethinkery in
+            let bethinkeries = sharedModel.showCompleted ? list.orderedBethinkeries : list.liveOrderedBethinkeries
+            if enableDedupe, let dupeIdx = bethinkeries.firstIndex(where: { bethinkery in
                 !bethinkery.isCompleted &&
                 bethinkery.title == cleanTitle &&
                 bethinkery.title != lastDuplicatedTitle
