@@ -1,6 +1,7 @@
 import SwiftUI
 
 
+// swiftlint:disable:next type_body_length
 struct ListView: View {
     @AppStorage(SettingsKey.enableAutocorrect.rawValue)
     private var enableAutocorrectSetting: Bool = kEnableAutocorrectDefault
@@ -217,7 +218,7 @@ struct ListView: View {
                 let titleText = dedupeCaseSensitive ? bethinkery.title : bethinkery.title.lowercased()
                 let newText = dedupeCaseSensitive ? cleanTitle : cleanTitle.lowercased()
                 let lastText = dedupeCaseSensitive ? lastDuplicatedTitle : lastDuplicatedTitle.lowercased()
-                
+
                 return !bethinkery.isCompleted &&
                         titleText == newText &&
                         titleText != lastText
