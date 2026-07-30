@@ -106,6 +106,22 @@ final class Bethinkery: Equatable, Identifiable {
         }
     }
 
+    func isDuplicate(of bethinkery: Bethinkery) -> Bool {
+        guard title == bethinkery.title &&
+              notes == bethinkery.notes &&
+              // TODO: url field is going away, priority will replace it
+              alarms.count == bethinkery.alarms.count
+            else { return false }
+
+        var checkAlarms = bethinkery.alarms
+        for alarm in alarms {
+            guard let idx = checkAlarms.firstIndex(where: { alarm.isDuplicate(of: $0) })
+                else { return false }
+            checkAlarms.remove(at: idx)
+        }
+        return true
+    }
+
     private func loadAlarms(from reminder: EKReminder) throws {
         var knownAlarmIDs = Set<String>()
 

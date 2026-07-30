@@ -142,4 +142,24 @@ final class BethinkeryAlarm: Equatable, Identifiable {
         }
     }
 
+    func isDuplicate(of alarm: BethinkeryAlarm) -> Bool {
+        if title == alarm.title && kind == alarm.kind {
+            switch kind {
+                case .absoluteTimeAlarm:
+                    guard let ltime = time, let rtime = alarm.time else { return false }
+                    return isAllDay == alarm.isAllDay &&
+                           abs(ltime.timeIntervalSince(rtime)) < kAbsoluteAlarmEqualityToleranceSeconds
+                case .relativeTimeAlarm:
+                    return offset == alarm.offset
+                case .proximityAlarm:
+                    return title == alarm.title &&
+                           radius == alarm.radius &&
+                           location.lat == alarm.location.lat &&
+                           location.lng == alarm.location.lng &&
+                           proximityType.rawValue == alarm.proximityType.rawValue
+            }
+        } else {
+            return false
+        }
+    }
 }

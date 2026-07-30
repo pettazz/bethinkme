@@ -7,6 +7,8 @@ import SwiftUI
 struct MainView: View {
     @AppStorage(SettingsKey.maxCompletedAgeDays.rawValue)
     private var maxCompletedAgeDaysSetting: Int = kMaxCompletedAgeDaysDefault
+    @AppStorage(SettingsKey.enableDedupe.rawValue)
+    private var enableDedupe: Bool = kEnableDedupeDefault
 
     @Environment(\.modelContext)
     private var modelContext
@@ -248,6 +250,12 @@ struct MainView: View {
                 sharedModel.syncCoordinator.requestSync(reason: .EKChanged)
             }
         }
+        .onChange(of: enableDedupe) { _, isDedupeEnabled in
+            guard isDedupeEnabled, let listModel else { return }
+            let dupes = listModel.findAllDuplicates()
+            guard !dupes.isEmpty else { return }
+            displayDedupeConfirmation(dupes: dupes)
+        }
         .environment(alertDialogModel)
         .alertDialogPresentable(alertModel: $alertDialogModel)
 
@@ -292,7 +300,9 @@ struct MainView: View {
         let actions = [
             ActionButton(title: "Delete List", role: .destructive, action: {
                 withErrorReporter {
-                    guard let listModel else { return }
+                    guard let listModel else {
+                        throw BethinkMeError("lost access to model when trying to delete list")
+                    }
                     try listModel.delete(selectedListForDelete)
                 }
             })
@@ -300,6 +310,27 @@ struct MainView: View {
         alertDialogModel.reminderList = selectedListForDelete.bethinkeries
         alertDialogModel.actions = actions
         alertDialogModel.showDefaultCancel = true
+        alertDialogModel.isPresenting = true
+    }
+
+    private func displayDedupeConfirmation(dupes: DuplicateGroup) {
+        alertDialogModel.title = "Duplicate Reminders"
+        // swiftlint:disable:next line_length
+        alertDialogModel.message = "You've enabled deduplication for new reminders, do you want to find and remove existing duplicates in your lists now? Any identical reminders within the same list will be **permanently** deleted, leaving only one copy."
+        let actions = [
+            ActionButton(title: "Remove duplicate Reminders", role: .destructive, action: {
+                withErrorReporter {
+                    guard let bethinkeryModel else {
+                        throw BethinkMeError("lost access to model when trying to run cleanup dedupe")
+                    }
+                    try bethinkeryModel.delete(dupes.allBethinkeries)
+                }
+            }),
+            ActionButton(title: "Leave them alone", role: .cancel, action: {})
+        ]
+        alertDialogModel.duplicateList = dupes
+        alertDialogModel.actions = actions
+        alertDialogModel.showDefaultCancel = false
         alertDialogModel.isPresenting = true
     }
 }

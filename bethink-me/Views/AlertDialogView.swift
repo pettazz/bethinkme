@@ -111,6 +111,44 @@ struct AlertDialogView: View {
                 .frame(maxHeight: 400)
             }
 
+            if let dupes = alertModel.duplicateList, !dupes.isEmpty {
+                ScrollView {
+                    HStack(alignment: .top, spacing: 20) {
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("Reminders to be Deleted")
+                                .font(.headline)
+                                .foregroundStyle(Color(uiColor: .label))
+                            ForEach(dupes.lists) { list in
+                                Text(list.title)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .fontWeight(.regular)
+
+                                ForEach(list.groupedRows, id: \.id) { reminder in
+                                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                                        Image(systemName: "circle")
+                                            .font(.headline)
+                                            .accessibilityHidden(true)
+                                            .frame(width: 24, alignment: .center)
+                                        Text(.init(reminder.count > 1 ?
+                                                    "**\(reminder.count)x** \(reminder.title)" :
+                                                    reminder.title))
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                            .fontWeight(.regular)
+                                    }
+                                }
+                            }
+                        }
+                        .foregroundStyle(Color(uiColor: .label))
+                        .padding()
+                        .frame(maxWidth: .infinity)
+                        .background(Color(.systemGroupedBackground), in: RoundedRectangle(cornerRadius: 10))
+                    }
+                    .padding(.vertical, 20)
+                    .frame(maxWidth: .infinity)
+                }
+                .frame(maxHeight: 400)
+            }
+
             VStack(alignment: .center) {
                 ForEach(Array(alertModel.actions.enumerated()), id: \.offset) { _, action in
                     Button(role: action.role) {

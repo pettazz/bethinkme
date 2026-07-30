@@ -21,6 +21,8 @@ class AlertDialogModel {
 
     var reminderList: [Bethinkery]?
 
+    var duplicateList: DuplicateGroup?
+
     func dismiss() {
         self.isPresenting = false
         self.title = ""
@@ -29,6 +31,7 @@ class AlertDialogModel {
         self.currentAlarms = nil
         self.diffAlarms = nil
         self.reminderList = nil
+        self.duplicateList = nil
         self.showDefaultCancel = false
     }
 }

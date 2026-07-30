@@ -83,6 +83,22 @@ final class BethinkeryViewModel {
         }
     }
 
+    func delete(_ bethinkeries: [Bethinkery]) throws {
+        do {
+            try sharedModel.withTransaction { transaction in
+                for bethinkery in bethinkeries {
+                    guard bethinkery.modelContext != nil else {
+                        throw BethinkMeError("lost model context for Bethinkery during delete")
+                    }
+                    try transaction.stageRemove(transaction.liveReminder(for: bethinkery))
+                    transaction.deleteModel(bethinkery)
+                }
+            }
+        } catch {
+            throw BethinkMeError("failed to delete list of Bethinkeries", from: error as NSError)
+        }
+    }
+
     func toggleCompleted(_ bethinkery: Bethinkery) throws {
         let updatedBethinkery = EditBethinkery.fromBethinkery(bethinkery)
         updatedBethinkery.isCompleted.toggle()

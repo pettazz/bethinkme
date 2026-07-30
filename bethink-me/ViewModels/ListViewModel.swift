@@ -119,6 +119,36 @@ final class ListViewModel {
         sharedModel.reload()
     }
 
+    func doesDuplicateExist(of bethinkery: Bethinkery, in list: BethinkeryList) -> Bool {
+        return list.liveOrderedBethinkeries.contains(where: { testBethinkery in
+            bethinkery.id != testBethinkery.id && bethinkery.isDuplicate(of: testBethinkery)
+        })
+    }
+
+    func findDuplicates(in list: BethinkeryList) -> [Bethinkery] {
+        var originals: [Bethinkery] = []
+        var dupes: [Bethinkery] = []
+
+        for bethinkery in list.liveOrderedBethinkeries {
+            if originals.contains(where: { bethinkery.isDuplicate(of: $0) }) {
+                dupes.append(bethinkery)
+            } else {
+                originals.append(bethinkery)
+            }
+        }
+
+        return dupes
+    }
+
+    func findAllDuplicates() -> DuplicateGroup {
+        let result: [DuplicateGroup.DuplicateList] = sharedModel.bethinkeryLists.compactMap({ list in
+            let dupes = findDuplicates(in: list)
+            guard !dupes.isEmpty else { return nil }
+            return DuplicateGroup.DuplicateList(id: list.id, title: list.title, bethinkeries: dupes)
+        })
+        return DuplicateGroup(lists: result)
+    }
+
     func create(from createCommand: EditBethinkeryList, source: EKSource) throws -> BethinkeryList {
         do {
             return try sharedModel.withTransaction { transaction in
