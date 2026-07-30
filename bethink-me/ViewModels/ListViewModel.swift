@@ -6,6 +6,10 @@ import SwiftUI
 @MainActor
 @Observable
 final class ListViewModel {
+    @AppStorage(SettingsKey.enableDedupe.rawValue)
+    @ObservationIgnored private var enableDedupe: Bool = kEnableDedupeDefault
+    @AppStorage(SettingsKey.dedupeRunOnSync.rawValue)
+    @ObservationIgnored private var dedupeRunOnSync: Bool = kDedupeRunOnSyncDefault
     @AppStorage(SettingsKey.maxCompletedAgeDays.rawValue)
     @ObservationIgnored private var maxCompletedAgeDaysSetting: Int = kMaxCompletedAgeDaysDefault
 
@@ -73,8 +77,12 @@ final class ListViewModel {
                     // | yes reminder, no storage
                     // add it
                     let newReminder = try Bethinkery(reminder: ekrem, list: currentList)
-                    currentList.bethinkeries.append(newReminder)
-                    sharedModel.modelContext.insert(newReminder)
+                    if enableDedupe && dedupeRunOnSync && doesDuplicateExist(of: newReminder, in: currentList) {
+                        try sharedModel.eventStore.remove(ekrem, commit: true)
+                    } else {
+                        currentList.bethinkeries.append(newReminder)
+                        sharedModel.modelContext.insert(newReminder)
+                    }
                 } else {
                     throw BethinkMeError("found multiple matching rem ids for \(ekrem.calendarItemIdentifier)!")
                 }

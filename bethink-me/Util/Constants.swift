@@ -3,6 +3,7 @@ import Foundation
 // settings defaults
 let kEnableAutocorrectDefault: Bool = true
 let kEnableDedupeDefault: Bool = true
+let kDedupeRunOnSyncDefault: Bool = true
 let kMaxCompletedAgeDaysDefault: Int = 30
 let kDisplayNotesDefault: Bool = true
 let kDisplayURLsDefault: Bool = false

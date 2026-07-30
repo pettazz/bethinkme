@@ -7,6 +7,8 @@ struct SettingsView: View {
     private var enableAutocorrect: Bool = kEnableAutocorrectDefault
     @AppStorage(SettingsKey.enableDedupe.rawValue)
     private var enableDedupe: Bool = kEnableDedupeDefault
+    @AppStorage(SettingsKey.dedupeRunOnSync.rawValue)
+    private var dedupeRunOnSync: Bool = kDedupeRunOnSyncDefault
     @AppStorage(SettingsKey.maxCompletedAgeDays.rawValue)
     private var maxCompletedAgeDays: Int = kMaxCompletedAgeDaysDefault
     @AppStorage(SettingsKey.displayNotes.rawValue)
@@ -33,6 +35,22 @@ struct SettingsView: View {
                     }
                 } header: {
                     Text("Editing")
+                }
+
+                if enableDedupe {
+                    Section {
+                        Toggle(isOn: $dedupeRunOnSync) {
+                            VStack(alignment: .leading) {
+                                Text("Deduplicate on sync")
+                                // swiftlint:disable:next line_length
+                                Text("When synchronizing changes made outside the app, delete new copies of existing Reminders")
+                                    .font(.caption)
+                            }
+                            .containerRelativeFrame(.horizontal, count: 4, span: 2, spacing: 0)
+                        }
+                    } header: {
+                        Text("Deduplication")
+                    }
                 }
 
                 Section {
