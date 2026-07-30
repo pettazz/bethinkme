@@ -11,6 +11,8 @@ struct SettingsView: View {
     private var dedupeCaseSensitive: Bool = kDedupeCaseSensitiveDefault
     @AppStorage(SettingsKey.dedupeRunOnSync.rawValue)
     private var dedupeRunOnSync: Bool = kDedupeRunOnSyncDefault
+    @AppStorage(SettingsKey.dedupeNow.rawValue)
+    private var dedupeNow: Bool = false
     @AppStorage(SettingsKey.maxCompletedAgeDays.rawValue)
     private var maxCompletedAgeDays: Int = kMaxCompletedAgeDaysDefault
     @AppStorage(SettingsKey.displayNotes.rawValue)
@@ -58,6 +60,20 @@ struct SettingsView: View {
                                     .font(.caption)
                             }
                             .containerRelativeFrame(.horizontal, count: 4, span: 2, spacing: 0)
+                        }
+                        VStack(alignment: .leading) {
+                            if dedupeNow {
+                                // swiftlint:disable:next line_length
+                                Text("Deduplication check will run when you next switch back to the Lists tab, a notification will be shown if any are found")
+                                    .font(.caption)
+                            } else {
+                                Button("Schedule a deduplication check") {
+                                    dedupeNow = true
+                                }
+                                // swiftlint:disable:next line_length
+                                Text("Runs when you next switch back to the Lists tab, a notification will be shown if any are found")
+                                    .font(.caption)
+                            }
                         }
                     } header: {
                         Text("Deduplication")

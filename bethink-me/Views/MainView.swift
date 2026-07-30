@@ -9,6 +9,8 @@ struct MainView: View {
     private var maxCompletedAgeDaysSetting: Int = kMaxCompletedAgeDaysDefault
     @AppStorage(SettingsKey.enableDedupe.rawValue)
     private var enableDedupe: Bool = kEnableDedupeDefault
+    @AppStorage(SettingsKey.dedupeNow.rawValue)
+    private var dedupeNow: Bool = false
 
     @Environment(\.modelContext)
     private var modelContext
@@ -252,6 +254,13 @@ struct MainView: View {
         }
         .onChange(of: enableDedupe) { _, isDedupeEnabled in
             guard isDedupeEnabled, let listModel else { return }
+            let dupes = listModel.findAllDuplicates()
+            guard !dupes.isEmpty else { return }
+            displayDedupeConfirmation(dupes: dupes)
+        }
+        .onAppear {
+            guard enableDedupe && dedupeNow, let listModel else { return }
+            dedupeNow = false
             let dupes = listModel.findAllDuplicates()
             guard !dupes.isEmpty else { return }
             displayDedupeConfirmation(dupes: dupes)

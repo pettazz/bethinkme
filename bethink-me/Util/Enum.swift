@@ -47,6 +47,7 @@ enum SettingsKey: String {
     case enableDedupe = "settings.enableDedupe"
     case dedupeCaseSensitive = "settings.dedupeCaseSensitive"
     case dedupeRunOnSync = "settings.dedupeRunOnSync"
+    case dedupeNow = "settings.dedupeNow"
     case maxCompletedAgeDays = "settings.maxCompletedAgeDays"
     case displayNotes = "settings.displayNotes"
     case displayURLs = "settings.displayURLs"
