@@ -10,6 +10,8 @@ final class ListViewModel {
     @ObservationIgnored private var enableDedupe: Bool = kEnableDedupeDefault
     @AppStorage(SettingsKey.dedupeRunOnSync.rawValue)
     @ObservationIgnored private var dedupeRunOnSync: Bool = kDedupeRunOnSyncDefault
+    @AppStorage(SettingsKey.inheritListAlarmsOnImport.rawValue)
+    @ObservationIgnored private var inheritListAlarmsOnImport: InheritListAlarmsOnImportOptions = kInheritListAlarmsOnImportDefault // swiftlint:disable:this line_length
     @AppStorage(SettingsKey.maxCompletedAgeDays.rawValue)
     @ObservationIgnored private var maxCompletedAgeDaysSetting: Int = kMaxCompletedAgeDaysDefault
 
@@ -47,6 +49,7 @@ final class ListViewModel {
         // | yes reminder, no storage
         // X no reminder, yes storage
 
+        var needToInheritListAlarms: [Bethinkery] = []
         for ekcal in calendars {
             let existingLists = sharedModel.bethinkeryLists.filter({ $0.id == ekcal.calendarIdentifier })
             let currentList: BethinkeryList
@@ -82,6 +85,12 @@ final class ListViewModel {
                     } else {
                         currentList.bethinkeries.append(newReminder)
                         sharedModel.modelContext.insert(newReminder)
+
+                        if inheritListAlarmsOnImport == .always ||
+                            (inheritListAlarmsOnImport == .whenEmpty &&
+                             (!newReminder.hasAlarms && currentList.hasAlarms)) {
+                            needToInheritListAlarms.append(newReminder)
+                        }
                     }
                 } else {
                     throw BethinkMeError("found multiple matching rem ids for \(ekrem.calendarItemIdentifier)!")
@@ -120,6 +129,17 @@ final class ListViewModel {
         if !calendars.isEmpty, let firstCalendar = calendars.first {
             let defaultCal = sharedModel.eventStore.defaultCalendarForNewReminders() ?? firstCalendar
             defaultSource = defaultCal.source
+        }
+
+        if !needToInheritListAlarms.isEmpty {
+            try sharedModel.withTransaction { transaction in
+                for bethinkery in needToInheritListAlarms {
+                    let alarms = bethinkery.list.alarmTemplates.compactMap({ $0.toTemplate(newInstance: true) })
+                    try sharedModel.replaceAlarms(on: bethinkery,
+                                                  with: alarms,
+                                                  within: transaction)
+                }
+            }
         }
 
         try sharedModel.modelContext.save()

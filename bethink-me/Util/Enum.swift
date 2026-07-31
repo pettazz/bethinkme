@@ -44,6 +44,7 @@ enum Env: String {
 
 enum SettingsKey: String {
     case enableAutocorrect = "settings.enableAutocorrect"
+    case inheritListAlarmsOnImport = "settings.inheritListAlarmsOnImport"
     case enableDedupe = "settings.enableDedupe"
     case dedupeCaseSensitive = "settings.dedupeCaseSensitive"
     case dedupeRunOnSync = "settings.dedupeRunOnSync"
@@ -52,6 +53,23 @@ enum SettingsKey: String {
     case displayNotes = "settings.displayNotes"
     case displayURLs = "settings.displayURLs"
     case displayAlarmIcons = "settings.displayAlarmIcons"
+}
+
+enum InheritListAlarmsOnImportOptions: String, CaseIterable {
+    case always
+    case whenEmpty
+    case never
+
+    var title: String {
+        switch self {
+            case .always:
+                return "Always"
+            case .whenEmpty:
+                return "When empty"
+            case .never:
+                return "Never"
+        }
+    }
 }
 
 enum SyncStatus {

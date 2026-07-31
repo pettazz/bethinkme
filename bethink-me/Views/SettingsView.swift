@@ -5,6 +5,8 @@ import UniformTypeIdentifiers
 struct SettingsView: View {
     @AppStorage(SettingsKey.enableAutocorrect.rawValue)
     private var enableAutocorrect: Bool = kEnableAutocorrectDefault
+    @AppStorage(SettingsKey.inheritListAlarmsOnImport.rawValue)
+    private var inheritListAlarmsOnImport: InheritListAlarmsOnImportOptions = kInheritListAlarmsOnImportDefault
     @AppStorage(SettingsKey.enableDedupe.rawValue)
     private var enableDedupe: Bool = kEnableDedupeDefault
     @AppStorage(SettingsKey.dedupeCaseSensitive.rawValue)
@@ -27,8 +29,22 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             Form {
+                // TODO: rethink the sections and better descriptions once we have a full idea of what goes in here
                 Section {
                     Toggle("Enable autocorrection", isOn: $enableAutocorrect)
+                    Picker(selection: $inheritListAlarmsOnImport) {
+                        ForEach(InheritListAlarmsOnImportOptions.allCases, id: \.self) { option in
+                            Text(option.title).tag(option)
+                        }
+                    } label: {
+                        VStack(alignment: .leading) {
+                            Text("Imported Reminders inherit List alarms")
+                            // swiftlint:disable:next line_length
+                            Text(.init("When importing new Reminders created outside the app (other apps, iCloud sync, etc), when to replace any existing alarms with the List's alarms: **Always**: delete all existing alarms and apply the List alarms, **When empty**: only if the Reminder has no alarms set, or **Never**: do not change alarms when importing."))
+                                .font(.caption)
+                        }
+                        .containerRelativeFrame(.horizontal, count: 4, span: 2, spacing: 0)
+                    }
                     Toggle(isOn: $enableDedupe) {
                         VStack(alignment: .leading) {
                             Text("Enable deuplication")
