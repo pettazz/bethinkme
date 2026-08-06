@@ -91,6 +91,13 @@ struct ListView: View {
                                     }
                                 }
                             }
+                            .onAppear {
+                                Task { @MainActor in
+                                    await Task.yield()
+                                    guard isAdding else { return }
+                                    addInFocus = true
+                                }
+                            }
                             .submitLabel(.next)
                             .onSubmit {
                                 saveNew()
@@ -185,10 +192,6 @@ struct ListView: View {
                         withAnimation {
                             addingToListID = list.id
                             scrollToAdd()
-                        }
-                        Task { @MainActor in
-                            try? await Task.sleep(for: .milliseconds(50))
-                            addInFocus = true
                         }
                     } label: {
                         Image(systemName: "plus.circle.fill")
