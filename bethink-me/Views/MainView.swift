@@ -38,6 +38,10 @@ struct MainView: View {
     @State private var addingToListID: String?
     @State private var createdListID: String?
 
+    private var isContentLoading: Bool {
+        sharedModel == nil || listModel == nil || bethinkeryModel == nil || listsLoading
+    }
+
     var body: some View {
         ZStack {
             NavigationStack {
@@ -143,7 +147,7 @@ struct MainView: View {
                                                                onListCreated: { createdListID = $0 })
                                                     .textCase(.none)
                                             })
-                                        .disabled(listsLoading)
+                                        .disabled(isContentLoading)
                                     }
                                 }
                                 ToolbarItem(placement: .primaryAction) {
@@ -159,7 +163,7 @@ struct MainView: View {
                                                                  ? "Done editing lists"
                                                                  : "Edit lists"))
                                     }
-                                    .disabled(listsLoading)
+                                    .disabled(isContentLoading)
                                 }
                                 if listEditMode != .active {
                                     ToolbarItem(placement: .primaryAction) {
@@ -178,7 +182,7 @@ struct MainView: View {
                                                     .accessibilityLabel(Text("Show completed Bethinkeries"))
                                             }
                                         }
-                                        .disabled(listsLoading)
+                                        .disabled(isContentLoading)
                                     }
                                 }
                             }
@@ -199,7 +203,7 @@ struct MainView: View {
                             }
                         }
                         .animation(.snappy, value: showDelayedSpinner)
-                        .task(id: listsLoading) {
+                        .task(id: isContentLoading) {
                             showDelayedSpinner = false
 
                             guard listsLoading else { return }
