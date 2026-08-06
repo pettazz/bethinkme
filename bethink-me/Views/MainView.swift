@@ -34,6 +34,8 @@ struct MainView: View {
     @State private var alertDialogModel: AlertDialogModel = AlertDialogModel()
 
     @State private var keyboardHeight: CGFloat = 0
+
+    @State private var addingToListID: String?
     @State private var createdListID: String?
 
     var body: some View {
@@ -77,6 +79,7 @@ struct MainView: View {
                                             ForEach(sharedModel.bethinkeryLists) { list in
                                                 ListView(
                                                     selectedBethinkeryForEdit: $selectedBethinkeryForEdit,
+                                                    addingToListID: $addingToListID,
                                                     sharedModel: sharedModel,
                                                     listModel: listModel,
                                                     bethinkeryModel: bethinkeryModel,

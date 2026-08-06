@@ -17,12 +17,17 @@ struct ListView: View {
     private var alertDialogModel
 
     @FocusState private var addInFocus: Bool
-    @State private var isAdding: Bool = false
     @State private var newTitle: String = ""
     @State private var lastDuplicatedTitle: String = ""
     @State private var isPresentingEditListSheet: Bool = false
 
     @Binding var selectedBethinkeryForEdit: Bethinkery?
+
+    @Binding var addingToListID: String?
+
+    private var isAdding: Bool {
+        addingToListID == list.id
+    }
 
     var sharedModel: SharedViewModel
     var listModel: ListViewModel
@@ -79,7 +84,9 @@ struct ListView: View {
                             }
                             .submitLabel(.next)
                             .onSubmit {
-                                saveNew()
+                                withAnimation {
+                                    saveNew()
+                                }
                                 scrollToAdd()
                             }
                     }
@@ -150,7 +157,7 @@ struct ListView: View {
                     })
                     Button {
                         withAnimation {
-                            isAdding = true
+                            addingToListID = list.id
                             scrollToAdd()
                         }
                         Task { @MainActor in
@@ -193,6 +200,7 @@ struct ListView: View {
     private func scrollToAdd() {
         guard isAdding, let scrollProxy else { return }
         Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(200))
             withAnimation {
                 let visible = sharedModel.showCompleted ?
                                 list.orderedBethinkeries :
@@ -237,9 +245,13 @@ struct ListView: View {
     }
 
     private func closeAdding() {
-        newTitle = ""
-        isAdding = false
-        addInFocus = false
+        withAnimation {
+            newTitle = ""
+            if addingToListID == list.id {
+                addingToListID = nil
+            }
+            addInFocus = false
+        }
     }
 
     private func doBethinkeryMove(_ bethinkery: Bethinkery,
