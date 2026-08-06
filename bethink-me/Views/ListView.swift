@@ -1,6 +1,11 @@
 import SwiftUI
 
 
+enum RowFlashKind: Equatable {
+    case created
+    case deduped
+}
+
 // swiftlint:disable:next type_body_length
 struct ListView: View {
     @AppStorage(SettingsKey.enableAutocorrect.rawValue)
@@ -19,6 +24,10 @@ struct ListView: View {
     @FocusState private var addInFocus: Bool
     @State private var newTitle: String = ""
     @State private var lastDuplicatedTitle: String = ""
+
+    @State private var flashedRow: (id: String, kind: RowFlashKind)?
+    @State private var flashTrigger = 0
+
     @State private var isPresentingEditListSheet: Bool = false
 
     @Binding var selectedBethinkeryForEdit: Bethinkery?
@@ -84,9 +93,7 @@ struct ListView: View {
                             }
                             .submitLabel(.next)
                             .onSubmit {
-                                withAnimation {
-                                    saveNew()
-                                }
+                                saveNew()
                                 scrollToAdd()
                             }
                     }
@@ -95,8 +102,27 @@ struct ListView: View {
                 ForEach(sharedModel.showCompleted ?
                             list.orderedBethinkeries :
                             list.liveOrderedBethinkeries) { bethinkery in
+                    let flash = flashedRow.flatMap { $0.id == bethinkery.id ? $0.kind : nil }
                     RowView(bethinkeryModel: bethinkeryModel, bethinkery: bethinkery)
                         .id(bethinkery.id)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color(hex: list.hexColor))
+                                .opacity(flash != nil ? 0.3 : 0)
+                                .padding(-16)
+                        )
+                        .overlay(alignment: .leading) {
+                            if flash != nil && flash == .deduped {
+                                Image(systemName: "rectangle.on.rectangle.dashed")
+                                    .font(.headline)
+                                    .foregroundStyle(Color(hex: list.hexColor))
+                                    .background(Circle().fill(Color(.systemBackground)))
+                                    .overlay(Circle().stroke(Color(.separator).opacity(0.75), lineWidth: 1))
+                                    .accessibilityHidden(true)
+                            }
+                        }
+                        .sensoryFeedback(.success, trigger: flashTrigger)
+                        .sensoryFeedback(.impact(weight: .light), trigger: flashTrigger)
                         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                             Button(role: .destructive) {
                                 withErrorReporter {
@@ -232,12 +258,15 @@ struct ListView: View {
                         titleText != lastText
             }) {
                 // dupe found, pop it to the top and ignore the new one
+                let dupeID = bethinkeries[dupeIdx].id
                 try bethinkeryModel.moveBethinkeryPosition(from: IndexSet(integer: dupeIdx), to: 0, list: list)
                 lastDuplicatedTitle = cleanTitle
+                flash(dupeID, kind: .deduped)
             } else {
                 // no existing dupe, continue adding new
                 let newBethinkery = EditBethinkery(title: cleanTitle, isCompleted: false)
-                _ = try bethinkeryModel.create(from: newBethinkery, list: list)
+                let createdBethinkery = try bethinkeryModel.create(from: newBethinkery, list: list)
+                flash(createdBethinkery.id, kind: .created)
             }
         }
         newTitle = ""
@@ -260,6 +289,23 @@ struct ListView: View {
         try bethinkeryModel.moveBethinkery(bethinkery,
                                            to: destination,
                                            inheritListAlarms: inheritListAlarms)
+    }
+
+    private func flash(_ id: String, kind: RowFlashKind) {
+        Task { @MainActor in
+            flashedRow = (id, kind)
+            flashTrigger += 1
+
+            try? await Task.sleep(for: .milliseconds(100))
+            guard flashedRow?.id == id else { return }
+            withAnimation(.snappy(duration: 1)) {
+                flashedRow = nil
+            }
+        }
+        if kind == .deduped {
+            // TODO: accessibility review
+            AccessibilityNotification.Announcement("Already on list, moved to top").post()
+        }
     }
 
     private func requestBethinkeryMove(_ bethinkery: Bethinkery, destination: BethinkeryList) throws {
