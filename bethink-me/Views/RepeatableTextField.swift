@@ -2,8 +2,31 @@ import SwiftUI
 
 
 struct RepeatableTextField: UIViewRepresentable {
-    @Binding var text: String
+
+    final class Coordinator: NSObject, UITextFieldDelegate {
+        @Binding var text: String
+
+        var onSubmit: () -> Void
+
+        init(text: Binding<String>, onSubmit: @escaping () -> Void) {
+            _text = text
+            self.onSubmit = onSubmit
+        }
+
+        @objc
+        func textChanged(_ sender: UITextField) {
+            text = sender.text ?? ""
+        }
+
+        func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+            onSubmit()
+            return false
+        }
+    }
     
+
+    @Binding var text: String
+
     var enableAutocorrect: Bool
     var onSubmit: () -> Void
 
@@ -27,24 +50,4 @@ struct RepeatableTextField: UIViewRepresentable {
     }
 
     func makeCoordinator() -> Coordinator { Coordinator(text: $text, onSubmit: onSubmit) }
-
-    final class Coordinator: NSObject, UITextFieldDelegate {
-        @Binding var text: String
-        
-        var onSubmit: () -> Void
-
-        init(text: Binding<String>, onSubmit: @escaping () -> Void) {
-            _text = text
-            self.onSubmit = onSubmit
-        }
-
-        @objc func textChanged(_ sender: UITextField) {
-            text = sender.text ?? ""
-        }
-
-        func textFieldShouldReturn(_ textField: UITextField) -> Bool {
-            onSubmit()
-            return false
-        }
-    }
 }
