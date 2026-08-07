@@ -70,10 +70,12 @@ struct ListView: View {
                             .font(.title2)
                             .foregroundColor(.gray)
                             .accessibilityHidden(true)
-                        TextField("", text: $newTitle)
+                        RepeatableTextField(text: $newTitle,
+                                            enableAutocorrect: enableAutocorrectSetting) {
+                            saveNew()
+                            scrollToAdd()
+                        }
                             .id("adding-to-\(list.id)")
-                            .autocorrectionDisabled(!enableAutocorrectSetting)
-                            .textFieldStyle(.plain)
                             .focused($addInFocus)
                             .toolbar {
                                 ToolbarItem(placement: .cancellationAction) {
@@ -97,11 +99,6 @@ struct ListView: View {
                                     guard isAdding else { return }
                                     addInFocus = true
                                 }
-                            }
-                            .submitLabel(.next)
-                            .onSubmit {
-                                saveNew()
-                                scrollToAdd()
                             }
                     }
                 }
@@ -273,7 +270,6 @@ struct ListView: View {
             }
         }
         newTitle = ""
-        addInFocus = true
     }
 
     private func closeAdding() {
