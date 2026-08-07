@@ -126,6 +126,9 @@ struct MainView: View {
                                         }
                                     }
                                 }
+                            } else {
+                                LoadingSpinnerView(message: "Loading Bethinkeries...")
+                                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                             }
                         }
                         .navigationTitle("Lists")
@@ -193,10 +196,10 @@ struct MainView: View {
                                 Color.black.opacity(0.3)
                                     .ignoresSafeArea()
                                 if #available(iOS 26.0, *) {
-                                    LoadingSpinnerView()
+                                    LoadingSpinnerView(message: "Synchronizing Bethinkeries...")
                                         .glassEffect(in: .rect(cornerRadius: 16.0))
                                 } else {
-                                    LoadingSpinnerView()
+                                    LoadingSpinnerView(message: "Synchronizing Bethinkeries...")
                                         .background(RoundedRectangle(cornerRadius: 16.0)
                                             .fill(Color.white))
                                 }
@@ -220,6 +223,7 @@ struct MainView: View {
             .task(id: scenePhase) {
                 guard scenePhase == .active else { return }
                 do {
+                    try? await Task.sleep(for: .seconds(4))
                     try await setupVMs()
                 } catch {
                     ErrorReporter().report(error, retry: {
