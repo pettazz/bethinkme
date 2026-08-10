@@ -23,7 +23,7 @@ struct RepeatableTextField: UIViewRepresentable {
             return false
         }
     }
-    
+
 
     @Binding var text: String
 

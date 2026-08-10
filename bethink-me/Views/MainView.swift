@@ -26,7 +26,7 @@ struct MainView: View {
     @State private var listEditMode: EditMode = .inactive
     @State private var shouldPresentNewListSheet = false
 
-    @State private var listsLoading: Bool = false
+    @State private var isSyncing: Bool = false
     @State private var showDelayedSpinner = false
 
     @State private var selectedBethinkeryForEdit: Bethinkery?
@@ -38,8 +38,23 @@ struct MainView: View {
     @State private var addingToListID: String?
     @State private var createdListID: String?
 
-    private var isContentLoading: Bool {
-        sharedModel == nil || listModel == nil || bethinkeryModel == nil || listsLoading
+    private var isLoadingInit: Bool {
+        sharedModel == nil || listModel == nil || bethinkeryModel == nil
+    }
+
+    private var isLoadingAny: Bool {
+        sharedModel == nil || listModel == nil || bethinkeryModel == nil || isSyncing
+    }
+
+    private var loadingMessage: String? {
+        if isSyncing {
+            return "Synchronizing Bethinkeries.."
+        }
+        if isLoadingInit {
+            return "Loading Bethinkeries..."
+        }
+
+        return nil
     }
 
     var body: some View {
@@ -126,9 +141,6 @@ struct MainView: View {
                                         }
                                     }
                                 }
-                            } else {
-                                LoadingSpinnerView(message: "Loading Bethinkeries...")
-                                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                             }
                         }
                         .navigationTitle("Lists")
@@ -150,7 +162,7 @@ struct MainView: View {
                                                                onListCreated: { createdListID = $0 })
                                                     .textCase(.none)
                                             })
-                                        .disabled(isContentLoading)
+                                        .disabled(isLoadingAny)
                                     }
                                 }
                                 ToolbarItem(placement: .primaryAction) {
@@ -166,7 +178,7 @@ struct MainView: View {
                                                                  ? "Done editing lists"
                                                                  : "Edit lists"))
                                     }
-                                    .disabled(isContentLoading)
+                                    .disabled(isLoadingAny)
                                 }
                                 if listEditMode != .active {
                                     ToolbarItem(placement: .primaryAction) {
@@ -185,33 +197,25 @@ struct MainView: View {
                                                     .accessibilityLabel(Text("Show completed Bethinkeries"))
                                             }
                                         }
-                                        .disabled(isContentLoading)
+                                        .disabled(isLoadingAny)
                                     }
                                 }
                             }
                         }
 
                         ZStack {
-                            if showDelayedSpinner {
-                                Color.black.opacity(0.3)
-                                    .ignoresSafeArea()
-                                if #available(iOS 26.0, *) {
-                                    LoadingSpinnerView(message: "Synchronizing Bethinkeries...")
-                                        .glassEffect(in: .rect(cornerRadius: 16.0))
-                                } else {
-                                    LoadingSpinnerView(message: "Synchronizing Bethinkeries...")
-                                        .background(RoundedRectangle(cornerRadius: 16.0)
-                                            .fill(Color.white))
-                                }
+                            if showDelayedSpinner, let msg = loadingMessage {
+                                spinnerContent(message: msg)
                             }
                         }
                         .animation(.snappy, value: showDelayedSpinner)
-                        .task(id: isContentLoading) {
-                            showDelayedSpinner = false
-
-                            guard listsLoading else { return }
+                        .task(id: isLoadingAny) {
+                            guard isLoadingAny else {
+                                showDelayedSpinner = false
+                                return
+                            }
                             try? await Task.sleep(for: .seconds(1))
-                            guard !Task.isCancelled, listsLoading else { return }
+                            guard !Task.isCancelled, isLoadingAny else { return }
 
                             withAnimation(.snappy) {
                                 showDelayedSpinner = true
@@ -223,7 +227,6 @@ struct MainView: View {
             .task(id: scenePhase) {
                 guard scenePhase == .active else { return }
                 do {
-                    try? await Task.sleep(for: .seconds(4))
                     try await setupVMs()
                 } catch {
                     ErrorReporter().report(error, retry: {
@@ -278,7 +281,21 @@ struct MainView: View {
         }
         .environment(alertDialogModel)
         .alertDialogPresentable(alertModel: $alertDialogModel)
+    }
 
+    @ViewBuilder
+    private func spinnerContent(message: String) -> some View {
+        Color.black.opacity(0.3)
+            .ignoresSafeArea()
+
+        if #available(iOS 26.0, *) {
+            LoadingSpinnerView(message: message)
+                .glassEffect(in: .rect(cornerRadius: 16.0))
+        } else {
+            LoadingSpinnerView(message: message)
+                .background(RoundedRectangle(cornerRadius: 16.0)
+                    .fill(Color.white))
+        }
     }
 
     private func setupVMs() async throws {
@@ -297,9 +314,9 @@ struct MainView: View {
 
         if sharedModel.syncCoordinator.synchronizer == nil {
             sharedModel.syncCoordinator.synchronizer = {
-                listsLoading = true
+                isSyncing = true
                 try await listModel.loadLists()
-                listsLoading = false
+                isSyncing = false
             }
             sharedModel.syncCoordinator.start()
             sharedModel.startEventStoreObserver()
