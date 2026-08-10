@@ -14,7 +14,7 @@ class AlertDialogModel {
     var title: String = ""
     var message: String = ""
     var actions: [ActionButton] = []
-    var showDefaultCancel: Bool = false
+    var showDefaultCancel: Bool = true
 
     var currentAlarms: [BethinkeryAlarmTemplate]?
     var diffAlarms: [BethinkeryAlarmTemplate]?
@@ -22,6 +22,25 @@ class AlertDialogModel {
     var reminderList: [Bethinkery]?
 
     var duplicateList: DuplicateGroup?
+
+    func present(title: String,
+                 message: String,
+                 actions: [ActionButton],
+                 currentAlarms: [BethinkeryAlarmTemplate]? = nil,
+                 diffAlarms: [BethinkeryAlarmTemplate]? = nil,
+                 reminderList: [Bethinkery]? = nil,
+                 duplicateList: DuplicateGroup? = nil,
+                 showDefaultCancel: Bool = true) {
+        self.isPresenting = true
+        self.title = title
+        self.message = message
+        self.actions = actions
+        self.currentAlarms = currentAlarms
+        self.diffAlarms = diffAlarms
+        self.reminderList = reminderList
+        self.duplicateList = duplicateList
+        self.showDefaultCancel = showDefaultCancel
+    }
 
     func dismiss() {
         self.isPresenting = false

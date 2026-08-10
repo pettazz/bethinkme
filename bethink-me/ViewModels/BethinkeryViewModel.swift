@@ -116,7 +116,7 @@ final class BethinkeryViewModel {
             throw BethinkMeError("invalid number of items sent to move: \(from.count)")
         }
         try sharedModel.withTransaction { _ in
-            var tmpBethinkeries = sharedModel.showCompleted ? list.orderedBethinkeries : list.liveOrderedBethinkeries
+            var tmpBethinkeries = list.visibleBethinkeries(showCompleted: sharedModel.showCompleted)
             tmpBethinkeries.move(fromOffsets: from, toOffset: to)
 
             for (idx, bethinkery) in tmpBethinkeries.enumerated() {

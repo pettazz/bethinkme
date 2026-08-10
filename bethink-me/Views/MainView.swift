@@ -3,7 +3,6 @@ import SwiftData
 import SwiftUI
 
 
-// swiftlint:disable:next type_body_length
 struct MainView: View {
     @AppStorage(SettingsKey.maxCompletedAgeDays.rawValue)
     private var maxCompletedAgeDaysSetting: Int = kMaxCompletedAgeDaysDefault
@@ -23,20 +22,12 @@ struct MainView: View {
 
     @State private var errorState = ErrorState.instance
 
-    @State private var listEditMode: EditMode = .inactive
-    @State private var shouldPresentNewListSheet = false
-
     @State private var isSyncing: Bool = false
     @State private var showDelayedSpinner = false
 
     @State private var selectedBethinkeryForEdit: Bethinkery?
 
     @State private var alertDialogModel: AlertDialogModel = AlertDialogModel()
-
-    @State private var keyboardHeight: CGFloat = 0
-
-    @State private var addingToListID: String?
-    @State private var createdListID: String?
 
     private var isLoadingInit: Bool {
         sharedModel == nil || listModel == nil || bethinkeryModel == nil
@@ -76,131 +67,12 @@ struct MainView: View {
 
                 } else {
                     ZStack {
-                        VStack {
-                            if let sharedModel, let listModel, let bethinkeryModel {
-                                if sharedModel.bethinkeryLists.isEmpty {
-                                    InvalidStateView(icon: "checklist",
-                                                     title: "oh no",
-                                                     message: "no toedoes?")
-                                } else {
-                                    ScrollViewReader { scrollProxy in
-                                        List {
-                                            Section {
-                                                Color.clear
-                                                    .frame(height: 0)
-                                                    .listRowInsets(EdgeInsets())
-                                                    .listRowSeparator(.hidden)
-                                                    .listRowBackground(Color.clear)
-                                                    .id("lists-top")
-                                            }
-                                            .listSectionSpacing(0)
-
-                                            ForEach(sharedModel.bethinkeryLists) { list in
-                                                ListView(
-                                                    selectedBethinkeryForEdit: $selectedBethinkeryForEdit,
-                                                    addingToListID: $addingToListID,
-                                                    sharedModel: sharedModel,
-                                                    listModel: listModel,
-                                                    bethinkeryModel: bethinkeryModel,
-                                                    list: list,
-                                                    scrollProxy: scrollProxy,
-                                                    onListDelete: { list in
-                                                        displayListDeleteConfirmation(selectedListForDelete: list)
-                                                    })
-                                            }
-                                            .onMove { from, to in
-                                                withErrorReporter {
-                                                    try listModel.moveListPosition(from: from, to: to)
-                                                }
-                                            }
-                                        }
-                                        .environment(\.defaultMinListRowHeight, 0)
-                                        .environment(\.editMode, $listEditMode)
-                                        .contentMargins(.bottom, keyboardHeight, for: .scrollContent)
-                                        .onReceive(NotificationCenter.default.publisher(
-                                            for: UIResponder.keyboardWillShowNotification)) { note in
-                                                if let frame = note.userInfo?[UIResponder.keyboardFrameEndUserInfoKey]
-                                                    as? CGRect {
-                                                        keyboardHeight = frame.height
-                                                }
-                                        }
-                                        .onReceive(NotificationCenter.default.publisher(
-                                            for: UIResponder.keyboardWillHideNotification)) { _ in
-                                                keyboardHeight = 0
-                                        }
-                                        .onChange(of: createdListID) {
-                                            Task { @MainActor in
-                                                if createdListID != nil {
-                                                    try? await Task.sleep(for: .milliseconds(50))
-                                                    withAnimation {
-                                                        scrollProxy.scrollTo("lists-top", anchor: .top)
-                                                    }
-                                                    createdListID = nil
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        .navigationTitle("Lists")
-                        .toolbar {
-                            if let sharedModel, let listModel {
-                                if listEditMode != .active {
-                                    ToolbarItem(placement: .primaryAction) {
-                                        Button {
-                                            shouldPresentNewListSheet.toggle()
-                                        } label: {
-                                            Image(systemName: "rectangle.stack.fill.badge.plus")
-                                                .accessibilityLabel(Text("Add a new list"))
-                                        }
-                                        .sheet(
-                                            isPresented: $shouldPresentNewListSheet,
-                                            content: {
-                                                ListDetailView(sharedModel: sharedModel,
-                                                               listModel: listModel,
-                                                               onListCreated: { createdListID = $0 })
-                                                    .textCase(.none)
-                                            })
-                                        .disabled(isLoadingAny)
-                                    }
-                                }
-                                ToolbarItem(placement: .primaryAction) {
-                                    Button {
-                                        withAnimation {
-                                            listEditMode = listEditMode.isEditing ? .inactive : .active
-                                        }
-                                    } label: {
-                                        Image(systemName: listEditMode == .active
-                                              ? "checkmark.circle.fill"
-                                              : "arrow.up.arrow.down.square.fill")
-                                        .accessibilityLabel(Text(listEditMode == .active
-                                                                 ? "Done editing lists"
-                                                                 : "Edit lists"))
-                                    }
-                                    .disabled(isLoadingAny)
-                                }
-                                if listEditMode != .active {
-                                    ToolbarItem(placement: .primaryAction) {
-                                        Button {
-                                            withAnimation {
-                                                sharedModel.showCompleted.toggle()
-                                                sharedModel.reload()
-                                                sharedModel.resetOrdinals()
-                                            }
-                                        } label: {
-                                            if sharedModel.showCompleted {
-                                                Image(systemName: "eye.slash.fill")
-                                                    .accessibilityLabel(Text("Hide completed Bethinkeries"))
-                                            } else {
-                                                Image(systemName: "eye.fill")
-                                                    .accessibilityLabel(Text("Show completed Bethinkeries"))
-                                            }
-                                        }
-                                        .disabled(isLoadingAny)
-                                    }
-                                }
-                            }
+                        if let sharedModel, let listModel, let bethinkeryModel {
+                            ListsView(sharedModel: sharedModel,
+                                      listModel: listModel,
+                                      bethinkeryModel: bethinkeryModel,
+                                      isLoadingAny: isLoadingAny,
+                                      selectedBethinkeryForEdit: $selectedBethinkeryForEdit)
                         }
 
                         ZStack {
@@ -323,37 +195,7 @@ struct MainView: View {
         }
     }
 
-    private func displayListDeleteConfirmation(selectedListForDelete: BethinkeryList) {
-        alertDialogModel.title = "Delete List"
-        alertDialogModel.message = "This will permanently delete the list\n\n**\(selectedListForDelete.title)**\n\n"
-        if !selectedListForDelete.bethinkeries.isEmpty {
-            if selectedListForDelete.bethinkeries.count == 1 {
-                alertDialogModel.message += "and its **Reminder.** "
-            } else {
-                alertDialogModel.message += "and all of its **\(selectedListForDelete.bethinkeries.count) Reminders.** "
-            }
-        }
-        alertDialogModel.message += "This cannot be undone."
-        let actions = [
-            ActionButton(title: "Delete List", role: .destructive, action: {
-                withErrorReporter {
-                    guard let listModel else {
-                        throw BethinkMeError("lost access to model when trying to delete list")
-                    }
-                    try listModel.delete(selectedListForDelete)
-                }
-            })
-        ]
-        alertDialogModel.reminderList = selectedListForDelete.bethinkeries
-        alertDialogModel.actions = actions
-        alertDialogModel.showDefaultCancel = true
-        alertDialogModel.isPresenting = true
-    }
-
     private func displayDedupeConfirmation(dupes: DuplicateGroup) {
-        alertDialogModel.title = "Duplicate Reminders"
-        // swiftlint:disable:next line_length
-        alertDialogModel.message = "You've enabled deduplication for new reminders, do you want to find and remove existing duplicates in your lists now? Any identical reminders within the same list will be **permanently** deleted, leaving only one copy."
         let actions = [
             ActionButton(title: "Remove duplicate Reminders", role: .destructive, action: {
                 withErrorReporter {
@@ -365,9 +207,11 @@ struct MainView: View {
             }),
             ActionButton(title: "Leave them alone", role: .cancel, action: {})
         ]
-        alertDialogModel.duplicateList = dupes
-        alertDialogModel.actions = actions
-        alertDialogModel.showDefaultCancel = false
-        alertDialogModel.isPresenting = true
+        alertDialogModel.present(title: "Duplicate Reminders",
+                                 // swiftlint:disable:next line_length
+                                 message: "You've enabled deduplication for new reminders, do you want to find and remove existing duplicates in your lists now? Any identical reminders within the same list will be **permanently** deleted, leaving only one copy.",
+                                 actions: actions,
+                                 duplicateList: dupes,
+                                 showDefaultCancel: false)
     }
 }

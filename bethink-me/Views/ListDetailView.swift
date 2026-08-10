@@ -100,9 +100,6 @@ struct ListDetailView: View {
     }
 
     private func displayAlarmEditAlertDialog(list: BethinkeryList, editListCommand: EditBethinkeryList) {
-        alertDialogModel.title = "Editing List Alarms"
-        // swiftlint:disable:next line_length
-        alertDialogModel.message = "This list already contains Reminders. Do you want to discard any existing alarms they have set and replace them with the alarms from this list?"
         let actions = [
             ActionButton(title: "Replace with List alarms", role: .destructive, action: {
                 withErrorReporter {
@@ -117,10 +114,11 @@ struct ListDetailView: View {
                 }
             })
         ]
-        alertDialogModel.actions = actions
-        alertDialogModel.diffAlarms = editListCommand.alarmTemplates
-        alertDialogModel.showDefaultCancel = true
-        alertDialogModel.isPresenting = true
+        alertDialogModel.present(title: "Editing List Alarms",
+                                 // swiftlint:disable:next line_length
+                                 message: "This list already contains Reminders. Do you want to discard any existing alarms they have set and replace them with the alarms from this list?",
+                                 actions: actions,
+                                 diffAlarms: editListCommand.alarmTemplates)
     }
 
     private func save() {
