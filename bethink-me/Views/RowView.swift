@@ -49,9 +49,14 @@ struct RowView: View {
 
                 Group {
                     if isEditing {
-                        TextField(bethinkery.title, text: $editedTitle)
+                        RepeatableTextField(text: $editedTitle,
+                                            enableAutocorrect: enableAutocorrectSetting,
+                                            returnKey: .default) {
+                            saveEdit()
+                        } onDone: {
+                            saveEdit()
+                        }
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .autocorrectionDisabled(!enableAutocorrectSetting)
                             .focused($editFocus)
                             .onAppear {
                                 editFocus = true
@@ -62,17 +67,6 @@ struct RowView: View {
                                         cancelEdit()
                                     }
                                 }
-                                ToolbarItem(placement: .keyboard) {
-                                    Spacer()
-                                }
-                                ToolbarItem(placement: .keyboard) {
-                                    Button("Done") {
-                                        saveEdit()
-                                    }
-                                }
-                            }
-                            .onSubmit {
-                                saveEdit()
                             }
                             .onChange(of: editFocus) {
                                 if isEditing && !editFocus {
@@ -88,7 +82,7 @@ struct RowView: View {
                             .onTapGesture {
                                 editedTitle = bethinkery.title
 
-                                withAnimation(.snappy) {
+                                withAnimation(.snappy(duration: 0.25)) {
                                     isEditing = true
                                 }
                             }
@@ -165,7 +159,8 @@ struct RowView: View {
 
     private func cancelEdit() {
         editedTitle = ""
-        withAnimation {
+        editFocus = false
+        withAnimation(.snappy(duration: 0.25)) {
             isEditing = false
         }
     }

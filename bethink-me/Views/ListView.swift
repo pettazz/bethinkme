@@ -74,21 +74,15 @@ struct ListView: View {
                                             enableAutocorrect: enableAutocorrectSetting) {
                             saveNew()
                             scrollToAdd()
+                        } onDone: {
+                            saveNew()
+                            closeAdding()
                         }
                             .id("adding-to-\(list.id)")
                             .focused($addInFocus)
                             .toolbar {
                                 ToolbarItem(placement: .cancellationAction) {
                                     Button("Cancel") {
-                                        closeAdding()
-                                    }
-                                }
-                                ToolbarItem(placement: .keyboard) {
-                                    Spacer()
-                                }
-                                ToolbarItem(placement: .keyboard) {
-                                    Button("Done") {
-                                        saveNew()
                                         closeAdding()
                                     }
                                 }
