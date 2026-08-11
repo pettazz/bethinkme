@@ -166,7 +166,7 @@ struct RowView: View {
     private func saveEdit() {
         let cleanTitle = editedTitle.trimmingCharacters(in: .whitespaces)
         guard !cleanTitle.isEmpty else { return }
-        
+
         withErrorReporter {
             let updater = EditBethinkery.fromBethinkery(bethinkery)
             updater.title = cleanTitle

@@ -26,10 +26,6 @@ final class BethinkeryList: Equatable, Identifiable {
         orderedBethinkeries.filter({ !$0.isCompleted || $0.freshlyCompleted })
     }
 
-    func visibleBethinkeries(showCompleted: Bool) -> [Bethinkery] {
-        showCompleted ? orderedBethinkeries : liveOrderedBethinkeries
-    }
-
 
     init(id: String, title: String, hexColor: String, calendar: EKCalendar) {
         self.id = id
@@ -49,6 +45,10 @@ final class BethinkeryList: Equatable, Identifiable {
 
     static func == (lhs: BethinkeryList, rhs: BethinkeryList) -> Bool {
         return lhs.id == rhs.id
+    }
+
+    func visibleBethinkeries(showCompleted: Bool) -> [Bethinkery] {
+        showCompleted ? orderedBethinkeries : liveOrderedBethinkeries
     }
 
     func load(from calendar: EKCalendar) {

@@ -12,7 +12,7 @@ struct AddBethinkeryRowView: View {
     @FocusState private var addInFocus: Bool
     @State private var newTitle: String = ""
     @State private var lastDuplicatedTitle: String = ""
-    
+
     var list: BethinkeryList
 
     var sharedModel: SharedViewModel
