@@ -110,8 +110,8 @@ struct ErrorDetailView: View {
                     ErrorDetailViewRow(
                         title: "stack",
                         content: [
-                            error.callStack[1],
-                            error.callStack[2]
+                            error.callStack.count >= 2 ? error.callStack[1] : "n/a",
+                            error.callStack.count >= 3 ? error.callStack[2] : "n/a"
                         ].joined(separator: "\n"))
 
                 }

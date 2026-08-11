@@ -1,3 +1,4 @@
+// TODO: if this is never actually used we can delete this half and just keep the template version
 extension Array where Element == BethinkeryAlarm {
     var sortedAlarms: [BethinkeryAlarm] {
         self.sorted(by: { lalarm, ralarm in
@@ -19,7 +20,7 @@ extension Array where Element == BethinkeryAlarm {
                     }
                 case .proximityAlarm:
                     if ralarm.kind == .proximityAlarm {
-                        return true // who care, maybe alphabetical?
+                        return ralarm.title < lalarm.title
                     } else {
                         return false
                     }
@@ -53,9 +54,9 @@ extension Array where Element == any BethinkeryAlarmTemplate {
                 } else {
                     return true
                 }
-            } else if lalarm is ProximityAlarmTemplate {
-                if ralarm is ProximityAlarmTemplate {
-                    return true // who care
+            } else if let lprox = lalarm as? ProximityAlarmTemplate {
+                if let rprox = ralarm as? ProximityAlarmTemplate {
+                    return lprox.title < rprox.title
                 } else {
                     return false
                 }
