@@ -1,39 +1,39 @@
-// TODO: if this is never actually used we can delete this half and just keep the template version
-//extension Array where Element == BethinkeryAlarm {
-//    var sortedAlarms: [BethinkeryAlarm] {
-//        self.sorted(by: { lalarm, ralarm in
-//            switch lalarm.kind {
-//                case .relativeTimeAlarm:
-//                    if ralarm.kind == .relativeTimeAlarm {
-//                        return lalarm.offset < ralarm.offset
-//                    } else {
-//                        return true
-//                    }
-//                case .absoluteTimeAlarm:
-//                    if ralarm.kind == .absoluteTimeAlarm {
-//                        guard let lalarmTime = lalarm.time, let ralarmTime = ralarm.time else { return false }
-//                        return lalarmTime < ralarmTime
-//                    } else if ralarm.kind == .relativeTimeAlarm {
-//                        return false
-//                    } else {
-//                        return true
-//                    }
-//                case .proximityAlarm:
-//                    if ralarm.kind == .proximityAlarm {
-//                        return ralarm.title < lalarm.title
-//                    } else {
-//                        return false
-//                    }
-//            }
-//        })
-//    }
-//    var earliestAlarm: BethinkeryAlarm? {
-//        let foundAlarm: BethinkeryAlarm? = self.sortedAlarms.first(where: { alarm in
-//            alarm.kind == .absoluteTimeAlarm
-//        })
-//        return foundAlarm ?? nil
-//    }
-//}
+import Foundation
+
+
+extension Array where Element == BethinkeryAlarm {
+    var sortedAlarms: [BethinkeryAlarm] {
+        self.sorted(by: { lalarm, ralarm in
+            switch lalarm.kind {
+                case .relativeTimeAlarm:
+                    if ralarm.kind == .relativeTimeAlarm {
+                        return lalarm.offset < ralarm.offset
+                    } else {
+                        return true
+                    }
+                case .absoluteTimeAlarm:
+                    if ralarm.kind == .absoluteTimeAlarm {
+                        guard let lalarmTime = lalarm.time, let ralarmTime = ralarm.time else { return false }
+                        return lalarmTime < ralarmTime
+                    } else if ralarm.kind == .relativeTimeAlarm {
+                        return false
+                    } else {
+                        return true
+                    }
+                case .proximityAlarm:
+                    if ralarm.kind == .proximityAlarm {
+                        return ralarm.title < lalarm.title
+                    } else {
+                        return false
+                    }
+            }
+        })
+    }
+    var earliestAlarm: BethinkeryAlarm? {
+        filter({ $0.kind == .absoluteTimeAlarm })
+            .min(by: { ($0.time ?? .distantFuture) < ($1.time ?? .distantFuture) })
+    }
+}
 
 // entirely a duplicate of the above for templates
 // too lazy to genericize it 
