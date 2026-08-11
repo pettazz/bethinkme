@@ -89,9 +89,7 @@ struct MainView: View {
                             try? await Task.sleep(for: .seconds(1))
                             guard !Task.isCancelled, isLoadingAny else { return }
 
-                            withAnimation(.snappy) {
-                                showDelayedSpinner = true
-                            }
+                            showDelayedSpinner = true
                         }
                     }
                 }
@@ -133,10 +131,8 @@ struct MainView: View {
             }
         }
         .onChange(of: maxCompletedAgeDaysSetting) { _, _ in
-            Task {
-                guard let sharedModel else { return }
-                sharedModel.syncCoordinator.requestSync(reason: .EKChanged)
-            }
+            guard let sharedModel else { return }
+            sharedModel.syncCoordinator.requestSync(reason: .EKChanged)
         }
         .onChange(of: enableDedupe) { _, isDedupeEnabled in
             guard isDedupeEnabled, let listModel else { return }

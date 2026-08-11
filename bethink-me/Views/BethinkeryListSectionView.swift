@@ -165,14 +165,6 @@ struct BethinkeryListSectionView: View {
         }
     }
 
-    private func doBethinkeryMove(_ bethinkery: Bethinkery,
-                                  destination: BethinkeryList,
-                                  inheritListAlarms: Bool) throws {
-        try bethinkeryModel.moveBethinkery(bethinkery,
-                                           to: destination,
-                                           inheritListAlarms: inheritListAlarms)
-    }
-
     private func flash(_ id: String, kind: RowFlashKind) {
         Task { @MainActor in
             flashedRow = (id, kind)
@@ -196,12 +188,12 @@ struct BethinkeryListSectionView: View {
                 let actions = [
                     ActionButton(title: "Replace with List alarms", role: .destructive, action: {
                         withErrorReporter {
-                            try doBethinkeryMove(bethinkery, destination: destination, inheritListAlarms: true)
+                            try bethinkeryModel.moveBethinkery(bethinkery, to: destination, inheritListAlarms: true)
                         }
                     }),
                     ActionButton(title: "Keep existing alarms", action: {
                         withErrorReporter {
-                            try doBethinkeryMove(bethinkery, destination: destination, inheritListAlarms: false)
+                            try bethinkeryModel.moveBethinkery(bethinkery, to: destination, inheritListAlarms: false)
                         }
                     })
                 ]
@@ -213,10 +205,10 @@ struct BethinkeryListSectionView: View {
                                          diffAlarms: destination.alarmTemplates.compactMap({ $0.toTemplate() }))
             } else {
                 // retain existing alarms and don't inherit []
-                try doBethinkeryMove(bethinkery, destination: destination, inheritListAlarms: false)
+                try bethinkeryModel.moveBethinkery(bethinkery, to: destination, inheritListAlarms: false)
             }
         } else {
-            try doBethinkeryMove(bethinkery, destination: destination, inheritListAlarms: true)
+            try bethinkeryModel.moveBethinkery(bethinkery, to: destination, inheritListAlarms: true)
         }
     }
 }
