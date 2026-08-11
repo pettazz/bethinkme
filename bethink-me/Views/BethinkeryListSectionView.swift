@@ -47,112 +47,111 @@ struct BethinkeryListSectionView: View {
                     .padding(.leading, 10)
             }
         } else {
-            Section(
-                content: {
-                    if addingToListID == list.id {
-                        AddBethinkeryRowView(
-                            list: list,
-                            sharedModel: sharedModel,
-                            bethinkeryModel: bethinkeryModel,
-                            scrollProxy: scrollProxy,
-                            addingToListID: $addingToListID,
-                            onFlash: flash)
-                    }
+            Section(content: {
+                if addingToListID == list.id {
+                    AddBethinkeryRowView(
+                        list: list,
+                        sharedModel: sharedModel,
+                        bethinkeryModel: bethinkeryModel,
+                        scrollProxy: scrollProxy,
+                        addingToListID: $addingToListID,
+                        onFlash: flash)
+                }
 
-                    ForEach(list.visibleBethinkeries(showCompleted: sharedModel.showCompleted)) { bethinkery in
-                        let flashKind = flashedRow.flatMap { $0.id == bethinkery.id ? $0.kind : nil }
-                        RowView(bethinkeryModel: bethinkeryModel, bethinkery: bethinkery)
-                            .id(bethinkery.id)
-                            .background(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .fill(Color(hex: list.hexColor))
-                                    .opacity(flashKind != nil ? 0.3 : 0)
-                                    .padding(-16)
-                            )
-                            .overlay(alignment: .leading) {
-                                if flashKind != nil && flashKind == .deduped {
-                                    Image(systemName: "rectangle.on.rectangle.dashed")
-                                        .font(.headline)
-                                        .foregroundStyle(Color(hex: list.hexColor))
-                                        .background(Circle().fill(Color(.systemBackground)))
-                                        .overlay(Circle().stroke(Color(.separator).opacity(0.75), lineWidth: 1))
-                                        .accessibilityHidden(true)
-                                }
+                ForEach(list.visibleBethinkeries(showCompleted: sharedModel.showCompleted)) { bethinkery in
+                    let flashKind = flashedRow.flatMap { $0.id == bethinkery.id ? $0.kind : nil }
+                    RowView(bethinkeryModel: bethinkeryModel, bethinkery: bethinkery)
+                        .id(bethinkery.id)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color(hex: list.hexColor))
+                                .opacity(flashKind != nil ? 0.3 : 0)
+                                .padding(-16)
+                        )
+                        .overlay(alignment: .leading) {
+                            if flashKind != nil && flashKind == .deduped {
+                                Image(systemName: "rectangle.on.rectangle.dashed")
+                                    .font(.headline)
+                                    .foregroundStyle(Color(hex: list.hexColor))
+                                    .background(Circle().fill(Color(.systemBackground)))
+                                    .overlay(Circle().stroke(Color(.separator).opacity(0.75), lineWidth: 1))
+                                    .accessibilityHidden(true)
                             }
-                            .sensoryFeedback(.success, trigger: flashTrigger)
-                            .sensoryFeedback(.impact(weight: .light), trigger: flashTrigger)
-                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                                Button(role: .destructive) {
-                                    withErrorReporter {
-                                        try bethinkeryModel.delete(bethinkery)
-                                    }
-                                } label: {
-                                    Label("Delete", systemImage: "trash")
+                        }
+                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                            Button(role: .destructive) {
+                                withErrorReporter {
+                                    try bethinkeryModel.delete(bethinkery)
                                 }
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
 
-                                Button {
-                                    selectedBethinkeryForEdit = bethinkery
-                                } label: {
-                                    Label("Edit", systemImage: "square.and.pencil")
-                                }
-                                .tint(.orange)
+                            Button {
+                                selectedBethinkeryForEdit = bethinkery
+                            } label: {
+                                Label("Edit", systemImage: "square.and.pencil")
+                            }
+                            .tint(.orange)
 
-                                Menu {
-                                    Section("Destination List") {
-                                        ForEach(sharedModel.bethinkeryLists) { moveMenuList in
-                                            if moveMenuList != list {
-                                                Button {
-                                                    withErrorReporter {
-                                                        try requestBethinkeryMove(bethinkery, destination: moveMenuList)
-                                                    }
-                                                } label: {
-                                                    moveDestinationLabel(moveMenuList)
+                            Menu {
+                                Section("Destination List") {
+                                    ForEach(sharedModel.bethinkeryLists) { moveMenuList in
+                                        if moveMenuList != list {
+                                            Button {
+                                                withErrorReporter {
+                                                    try requestBethinkeryMove(bethinkery, destination: moveMenuList)
                                                 }
+                                            } label: {
+                                                moveDestinationLabel(moveMenuList)
                                             }
                                         }
                                     }
-                                } label: {
-                                    Label("Move", systemImage: "arrow.left.arrow.right.square")
                                 }
+                            } label: {
+                                Label("Move", systemImage: "arrow.left.arrow.right.square")
                             }
-                    }
-                    .onMove { from, to in
-                        withErrorReporter {
-                            try bethinkeryModel.moveBethinkeryPosition(from: from, to: to, list: list)
                         }
+                }
+                .onMove { from, to in
+                    withErrorReporter {
+                        try bethinkeryModel.moveBethinkeryPosition(from: from, to: to, list: list)
                     }
-                },
-                header: {
-                    HStack {
-                        Text(list.title)
-                            .font(.headline)
+                }
+            },
+            header: {
+                HStack {
+                    Text(list.title)
+                        .font(.headline)
+                        .foregroundColor(Color(hex: list.hexColor))
+                    Spacer()
+                    Button {
+                        isPresentingEditListSheet.toggle()
+                    } label: {
+                        Image(systemName: "info.circle.fill")
+                            .font(.title)
                             .foregroundColor(Color(hex: list.hexColor))
-                        Spacer()
-                        Button {
-                            isPresentingEditListSheet.toggle()
-                        } label: {
-                            Image(systemName: "info.circle.fill")
-                                .font(.title)
-                                .foregroundColor(Color(hex: list.hexColor))
-                                .accessibilityLabel(Text("Edit the \(list.title) list"))
-                        }
-                        .sheet(isPresented: $isPresentingEditListSheet, content: {
-                            ListDetailView(sharedModel: sharedModel, listModel: listModel, list: list)
-                                .textCase(.none)
-                        })
-                        Button {
-                            withAnimation {
-                                addingToListID = list.id
-                            }
-                        } label: {
-                            Image(systemName: "plus.circle.fill")
-                                .font(.title)
-                                .foregroundColor(Color(hex: list.hexColor))
-                                .accessibilityLabel(Text("Add a new Bethinkery to the \(list.title) list"))
-                        }
+                            .accessibilityLabel(Text("Edit the \(list.title) list"))
                     }
-                    .id(list.id)
-                })
+                    .sheet(isPresented: $isPresentingEditListSheet, content: {
+                        ListDetailView(sharedModel: sharedModel, listModel: listModel, list: list)
+                            .textCase(.none)
+                    })
+                    Button {
+                        withAnimation {
+                            addingToListID = list.id
+                        }
+                    } label: {
+                        Image(systemName: "plus.circle.fill")
+                            .font(.title)
+                            .foregroundColor(Color(hex: list.hexColor))
+                            .accessibilityLabel(Text("Add a new Bethinkery to the \(list.title) list"))
+                    }
+                }
+                .id(list.id)
+            })
+            .sensoryFeedback(.success, trigger: flashTrigger)
+            .sensoryFeedback(.impact(weight: .light), trigger: flashTrigger)
         }
     }
 
