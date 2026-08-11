@@ -186,9 +186,11 @@ struct MainView: View {
 
         if sharedModel.syncCoordinator.synchronizer == nil {
             sharedModel.syncCoordinator.synchronizer = {
+                defer {
+                    isSyncing = false
+                }
                 isSyncing = true
                 try await listModel.loadLists()
-                isSyncing = false
             }
             sharedModel.syncCoordinator.start()
             sharedModel.startEventStoreObserver()
