@@ -35,13 +35,15 @@ struct AddBethinkeryRowView: View {
                 .foregroundColor(.gray)
                 .accessibilityHidden(true)
             RepeatableTextField(text: $newTitle,
-                                enableAutocorrect: enableAutocorrectSetting) {
-                saveNew()
-                scrollToAdd()
-            } onDone: {
-                saveNew()
-                closeAdding()
-            }
+                                enableAutocorrect: enableAutocorrectSetting,
+                                onSubmit: {
+                                    saveNew()
+                                    scrollToAdd()
+                                },
+                                onDone: {
+                                    saveNew()
+                                    closeAdding()
+                                })
                 .id("adding-to-\(list.id)")
                 .focused($addInFocus)
                 .toolbar {

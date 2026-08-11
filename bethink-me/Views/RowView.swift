@@ -51,11 +51,9 @@ struct RowView: View {
                     if isEditing {
                         RepeatableTextField(text: $editedTitle,
                                             enableAutocorrect: enableAutocorrectSetting,
-                                            returnKey: .default) {
-                            saveEdit()
-                        } onDone: {
-                            saveEdit()
-                        }
+                                            returnKey: .default,
+                                            onSubmit: saveEdit,
+                                            onDone: saveEdit)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .focused($editFocus)
                             .onAppear {
@@ -64,7 +62,7 @@ struct RowView: View {
                             .toolbar {
                                 ToolbarItem(placement: .cancellationAction) {
                                     Button("Cancel") {
-                                        cancelEdit()
+                                        closeEdit()
                                     }
                                 }
                             }
@@ -157,7 +155,7 @@ struct RowView: View {
             .accessibilityLabel(Text(label))
     }
 
-    private func cancelEdit() {
+    private func closeEdit() {
         editedTitle = ""
         editFocus = false
         withAnimation(.snappy(duration: 0.25)) {
@@ -166,12 +164,15 @@ struct RowView: View {
     }
 
     private func saveEdit() {
+        let cleanTitle = editedTitle.trimmingCharacters(in: .whitespaces)
+        guard !cleanTitle.isEmpty else { return }
+        
         withErrorReporter {
             let updater = EditBethinkery.fromBethinkery(bethinkery)
-            updater.title = editedTitle
+            updater.title = cleanTitle
             try bethinkeryModel.update(bethinkery, with: updater)
         }
 
-        cancelEdit()
+        closeEdit()
     }
 }
