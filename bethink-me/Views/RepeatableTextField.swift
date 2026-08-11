@@ -68,6 +68,8 @@ struct RepeatableTextField: UIViewRepresentable {
         if uiView.text != text {
             uiView.text = text
         }
+        uiView.autocorrectionType = enableAutocorrect ? .default : .no
+        uiView.returnKeyType = returnKey
         context.coordinator.onSubmit = onSubmit
         context.coordinator.onDone = onDone
     }
