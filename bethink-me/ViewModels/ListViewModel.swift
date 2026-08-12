@@ -35,7 +35,7 @@ final class ListViewModel {
         let validSourceTypes = [EKSourceType.local, .exchange, .calDAV]
         let calendars = sharedModel.eventStore
             .calendars(for: .reminder)
-            .filter({ validSourceTypes.contains($0.source.sourceType) })
+            .filter({ validSourceTypes.contains($0.source.sourceType) && $0.allowsContentModifications })
 
         guard !calendars.isEmpty || sharedModel.bethinkeryLists.isEmpty else {
             sharedModel.syncStatus = .unavailable
