@@ -11,7 +11,7 @@ struct RowView: View {
     @AppStorage(SettingsKey.displayAlarmIcons.rawValue)
     private var displayAlarmIcons: Bool = kDisplayAlarmIconsDefault
 
-    @FocusState private var editFocus: Bool
+    @State private var editFocus: Bool = false
     @State private var isEditing: Bool = false
     @State private var editedTitle: String = ""
 
@@ -50,13 +50,18 @@ struct RowView: View {
                 Group {
                     if isEditing {
                         RepeatableTextField(text: $editedTitle,
+                                            isFocused: $editFocus,
                                             enableAutocorrect: enableAutocorrectSetting,
                                             returnKey: .default,
                                             onSubmit: {
-                                                editFocus = false
+                                                if isEditing {
+                                                    saveEdit()
+                                                }
                                             },
                                             onDone: {
-                                                editFocus = false
+                                                if isEditing {
+                                                    saveEdit()
+                                                }
                                             },
                                             onEndEditing: {
                                                 if isEditing {
@@ -64,10 +69,6 @@ struct RowView: View {
                                                 }
                                             })
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .focused($editFocus)
-                            .onAppear {
-                                editFocus = true
-                            }
                             .toolbar {
                                 ToolbarItem(placement: .cancellationAction) {
                                     Button("Cancel") {
@@ -83,6 +84,7 @@ struct RowView: View {
                             .foregroundColor(bethinkery.isCompleted ? .gray : .primary)
                             .onTapGesture {
                                 editedTitle = bethinkery.title
+                                editFocus = true
 
                                 withAnimation(.snappy(duration: 0.25)) {
                                     isEditing = true

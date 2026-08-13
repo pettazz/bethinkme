@@ -77,13 +77,11 @@ struct ListsView: View {
                         isPresented: $shouldPresentNewListSheet,
                         onDismiss: {
                             guard createdListID != nil else { return }
-                            Task { @MainActor in
-                                await Task.yield()
-                                withAnimation {
-                                    scrollProxy.scrollTo("lists-top", anchor: .top)
-                                }
-                                self.createdListID = nil
+
+                            withAnimation {
+                                scrollProxy.scrollTo("lists-top", anchor: .top)
                             }
+                            self.createdListID = nil
                         },
                         content: {
                             ListDetailView(sharedModel: sharedModel,

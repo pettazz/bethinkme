@@ -9,7 +9,7 @@ struct AddBethinkeryRowView: View {
     @AppStorage(SettingsKey.dedupeCaseSensitive.rawValue)
     private var dedupeCaseSensitive: Bool = kDedupeCaseSensitiveDefault
 
-    @FocusState private var addInFocus: Bool
+    @State private var addInFocus: Bool = true
     @State private var newTitle: String = ""
     @State private var lastDuplicatedTitle: String = ""
 
@@ -35,6 +35,7 @@ struct AddBethinkeryRowView: View {
                 .foregroundColor(.gray)
                 .accessibilityHidden(true)
             RepeatableTextField(text: $newTitle,
+                                isFocused: $addInFocus,
                                 enableAutocorrect: enableAutocorrectSetting,
                                 onSubmit: {
                                     saveNew()
@@ -44,13 +45,18 @@ struct AddBethinkeryRowView: View {
                                     saveNew()
                                     closeAdding()
                                 },
+                                onBeginEditing: {
+                                    scrollToAdd()
+                                },
                                 onEndEditing: {
                                     if isAdding {
                                         closeAdding()
                                     }
                                 })
                 .id("adding-to-\(list.id)")
-                .focused($addInFocus)
+                .onAppear {
+                    addInFocus = true
+                }
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
                         Button("Cancel") {
@@ -58,33 +64,21 @@ struct AddBethinkeryRowView: View {
                         }
                     }
                 }
-                .onAppear {
-                    Task { @MainActor in
-                        await Task.yield()
-                        guard isAdding else { return }
-                        addInFocus = true
-                        scrollToAdd()
-                    }
-                }
         }
     }
 
     private func scrollToAdd() {
         guard let scrollProxy else { return }
-        Task { @MainActor in
-            await Task.yield()
-            guard isAdding else { return }
 
-            withAnimation {
-                let visible = list.visibleBethinkeries(showCompleted: sharedModel.showCompleted)
+        withAnimation {
+            let visible = list.visibleBethinkeries(showCompleted: sharedModel.showCompleted)
 
-                if visible.count >= 2 {
-                    scrollProxy.scrollTo(visible[1].id, anchor: .bottom)
-                } else if let first = visible.first {
-                    scrollProxy.scrollTo(first.id, anchor: .bottom)
-                } else {
-                    scrollProxy.scrollTo("adding-to-\(list.id)", anchor: .top)
-                }
+            if visible.count >= 2 {
+                scrollProxy.scrollTo(visible[1].id, anchor: .bottom)
+            } else if let first = visible.first {
+                scrollProxy.scrollTo(first.id, anchor: .bottom)
+            } else {
+                scrollProxy.scrollTo("adding-to-\(list.id)", anchor: .top)
             }
         }
     }

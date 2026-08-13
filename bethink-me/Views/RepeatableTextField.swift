@@ -5,6 +5,7 @@ struct RepeatableTextField: UIViewRepresentable {
 
     final class Coordinator: NSObject, UITextFieldDelegate {
         @Binding var text: String
+        @Binding var isFocused: Bool
 
         var onSubmit: () -> Void
         var onDone: () -> Void
@@ -12,11 +13,13 @@ struct RepeatableTextField: UIViewRepresentable {
         var onEndEditing: () -> Void
 
         init(text: Binding<String>,
+             isFocused: Binding<Bool>,
              onSubmit: @escaping () -> Void,
              onDone: @escaping () -> Void,
              onBeginEditing: @escaping () -> Void,
              onEndEditing: @escaping () -> Void) {
             _text = text
+            _isFocused = isFocused
             self.onSubmit = onSubmit
             self.onDone = onDone
             self.onBeginEditing = onBeginEditing
@@ -34,10 +37,16 @@ struct RepeatableTextField: UIViewRepresentable {
         }
 
         func textFieldDidBeginEditing(_ textField: UITextField) {
+            if !isFocused {
+                isFocused = true
+            }
             onBeginEditing()
         }
 
         func textFieldDidEndEditing(_ textField: UITextField) {
+            if isFocused {
+                isFocused = false
+            }
             onEndEditing()
         }
 
@@ -49,6 +58,7 @@ struct RepeatableTextField: UIViewRepresentable {
 
 
     @Binding var text: String
+    @Binding var isFocused: Bool
 
     var enableAutocorrect: Bool
     var returnKey: UIReturnKeyType = .next
@@ -86,6 +96,12 @@ struct RepeatableTextField: UIViewRepresentable {
         if uiView.text != text {
             uiView.text = text
         }
+        if isFocused != uiView.isFirstResponder {
+            let shouldFocus = isFocused
+            DispatchQueue.main.async {
+                if shouldFocus { uiView.becomeFirstResponder() } else { uiView.resignFirstResponder() }
+            }
+        }
         uiView.autocorrectionType = enableAutocorrect ? .default : .no
         uiView.returnKeyType = returnKey
         context.coordinator.onSubmit = onSubmit
@@ -95,6 +111,7 @@ struct RepeatableTextField: UIViewRepresentable {
     }
 
     func makeCoordinator() -> Coordinator { Coordinator(text: $text,
+                                                        isFocused: $isFocused,
                                                         onSubmit: onSubmit,
                                                         onDone: onDone,
                                                         onBeginEditing: onBeginEditing,
