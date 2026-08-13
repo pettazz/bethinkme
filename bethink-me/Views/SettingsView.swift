@@ -47,7 +47,7 @@ struct SettingsView: View {
                     }
                     Toggle(isOn: $enableDedupe) {
                         VStack(alignment: .leading) {
-                            Text("Enable deuplication")
+                            Text("Enable deduplication")
                             Text("Ignore new Reminders when they are identical to an existing one on the same list")
                                 .font(.caption)
                         }
