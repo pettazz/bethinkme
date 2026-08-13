@@ -34,6 +34,9 @@ extension Array where Element == BethinkeryAlarm {
         filter({ $0.kind == .absoluteTimeAlarm })
             .min(by: { ($0.time ?? .distantFuture) < ($1.time ?? .distantFuture) })
     }
+    var dueDateAlarm: BethinkeryAlarm? {
+        first(where: \.representsDueDate)
+    }
 }
 
 // entirely a duplicate of the above for templates

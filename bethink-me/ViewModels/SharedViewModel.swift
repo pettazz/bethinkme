@@ -111,14 +111,13 @@ final class SharedViewModel {
 
         switch alarm.kind {
             case .absoluteTimeAlarm:
-                if !alarm.isAllDay {
-                    guard let alarmTime = alarm.time else {
-                        throw BethinkMeError("tried to create absoluteTime BethinkeryAlarm from template missing time")
-                    }
-                    newEKAlarm = EKAlarm(absoluteDate: alarmTime)
-                } else {
-                    newEKAlarm = nil
+                guard !alarm.representsDueDate else {
+                    return nil
                 }
+                guard let alarmTime = alarm.time else {
+                    throw BethinkMeError("tried to create absoluteTime BethinkeryAlarm from template missing time")
+                }
+                newEKAlarm = EKAlarm(absoluteDate: alarmTime)
             case .relativeTimeAlarm:
                 newEKAlarm = EKAlarm(relativeOffset: alarm.offset)
             case .proximityAlarm:
@@ -152,6 +151,12 @@ final class SharedViewModel {
             if let newBaseAlarm {
                 reminder.addAlarm(newBaseAlarm)
             }
+
+            if newAlarm.kind == .absoluteTimeAlarm && !newAlarm.representsDueDate,
+               let synth = bethinkery.alarms.dueDateAlarm {
+                try removeAlarm(synth, from: bethinkery, within: transaction)
+            }
+
             try transaction.stage(reminder)
         } catch {
             throw BethinkMeError("failed to add alarm to Bethinkery", from: error as NSError)
@@ -165,13 +170,12 @@ final class SharedViewModel {
             bethinkery.alarms.removeAll(where: { $0.id == alarm.id })
             transaction.deleteModel(alarm)
 
-            if !(alarm.kind == .absoluteTimeAlarm && alarm.isAllDay) {
-                let reminder = try transaction.liveReminder(for: bethinkery)
-                if let ekAlarm = reminder.alarms?.first(where: { alarm == $0 }) {
-                    reminder.removeAlarm(ekAlarm)
-                }
-                try transaction.stage(reminder)
+            let reminder = try transaction.liveReminder(for: bethinkery)
+            if !alarm.representsDueDate,
+                let ekAlarm = reminder.alarms?.first(where: { alarm == $0 }) {
+                reminder.removeAlarm(ekAlarm)
             }
+            try transaction.stage(reminder)
         } catch {
             throw BethinkMeError("failed to delete alarm", from: error as NSError)
         }

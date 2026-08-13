@@ -34,6 +34,10 @@ final class BethinkeryAlarm: Equatable, Identifiable {
         }
     }
 
+    var representsDueDate: Bool {
+        id.hasPrefix("synth-")
+    }
+
 
     init(id: String? = nil, kind: BethinkeryAlarmKind) {
         self.id = id ?? UUID().uuidString

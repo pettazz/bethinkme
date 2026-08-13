@@ -149,8 +149,7 @@ final class Bethinkery: Equatable, Identifiable {
             }
         }
 
-        let synthID = "synth-\(self.id)"
-        let deleteables = self.alarms.filter({ !knownAlarmIDs.contains($0.id) && $0.id != synthID })
+        let deleteables = self.alarms.filter({ !knownAlarmIDs.contains($0.id) && !$0.representsDueDate })
         self.alarms.removeAll(where: { deleteables.map(\.id).contains($0.id) })
         for alarm in deleteables {
             modelContext?.delete(alarm)
@@ -160,24 +159,38 @@ final class Bethinkery: Equatable, Identifiable {
     }
 
     private func synthesizeDueDateAlarm(from reminder: EKReminder) {
-        guard let due = reminder.dueDateComponents else { return }
-
         let synthID = "synth-\(self.id)"
 
-        if !(self.alarms.contains { alarm in
-            guard alarm.kind == .absoluteTimeAlarm, let alarmTime = alarm.time else { return false }
+        func removeSynth() {
+            guard let synth = alarms.dueDateAlarm else { return }
+            alarms.removeAll { $0.id == synth.id }
+            modelContext?.delete(synth)
+        }
 
-            let alarmComps = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute],
-                                                             from: alarmTime)
-            return due.year == alarmComps.year
-                && due.month == alarmComps.month
-                && due.day == alarmComps.day
+        // we have a real due date alarm, no need
+        if (alarms.contains { $0.kind == .absoluteTimeAlarm && !$0.representsDueDate }) {
+            removeSynth()
+            return
+        }
 
-        }) {
-            if let ddDate = Calendar.current.date(from: due) {
-                let ddAlarm: BethinkeryAlarm = .absoluteTime(id: synthID, time: ddDate, isAllDay: true)
-                self.alarms.append(ddAlarm)
-            }
+        // no due date
+        guard let due = reminder.dueDateComponents else {
+            removeSynth()
+            return
+        }
+
+        let isAllDay = due.hour == nil && due.minute == nil
+        guard let ddDate = Calendar.current.date(from: due) else {
+            removeSynth()
+            return
+        }
+
+        // update existing or add
+        if let synth = alarms.first(where: \.representsDueDate) {
+            synth.time = ddDate
+            synth.isAllDay = isAllDay
+        } else {
+            alarms.append(.absoluteTime(id: synthID, time: ddDate, isAllDay: isAllDay))
         }
     }
 }
