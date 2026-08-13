@@ -73,17 +73,25 @@ struct ListsView: View {
                         for: UIResponder.keyboardWillHideNotification)) { _ in
                             keyboardHeight = 0
                     }
-                    .onChange(of: createdListID) {
-                        Task { @MainActor in
-                            if createdListID != nil {
-                                try? await Task.sleep(for: .milliseconds(50))
+                    .sheet(
+                        isPresented: $shouldPresentNewListSheet,
+                        onDismiss: {
+                            guard createdListID != nil else { return }
+                            Task { @MainActor in
+                                await Task.yield()
                                 withAnimation {
                                     scrollProxy.scrollTo("lists-top", anchor: .top)
                                 }
-                                createdListID = nil
+                                self.createdListID = nil
                             }
+                        },
+                        content: {
+                            ListDetailView(sharedModel: sharedModel,
+                                           listModel: listModel,
+                                           onListCreated: { createdListID = $0 })
+                            .textCase(.none)
                         }
-                    }
+                    )
                 }
             }
             .navigationTitle("Lists")
@@ -91,19 +99,11 @@ struct ListsView: View {
                 if listEditMode != .active {
                     ToolbarItem(placement: .primaryAction) {
                         Button {
-                            shouldPresentNewListSheet.toggle()
+                            shouldPresentNewListSheet = true
                         } label: {
                             Image(systemName: "rectangle.stack.fill.badge.plus")
                                 .accessibilityLabel(Text("Add a new list"))
                         }
-                        .sheet(
-                            isPresented: $shouldPresentNewListSheet,
-                            content: {
-                                ListDetailView(sharedModel: sharedModel,
-                                               listModel: listModel,
-                                               onListCreated: { createdListID = $0 })
-                                .textCase(.none)
-                            })
                         .disabled(isLoadingAny)
                     }
                 }

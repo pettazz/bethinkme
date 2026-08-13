@@ -8,11 +8,19 @@ struct RepeatableTextField: UIViewRepresentable {
 
         var onSubmit: () -> Void
         var onDone: () -> Void
+        var onBeginEditing: () -> Void
+        var onEndEditing: () -> Void
 
-        init(text: Binding<String>, onSubmit: @escaping () -> Void, onDone: @escaping () -> Void) {
+        init(text: Binding<String>,
+             onSubmit: @escaping () -> Void,
+             onDone: @escaping () -> Void,
+             onBeginEditing: @escaping () -> Void,
+             onEndEditing: @escaping () -> Void) {
             _text = text
             self.onSubmit = onSubmit
             self.onDone = onDone
+            self.onBeginEditing = onBeginEditing
+            self.onEndEditing = onEndEditing
         }
 
         @objc
@@ -23,6 +31,14 @@ struct RepeatableTextField: UIViewRepresentable {
         @objc
         func doneTapped() {
             onDone()
+        }
+
+        func textFieldDidBeginEditing(_ textField: UITextField) {
+            onBeginEditing()
+        }
+
+        func textFieldDidEndEditing(_ textField: UITextField) {
+            onEndEditing()
         }
 
         func textFieldShouldReturn(_ textField: UITextField) -> Bool {
@@ -38,6 +54,8 @@ struct RepeatableTextField: UIViewRepresentable {
     var returnKey: UIReturnKeyType = .next
     var onSubmit: () -> Void
     var onDone: () -> Void
+    var onBeginEditing: () -> Void = {}
+    var onEndEditing: () -> Void = {}
 
     func makeUIView(context: Context) -> UITextField {
         let field = UITextField()
@@ -72,7 +90,13 @@ struct RepeatableTextField: UIViewRepresentable {
         uiView.returnKeyType = returnKey
         context.coordinator.onSubmit = onSubmit
         context.coordinator.onDone = onDone
+        context.coordinator.onBeginEditing = onBeginEditing
+        context.coordinator.onEndEditing = onEndEditing
     }
 
-    func makeCoordinator() -> Coordinator { Coordinator(text: $text, onSubmit: onSubmit, onDone: onDone) }
+    func makeCoordinator() -> Coordinator { Coordinator(text: $text,
+                                                        onSubmit: onSubmit,
+                                                        onDone: onDone,
+                                                        onBeginEditing: onBeginEditing,
+                                                        onEndEditing: onEndEditing) }
 }

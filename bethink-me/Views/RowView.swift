@@ -52,8 +52,17 @@ struct RowView: View {
                         RepeatableTextField(text: $editedTitle,
                                             enableAutocorrect: enableAutocorrectSetting,
                                             returnKey: .default,
-                                            onSubmit: saveEdit,
-                                            onDone: saveEdit)
+                                            onSubmit: {
+                                                editFocus = false
+                                            },
+                                            onDone: {
+                                                editFocus = false
+                                            },
+                                            onEndEditing: {
+                                                if isEditing {
+                                                    saveEdit()
+                                                }
+                                            })
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .focused($editFocus)
                             .onAppear {
@@ -64,11 +73,6 @@ struct RowView: View {
                                     Button("Cancel") {
                                         closeEdit()
                                     }
-                                }
-                            }
-                            .onChange(of: editFocus) {
-                                if isEditing && !editFocus {
-                                    saveEdit()
                                 }
                             }
 
@@ -165,14 +169,22 @@ struct RowView: View {
 
     private func saveEdit() {
         let cleanTitle = editedTitle.trimmingCharacters(in: .whitespaces)
-        guard !cleanTitle.isEmpty else { return }
+        guard !cleanTitle.isEmpty else {
+            closeEdit()
+            return
+        }
 
-        withErrorReporter {
+        let success = withErrorReporter {
             let updater = EditBethinkery.fromBethinkery(bethinkery)
             updater.title = cleanTitle
             try bethinkeryModel.update(bethinkery, with: updater)
-        }
+            return true
+        } ?? false
 
-        closeEdit()
+        if success {
+            closeEdit()
+        } else {
+            editFocus = true
+        }
     }
 }

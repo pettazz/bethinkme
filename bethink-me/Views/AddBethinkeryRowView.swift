@@ -43,6 +43,11 @@ struct AddBethinkeryRowView: View {
                                 onDone: {
                                     saveNew()
                                     closeAdding()
+                                },
+                                onEndEditing: {
+                                    if isAdding {
+                                        closeAdding()
+                                    }
                                 })
                 .id("adding-to-\(list.id)")
                 .focused($addInFocus)
@@ -62,25 +67,17 @@ struct AddBethinkeryRowView: View {
                     }
                 }
         }
-        .onChange(of: addInFocus) { _, isFocused in
-            guard !isFocused, isAdding else { return }
-            Task { @MainActor in
-                try? await Task.sleep(for: .milliseconds(150))
-                if !addInFocus {
-                    closeAdding()
-                } else {
-                    scrollToAdd()
-                }
-            }
-        }
     }
 
     private func scrollToAdd() {
-        guard isAdding, let scrollProxy else { return }
+        guard let scrollProxy else { return }
         Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(200))
+            await Task.yield()
+            guard isAdding else { return }
+
             withAnimation {
                 let visible = list.visibleBethinkeries(showCompleted: sharedModel.showCompleted)
+
                 if visible.count >= 2 {
                     scrollProxy.scrollTo(visible[1].id, anchor: .bottom)
                 } else if let first = visible.first {
