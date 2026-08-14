@@ -45,6 +45,11 @@ struct AddBethinkeryRowView: View {
                                     saveNew()
                                     closeAdding()
                                 },
+                                onCancel: {
+                                    if isAdding {
+                                        closeAdding()
+                                    }
+                                },
                                 onEndEditing: {
                                     if isAdding {
                                         closeAdding()
@@ -58,13 +63,6 @@ struct AddBethinkeryRowView: View {
                     for: UIResponder.keyboardDidShowNotification)) { _ in
                         guard isAdding && addInFocus else { return }
                         scrollToAdd()
-                }
-                .toolbar {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button("Cancel") {
-                            closeAdding()
-                        }
-                    }
                 }
         }
     }

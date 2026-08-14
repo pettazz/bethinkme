@@ -63,19 +63,17 @@ struct RowView: View {
                                                     saveEdit()
                                                 }
                                             },
+                                            onCancel: {
+                                                if isEditing {
+                                                    closeEdit()
+                                                }
+                                            },
                                             onEndEditing: {
                                                 if isEditing {
                                                     saveEdit()
                                                 }
                                             })
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .toolbar {
-                                ToolbarItem(placement: .cancellationAction) {
-                                    Button("Cancel") {
-                                        closeEdit()
-                                    }
-                                }
-                            }
 
                     } else {
                         Text(bethinkery.title)

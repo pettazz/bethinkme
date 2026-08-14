@@ -9,6 +9,7 @@ struct RepeatableTextField: UIViewRepresentable {
 
         var onSubmit: () -> Void
         var onDone: () -> Void
+        var onCancel: () -> Void
         var onBeginEditing: () -> Void
         var onEndEditing: () -> Void
 
@@ -16,12 +17,14 @@ struct RepeatableTextField: UIViewRepresentable {
              isFocused: Binding<Bool>,
              onSubmit: @escaping () -> Void,
              onDone: @escaping () -> Void,
+             onCancel: @escaping () -> Void,
              onBeginEditing: @escaping () -> Void,
              onEndEditing: @escaping () -> Void) {
             _text = text
             _isFocused = isFocused
             self.onSubmit = onSubmit
             self.onDone = onDone
+            self.onCancel = onCancel
             self.onBeginEditing = onBeginEditing
             self.onEndEditing = onEndEditing
         }
@@ -34,6 +37,11 @@ struct RepeatableTextField: UIViewRepresentable {
         @objc
         func doneTapped() {
             onDone()
+        }
+
+        @objc
+        func cancelTapped() {
+            onCancel()
         }
 
         func textFieldDidBeginEditing(_ textField: UITextField) {
@@ -64,6 +72,7 @@ struct RepeatableTextField: UIViewRepresentable {
     var returnKey: UIReturnKeyType = .next
     var onSubmit: () -> Void
     var onDone: () -> Void
+    var onCancel: () -> Void
     var onBeginEditing: () -> Void = {}
     var onEndEditing: () -> Void = {}
 
@@ -80,6 +89,10 @@ struct RepeatableTextField: UIViewRepresentable {
 
         let bar = UIToolbar()
         bar.items = [
+            UIBarButtonItem(title: "Cancel",
+                            style: .plain,
+                            target: context.coordinator,
+                            action: #selector(Coordinator.cancelTapped)),
             UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil),
             UIBarButtonItem(title: "Done",
                             style: .done,
@@ -106,6 +119,7 @@ struct RepeatableTextField: UIViewRepresentable {
         uiView.returnKeyType = returnKey
         context.coordinator.onSubmit = onSubmit
         context.coordinator.onDone = onDone
+        context.coordinator.onCancel = onCancel
         context.coordinator.onBeginEditing = onBeginEditing
         context.coordinator.onEndEditing = onEndEditing
     }
@@ -114,6 +128,7 @@ struct RepeatableTextField: UIViewRepresentable {
                                                         isFocused: $isFocused,
                                                         onSubmit: onSubmit,
                                                         onDone: onDone,
+                                                        onCancel: onCancel,
                                                         onBeginEditing: onBeginEditing,
                                                         onEndEditing: onEndEditing) }
 }
