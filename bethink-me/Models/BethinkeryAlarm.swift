@@ -68,7 +68,7 @@ final class BethinkeryAlarm: Equatable, Identifiable {
                           location: LatLng,
                           proximityType: AlarmProximityType) -> BethinkeryAlarm {
         let alarm = BethinkeryAlarm(id: id, kind: .proximityAlarm)
-        alarm.title = title
+        alarm.title = normalizeProxTitle(title)
         alarm.radius = radius
         alarm.location = location
         alarm.proximityType = proximityType
@@ -89,21 +89,29 @@ final class BethinkeryAlarm: Equatable, Identifiable {
             case .relativeTimeAlarm:
                 return rhs.relativeOffset != 0 && lhs.offset == rhs.relativeOffset
             case .proximityAlarm:
-                guard let rhsLocation = rhs.structuredLocation else { return false }
-                guard let rhsGeo = rhsLocation.geoLocation else { return false }
-                let lhsLoc = CLLocation(latitude: lhs.location.lat, longitude: lhs.location.lng),
-                    rhsLoc = CLLocation(latitude: rhsGeo.coordinate.latitude, longitude: rhsGeo.coordinate.longitude),
-                    distance = lhsLoc.distance(from: rhsLoc)
-                return lhs.title == normalizeProxTitle(rhsLocation.title) &&
-                       abs(lhs.radius - rhsLocation.radius) <= kProximityAlarmRadiusEqualityToleranceMeters &&
-                       distance <= kProximityAlarmCoordinateEqualityToleranceMeters &&
-                       lhs.proximityType.rawValue == rhs.proximity.rawValue
+                return areProxAlarmsEqual(lhs, rhs)
         }
     }
 
     private static func normalizeProxTitle(_ title: String?) -> String {
         let extant = title ?? ""
         return extant.isEmpty ? "Location" : extant
+    }
+
+    private static func areProxAlarmsEqual(_ lhs: BethinkeryAlarm, _ rhs: EKAlarm) -> Bool {
+        guard lhs.kind == .proximityAlarm else { return false }
+        guard let rhsLocation = rhs.structuredLocation else { return false }
+        guard let rhsGeo = rhsLocation.geoLocation else { return false }
+
+        let lhsLoc = CLLocation(latitude: lhs.location.lat, longitude: lhs.location.lng),
+            rhsLoc = CLLocation(latitude: rhsGeo.coordinate.latitude, longitude: rhsGeo.coordinate.longitude),
+            distance = lhsLoc.distance(from: rhsLoc),
+            radiusDiff = abs(lhs.radius - rhsLocation.radius)
+
+        return lhs.title == normalizeProxTitle(rhsLocation.title) &&
+               radiusDiff <= kProximityAlarmRadiusEqualityToleranceMeters &&
+               distance <= kProximityAlarmCoordinateEqualityToleranceMeters &&
+               lhs.proximityType.rawValue == rhs.proximity.rawValue
     }
 
     static func fromEKAlarm(_ alarm: EKAlarm) throws -> BethinkeryAlarm? {

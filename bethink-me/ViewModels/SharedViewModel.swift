@@ -125,27 +125,26 @@ final class SharedViewModel {
         return newEKAlarm
     }
 
+    private func writeAlarms(of bethinkery: Bethinkery, onto reminder: EKReminder) throws {
+        reminder.alarms = try bethinkery.alarms.compactMap { try makeEKAlarm(for: $0) }
+    }
+
     func addAlarm(_ template: any BethinkeryAlarmTemplate,
                   to bethinkery: Bethinkery,
                   within transaction: EditTransaction) throws {
         let newAlarm: BethinkeryAlarm = template.toModel()
 
         do {
-            let newBaseAlarm: EKAlarm? = try makeEKAlarm(for: newAlarm)
             bethinkery.alarms.append(newAlarm)
             transaction.insertModel(newAlarm)
-
-            let reminder: EKReminder = try transaction.liveReminder(for: bethinkery)
-            if let newBaseAlarm {
-                reminder.addAlarm(newBaseAlarm)
-            }
 
             if newAlarm.kind == .absoluteTimeAlarm && !newAlarm.representsDueDate,
                let synth = bethinkery.alarms.dueDateAlarm {
                 try removeAlarm(synth, from: bethinkery, within: transaction)
             }
 
-            try transaction.stage(reminder)
+            let reminder: EKReminder = try transaction.liveReminder(for: bethinkery)
+            try writeAlarms(of: bethinkery, onto: reminder)
         } catch {
             throw BethinkMeError("failed to add alarm to Bethinkery", from: error as NSError)
         }
@@ -159,11 +158,7 @@ final class SharedViewModel {
             transaction.deleteModel(alarm)
 
             let reminder = try transaction.liveReminder(for: bethinkery)
-            if !alarm.representsDueDate,
-                let ekAlarm = reminder.alarms?.first(where: { alarm == $0 }) {
-                reminder.removeAlarm(ekAlarm)
-            }
-            try transaction.stage(reminder)
+            try writeAlarms(of: bethinkery, onto: reminder)
         } catch {
             throw BethinkMeError("failed to delete alarm", from: error as NSError)
         }
