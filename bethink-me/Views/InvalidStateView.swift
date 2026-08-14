@@ -33,7 +33,11 @@ struct InvalidStateView: View {
             if let retry {
                 Button {
                     Task { @MainActor in
-                        try await retry()
+                        do {
+                            try await retry()
+                        } catch {
+                            ErrorReporter().report(error, retry: retry)
+                        }
                     }
                 } label: {
                     Text("Retry")
