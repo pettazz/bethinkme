@@ -45,9 +45,6 @@ struct AddBethinkeryRowView: View {
                                     saveNew()
                                     closeAdding()
                                 },
-                                onBeginEditing: {
-                                    scrollToAdd()
-                                },
                                 onEndEditing: {
                                     if isAdding {
                                         closeAdding()
@@ -56,6 +53,11 @@ struct AddBethinkeryRowView: View {
                 .id("adding-to-\(list.id)")
                 .onAppear {
                     addInFocus = true
+                }
+                .onReceive(NotificationCenter.default.publisher(
+                    for: UIResponder.keyboardDidShowNotification)) { _ in
+                        guard isAdding && addInFocus else { return }
+                        scrollToAdd()
                 }
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
@@ -114,12 +116,10 @@ struct AddBethinkeryRowView: View {
     }
 
     private func closeAdding() {
-        withAnimation {
-            newTitle = ""
-            if addingToListID == list.id {
-                addingToListID = nil
-            }
-            addInFocus = false
+        newTitle = ""
+        if addingToListID == list.id {
+            addingToListID = nil
         }
+        addInFocus = false
     }
 }

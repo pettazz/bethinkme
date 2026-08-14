@@ -19,8 +19,6 @@ struct ListsView: View {
 
     @State private var addingToListID: String?
 
-    @State private var keyboardHeight: CGFloat = 0
-
     var body: some View {
         if sharedModel.bethinkeryLists.isEmpty {
             InvalidStateView(icon: "checklist",
@@ -61,18 +59,6 @@ struct ListsView: View {
                     }
                     .environment(\.defaultMinListRowHeight, 0)
                     .environment(\.editMode, $listEditMode)
-                    .contentMargins(.bottom, keyboardHeight, for: .scrollContent)
-                    .onReceive(NotificationCenter.default.publisher(
-                        for: UIResponder.keyboardWillShowNotification)) { note in
-                            if let frame = note.userInfo?[UIResponder.keyboardFrameEndUserInfoKey]
-                                as? CGRect {
-                                keyboardHeight = frame.height
-                            }
-                    }
-                    .onReceive(NotificationCenter.default.publisher(
-                        for: UIResponder.keyboardWillHideNotification)) { _ in
-                            keyboardHeight = 0
-                    }
                     .sheet(
                         isPresented: $shouldPresentNewListSheet,
                         onDismiss: {
