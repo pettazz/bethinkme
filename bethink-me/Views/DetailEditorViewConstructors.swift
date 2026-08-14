@@ -3,6 +3,7 @@ import SwiftUI
 
 struct DetailHeader: View {
     let title: String
+    var subTitle: String?
     let color: Color
 
     var body: some View {
@@ -12,7 +13,16 @@ struct DetailHeader: View {
             .font(.largeTitle)
             .bold()
             .padding(.horizontal, 20)
-            .padding(.vertical, 10)
+            .padding(.top, 10)
+        if let subTitle {
+            Text("in \(subTitle)")
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .foregroundStyle(.primary)
+                .font(.subheadline)
+                .bold()
+                .padding(.horizontal, 20)
+                .padding(.bottom, 10)
+        }
     }
 }
 
@@ -21,6 +31,7 @@ struct DetailEditor<FormContent: View, Footer: View>: View {
     private var dismiss
 
     let title: String
+    var subTitle: String?
     let color: Color
 
     var saveDisabled: Bool = false
@@ -33,7 +44,7 @@ struct DetailEditor<FormContent: View, Footer: View>: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                DetailHeader(title: title, color: color)
+                DetailHeader(title: title, subTitle: subTitle, color: color)
                 Form {
                     formContent()
                 }

@@ -28,12 +28,19 @@ struct ListDetailView: View {
     private var isNew: Bool { list == nil }
 
     private var selectedSource: EKSource? {
-        listModel.availableSources.first(where: { $0.sourceIdentifier == newSourceId })
+        if !newSourceId.isEmpty {
+            return listModel.availableSources.first(where: { $0.sourceIdentifier == newSourceId })
+        } else if let list {
+            return listModel.availableSources.first(where: { $0.sourceIdentifier == list.sourceId })
+        } else {
+            return nil
+        }
     }
 
     var body: some View {
         if !listModel.availableSources.isEmpty {
             DetailEditor(title: editListCommand.title.isEmpty ? "New List" : editListCommand.title,
+                         subTitle: selectedSource?.title ?? nil,
                          color: newColor,
                          onSave: save) {
                 Section {
