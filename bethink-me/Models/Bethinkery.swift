@@ -52,7 +52,7 @@ final class Bethinkery: Equatable, Identifiable {
         self.init(
             id: reminder.calendarItemIdentifier,
             list: list,
-            title: reminder.title,
+            title: reminder.title ?? "",
             isCompleted: reminder.isCompleted,
             notes: reminder.notes,
             url: reminder.url)
@@ -69,7 +69,7 @@ final class Bethinkery: Equatable, Identifiable {
     // (capture changes made outside the app)
     func load(from reminder: EKReminder) throws {
         self.id = reminder.calendarItemIdentifier
-        self.title = reminder.title
+        self.title = reminder.title ?? ""
         self.isCompleted = reminder.isCompleted
         self.freshlyCompleted = false
         self.notes = reminder.notes
