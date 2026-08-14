@@ -89,15 +89,22 @@ final class BethinkeryAlarm: Equatable, Identifiable {
             case .relativeTimeAlarm:
                 return rhs.relativeOffset != 0 && lhs.offset == rhs.relativeOffset
             case .proximityAlarm:
-                guard let loc = rhs.structuredLocation else { return false }
-                return lhs.title == loc.title &&
-                       lhs.radius == loc.radius &&
-                       lhs.location.lat == loc.geoLocation?.coordinate.latitude &&
-                       lhs.location.lng == loc.geoLocation?.coordinate.longitude &&
+                guard let rhsLocation = rhs.structuredLocation else { return false }
+                guard let rhsGeo = rhsLocation.geoLocation else { return false }
+                let lhsLoc = CLLocation(latitude: lhs.location.lat, longitude: lhs.location.lng),
+                    rhsLoc = CLLocation(latitude: rhsGeo.coordinate.latitude, longitude: rhsGeo.coordinate.longitude),
+                    distance = lhsLoc.distance(from: rhsLoc)
+                return lhs.title == normalizeProxTitle(rhsLocation.title) &&
+                       abs(lhs.radius - rhsLocation.radius) <= kProximityAlarmRadiusEqualityToleranceMeters &&
+                       distance <= kProximityAlarmCoordinateEqualityToleranceMeters &&
                        lhs.proximityType.rawValue == rhs.proximity.rawValue
         }
     }
 
+    private static func normalizeProxTitle(_ title: String?) -> String {
+        let extant = title ?? ""
+        return extant.isEmpty ? "Location" : extant
+    }
 
     static func fromEKAlarm(_ alarm: EKAlarm) throws -> BethinkeryAlarm? {
         if let absoluteDate = alarm.absoluteDate {
@@ -116,7 +123,7 @@ final class BethinkeryAlarm: Equatable, Identifiable {
                 default: .nothing
             }
 
-            return .proximity(title: loc.title ?? "Location",
+            return .proximity(title: normalizeProxTitle(loc.title),
                               radius: loc.radius,
                               location: LatLng(lat: geoLoc.coordinate.latitude,
                                                lng: geoLoc.coordinate.longitude),

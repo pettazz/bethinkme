@@ -18,3 +18,7 @@ let kSyncRequestDebounceMilliseconds: TimeInterval = 300
 
 // absolute alarm comparison tolerance for drift
 let kAbsoluteAlarmEqualityToleranceSeconds: TimeInterval = 1
+
+// proximity alarm comparison tolerance for drift
+let kProximityAlarmCoordinateEqualityToleranceMeters: Double = 10 // swiftlint:disable:this identifier_name
+let kProximityAlarmRadiusEqualityToleranceMeters: Double = 1 // swiftlint:disable:this identifier_name
