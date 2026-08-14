@@ -100,6 +100,11 @@ struct AlarmsEditView: View {
                                    displayedComponents: [.date, .hourAndMinute])
                     }
                     Toggle("All day", isOn: $newAlarmIsAllDay)
+                        .onChange(of: newAlarmIsAllDay) { _, isAllDay in
+                            if isAllDay {
+                                newAlarmTime = Calendar.current.startOfDay(for: newAlarmTime)
+                            }
+                        }
 
                 case .proximityAlarm:
                     Picker("Type", selection: $newAlarmProxType) {
