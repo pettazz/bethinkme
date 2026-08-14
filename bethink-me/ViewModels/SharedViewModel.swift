@@ -16,9 +16,6 @@ final class SharedViewModel {
     var showCompleted: Bool = false
 
     private var bethinkeryListsCache: [BethinkeryList] = []
-    private var bethinkeriesCache: [Bethinkery] = []
-    private var unfilteredBethinkeriesCache: [Bethinkery] = []
-
     var bethinkeryLists: [BethinkeryList] { bethinkeryListsCache }
 
 
@@ -57,21 +54,12 @@ final class SharedViewModel {
     }
 
     private func fetchAll() throws {
-        let bethinkeryListsCacheUpdate = try modelContext.fetch(FetchDescriptor(
-            sortBy: [.init(\BethinkeryList.ordinal)]))
-
-        let bethinkeriesCacheUpdate = try modelContext.fetch(FetchDescriptor(
-            predicate: #Predicate<Bethinkery> { bethinkery in
-                return (showCompleted || !bethinkery.isCompleted) || bethinkery.freshlyCompleted
-            },
-            sortBy: [.init(\Bethinkery.ordinal)]))
-
-        let unfilteredBethinkeriesCacheUpdate = try modelContext.fetch(FetchDescriptor(
-            sortBy: [.init(\Bethinkery.ordinal)]))
+        let descriptor = FetchDescriptor<BethinkeryList>(sortBy: [.init(\BethinkeryList.ordinal)])
+        // break glass in case of large lists lagging on initial scroll
+        // descriptor.relationshipKeyPathsForPrefetching = [\.bethinkeries]
+        let bethinkeryListsCacheUpdate = try modelContext.fetch(descriptor)
 
         bethinkeryListsCache = bethinkeryListsCacheUpdate
-        bethinkeriesCache = bethinkeriesCacheUpdate
-        unfilteredBethinkeriesCache = unfilteredBethinkeriesCacheUpdate
     }
 
     func reload() {
