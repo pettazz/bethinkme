@@ -30,7 +30,6 @@ final class ListViewModel {
     // swiftlint:disable:next cyclomatic_complexity
     func loadLists() async throws {
 //        try await Task.sleep(for: .milliseconds(1500))
-        await sharedModel.checkPermissions()
         guard sharedModel.hasAccess else {
             throw BethinkMeError("tried to loadLists without permissions")
         }

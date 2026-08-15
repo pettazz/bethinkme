@@ -12,17 +12,20 @@ final class SharedViewModel {
 
     private var eventStoreChangedTask: Task<Void, Never>?
 
-    var hasAccess: Bool = false
     var showCompleted: Bool = false
 
     private var bethinkeryListsCache: [BethinkeryList] = []
     var bethinkeryLists: [BethinkeryList] { bethinkeryListsCache }
 
+    var hasAccess: Bool {
+        EKEventStore.authorizationStatus(for: .reminder) == .fullAccess
+    }
+
 
     init(modelContext: ModelContext) async {
         modelContext.autosaveEnabled = false
         self.modelContext = modelContext
-        await checkPermissions()
+        _ = await requestAccess()
         self.reload()
     }
 
@@ -37,9 +40,9 @@ final class SharedViewModel {
         }
     }
 
-    func checkPermissions() async {
-        guard !hasAccess else { return }
-        hasAccess = (try? await eventStore.requestFullAccessToReminders()) ?? false
+    func requestAccess() async -> Bool {
+        guard !hasAccess else { return true }
+        return (try? await eventStore.requestFullAccessToReminders()) ?? false
     }
 
     func resetOrdinals() {
