@@ -34,7 +34,7 @@ struct MainView: View {
     }
 
     private var isLoadingAny: Bool {
-        sharedModel == nil || listModel == nil || bethinkeryModel == nil || isSyncing
+        isLoadingInit || isSyncing
     }
 
     private var loadingMessage: String? {

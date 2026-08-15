@@ -162,7 +162,7 @@ final class BethinkeryAlarm: Equatable, Identifiable {
     }
 
     func isDuplicate(of alarm: BethinkeryAlarm) -> Bool {
-        if title == alarm.title && kind == alarm.kind {
+        if kind == alarm.kind {
             switch kind {
                 case .absoluteTimeAlarm:
                     guard let ltime = time, let rtime = alarm.time else { return false }

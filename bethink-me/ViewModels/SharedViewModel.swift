@@ -22,7 +22,7 @@ final class SharedViewModel {
     init(modelContext: ModelContext) async {
         modelContext.autosaveEnabled = false
         self.modelContext = modelContext
-        self.hasAccess = await checkPermissions()
+        await checkPermissions()
         self.reload()
     }
 
@@ -37,9 +37,9 @@ final class SharedViewModel {
         }
     }
 
-    func checkPermissions() async -> Bool {
+    func checkPermissions() async {
+        guard !hasAccess else { return }
         hasAccess = (try? await eventStore.requestFullAccessToReminders()) ?? false
-        return hasAccess
     }
 
     func resetOrdinals() {

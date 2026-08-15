@@ -69,7 +69,7 @@ struct BethinkeryListSectionView: View {
                                 .padding(-16)
                         )
                         .overlay(alignment: .leading) {
-                            if flashKind != nil && flashKind == .deduped {
+                            if flashKind == .deduped {
                                 Image(systemName: "rectangle.on.rectangle.dashed")
                                     .font(.headline)
                                     .foregroundStyle(Color(hex: list.hexColor))

@@ -26,10 +26,10 @@ struct AlarmsEditView: View {
 
     private var saveDisabled: Bool {
         newAlarmType == .proximityAlarm &&
-            (!(newAlarmTitle != nil
-               && newAlarmRadius != nil
-               && newAlarmLocationLat != nil
-               && newAlarmLocationLng != nil))
+            (newAlarmTitle == nil
+               || newAlarmRadius == nil
+               || newAlarmLocationLat == nil
+               || newAlarmLocationLng == nil)
     }
 
     var body: some View {
@@ -42,7 +42,6 @@ struct AlarmsEditView: View {
                     Text(alarmType.title).tag(alarmType)
                 }
             }
-            .id("newAlarmForm")
             .pickerStyle(.segmented)
 
             switch newAlarmType {
@@ -74,10 +73,10 @@ struct AlarmsEditView: View {
                     Section {
                         HStack {
                             Spacer(minLength: 0)
-                            if let relativeAlarm = alarmList.earliestAlarm {
-                                Text(relativeAlarm.isAllDay ?
-                                     Formatters.allDayFormatter.string(from: relativeAlarm.time) :
-                                        Formatters.dateFormatter.string(from: relativeAlarm.time))
+                            if let relativeAnchorAlarm = alarmList.earliestAlarm {
+                                Text(relativeAnchorAlarm.isAllDay ?
+                                     Formatters.allDayFormatter.string(from: relativeAnchorAlarm.time) :
+                                        Formatters.dateFormatter.string(from: relativeAnchorAlarm.time))
                             } else {
                                 Text("No exact time alarm set")
                                     .foregroundStyle(.red)
