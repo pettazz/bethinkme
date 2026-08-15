@@ -71,8 +71,10 @@ final class ListViewModel {
                 throw BethinkMeError("found multiple matching cal ids for \(ekcal.calendarIdentifier)")
             }
 
-            let loadedReminders = await loadRemindersForCalendar(ekcal)
-            for ekrem in loadedReminders ?? [] {
+            guard let loadedReminders = await loadRemindersForCalendar(ekcal) else {
+                throw BethinkMeError("failed to load reminders for calendar \(ekcal.calendarIdentifier)")
+            }
+            for ekrem in loadedReminders {
                 let existingBethinkeries = currentList.bethinkeries.filter({ $0.id == ekrem.calendarItemIdentifier })
 
                 if existingBethinkeries.count == 1, let existingBethinkery = existingBethinkeries.first {
@@ -100,15 +102,13 @@ final class ListViewModel {
                 }
             }
 
-            if let loadedReminders {
-                for danglingReminder in currentList.bethinkeries.filter({ savedBethinkery in
-                    // the stored reminder no longer exists in the ekreminders for this list
-                    !loadedReminders.contains(where: { $0.calendarItemIdentifier == savedBethinkery.id })
-                }) {
-                    // X no reminder, yes storage
-                    // remove it
-                    sharedModel.modelContext.delete(danglingReminder)
-                }
+            for danglingReminder in currentList.bethinkeries.filter({ savedBethinkery in
+                // the stored reminder no longer exists in the ekreminders for this list
+                !loadedReminders.contains(where: { $0.calendarItemIdentifier == savedBethinkery.id })
+            }) {
+                // X no reminder, yes storage
+                // remove it
+                sharedModel.modelContext.delete(danglingReminder)
             }
         }
 
