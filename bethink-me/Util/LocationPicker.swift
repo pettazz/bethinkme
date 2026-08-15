@@ -50,7 +50,9 @@ struct LocationPickerView: UIViewControllerRepresentable {
 
             radius = result.radius
             name = titleCleaned.isEmpty ?
-                    String(result.location.address.split(separator: ",", maxSplits: 1)[0]) :
+                    result.location.address.isEmpty ?
+                        "Selected Location" :
+                        String(result.location.address.split(separator: ",", maxSplits: 1)[0]) :
                     titleCleaned
             address = result.location.address
             lat = result.location.coordinates.latitude
