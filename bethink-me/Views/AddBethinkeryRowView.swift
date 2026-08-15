@@ -105,6 +105,7 @@ struct AddBethinkeryRowView: View {
                 onFlash(dupeID, .deduped)
             } else {
                 // no existing dupe, continue adding new
+                lastDuplicatedTitle = ""
                 let newBethinkery = EditBethinkery(title: cleanTitle, isCompleted: false)
                 let createdBethinkery = try bethinkeryModel.create(from: newBethinkery, list: list)
                 onFlash(createdBethinkery.id, .created)
