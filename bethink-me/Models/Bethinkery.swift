@@ -5,9 +5,6 @@ import SwiftUI
 
 @Model
 final class Bethinkery: Equatable, Identifiable {
-    @AppStorage(SettingsKey.dedupeCaseSensitive.rawValue)
-    @Transient private var dedupeCaseSensitive: Bool = kDedupeCaseSensitiveDefault
-
     @Attribute(.unique)
     var id: String
     var list: BethinkeryList
@@ -109,9 +106,9 @@ final class Bethinkery: Equatable, Identifiable {
         }
     }
 
-    func isDuplicate(of bethinkery: Bethinkery) -> Bool {
-        let titleText = dedupeCaseSensitive ? title : title.lowercased()
-        let compareText = dedupeCaseSensitive ? bethinkery.title : bethinkery.title.lowercased()
+    func isDuplicate(of bethinkery: Bethinkery, caseSensitive: Bool) -> Bool {
+        let titleText = caseSensitive ? title : title.lowercased()
+        let compareText = caseSensitive ? bethinkery.title : bethinkery.title.lowercased()
 
         guard titleText == compareText &&
               notes == bethinkery.notes &&

@@ -8,6 +8,8 @@ import SwiftUI
 final class ListViewModel {
     @AppStorage(SettingsKey.enableDedupe.rawValue)
     @ObservationIgnored private var enableDedupe: Bool = kEnableDedupeDefault
+    @AppStorage(SettingsKey.dedupeCaseSensitive.rawValue)
+    @ObservationIgnored private var dedupeCaseSensitive: Bool = kDedupeCaseSensitiveDefault
     @AppStorage(SettingsKey.dedupeRunOnSync.rawValue)
     @ObservationIgnored private var dedupeRunOnSync: Bool = kDedupeRunOnSyncDefault
     @AppStorage(SettingsKey.inheritListAlarmsOnImport.rawValue)
@@ -150,7 +152,8 @@ final class ListViewModel {
 
     func doesDuplicateExist(of bethinkery: Bethinkery, in list: BethinkeryList) -> Bool {
         return list.liveOrderedBethinkeries.contains(where: { testBethinkery in
-            bethinkery.id != testBethinkery.id && bethinkery.isDuplicate(of: testBethinkery)
+            bethinkery.id != testBethinkery.id && bethinkery.isDuplicate(of: testBethinkery,
+                                                                         caseSensitive: dedupeCaseSensitive)
         })
     }
 
@@ -159,7 +162,7 @@ final class ListViewModel {
         var dupes: [Bethinkery] = []
 
         for bethinkery in list.liveOrderedBethinkeries {
-            if originals.contains(where: { bethinkery.isDuplicate(of: $0) }) {
+            if originals.contains(where: { bethinkery.isDuplicate(of: $0, caseSensitive: dedupeCaseSensitive) }) {
                 dupes.append(bethinkery)
             } else {
                 originals.append(bethinkery)
