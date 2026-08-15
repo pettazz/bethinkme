@@ -1,4 +1,3 @@
-import Combine
 import SwiftUI
 
 // a set of intermediate not-objects to use for holding all the fields
@@ -6,10 +5,11 @@ import SwiftUI
 // yeah we could just edit the model directly but I don't like the idea of either
 // decoupling it from the backing object commit to EventKit or doing that in a view
 
-class EditBethinkeryList: ObservableObject {
-    @Published var title: String
-    @Published var hexColor: String
-    @Published var alarmTemplates: [any BethinkeryAlarmTemplate] = []
+@Observable
+class EditBethinkeryList {
+    var title: String
+    var hexColor: String
+    var alarmTemplates: [any BethinkeryAlarmTemplate] = []
 
     init(title: String = "",
          hexColor: String = "",
@@ -27,13 +27,14 @@ class EditBethinkeryList: ObservableObject {
     }
 }
 
-class EditBethinkery: ObservableObject {
-    @Published var title: String = ""
-    @Published var isCompleted: Bool = false
-    @Published var freshlyCompleted: Bool = false
-    @Published var notesText: String = ""
-    @Published var urlText: String = ""
-    @Published var alarms: [any BethinkeryAlarmTemplate] = []
+@Observable
+class EditBethinkery {
+    var title: String = ""
+    var isCompleted: Bool = false
+    var freshlyCompleted: Bool = false
+    var notesText: String = ""
+    var urlText: String = ""
+    var alarms: [any BethinkeryAlarmTemplate] = []
 
     var notes: String? {
         notesText.isEmpty ? nil : notesText

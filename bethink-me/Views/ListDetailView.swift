@@ -11,7 +11,7 @@ struct ListDetailView: View {
 
     @State private var alertDialogModel: AlertDialogModel = AlertDialogModel()
 
-    @StateObject private var editListCommand: EditBethinkeryList = EditBethinkeryList()
+    @State private var editListCommand: EditBethinkeryList = EditBethinkeryList()
 
     @State private var newColor: Color = Color.accentColor
     @State private var newSourceId: String = ""
@@ -38,6 +38,8 @@ struct ListDetailView: View {
     }
 
     var body: some View {
+        @Bindable var editListCommand = editListCommand
+
         if !listModel.availableSources.isEmpty {
             DetailEditor(title: editListCommand.title.isEmpty ? "New List" : editListCommand.title,
                          subTitle: selectedSource?.title ?? nil,
@@ -102,7 +104,9 @@ struct ListDetailView: View {
         self.list = list
         self.onListCreated = onListCreated
         if let list {
-            _editListCommand = StateObject(wrappedValue: .fromBethinkeryList(list))
+            _editListCommand = State(wrappedValue: .fromBethinkeryList(list))
+        } else {
+            _editListCommand = State(wrappedValue: EditBethinkeryList())
         }
     }
 

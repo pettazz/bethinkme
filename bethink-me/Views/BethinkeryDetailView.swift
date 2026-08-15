@@ -8,7 +8,7 @@ struct BethinkeryDetailView: View {
     @Environment(\.dismiss)
     private var dismiss
 
-    @StateObject private var editBethinkeryCommand: EditBethinkery = EditBethinkery()
+    @State private var editBethinkeryCommand: EditBethinkery = EditBethinkery()
 
     @State private var isPresentingEditAlarmsView: Bool = false
 
@@ -16,6 +16,8 @@ struct BethinkeryDetailView: View {
     var bethinkery: Bethinkery
 
     var body: some View {
+        @Bindable var editBethinkeryCommand = editBethinkeryCommand
+
         DetailEditor(title: editBethinkeryCommand.title,
                      color: Color(hex: bethinkery.list.hexColor),
                      onSave: save) {
@@ -56,7 +58,7 @@ struct BethinkeryDetailView: View {
     init(bethinkeryModel: BethinkeryViewModel, bethinkery: Bethinkery) {
         self.bethinkeryModel = bethinkeryModel
         self.bethinkery = bethinkery
-        _editBethinkeryCommand = StateObject(wrappedValue: .fromBethinkery(bethinkery))
+        _editBethinkeryCommand = State(wrappedValue: .fromBethinkery(bethinkery))
     }
 
     private func save() {
