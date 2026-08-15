@@ -146,7 +146,8 @@ struct ListDetailView: View {
                 guard let list else {
                     throw BethinkMeError("tried to update list that doesn't exist")
                 }
-                if !(list.liveOrderedBethinkeries.isEmpty) {
+                let alarmsChanged = Set(list.alarmTemplates.map(\.id)) != Set(editListCommand.alarmTemplates.map(\.id))
+                if !(list.liveOrderedBethinkeries.isEmpty) && alarmsChanged {
                     displayAlarmEditAlertDialog(list: list, editListCommand: editListCommand)
                 } else {
                     try listModel.update(list, with: editListCommand)

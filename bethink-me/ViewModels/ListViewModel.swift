@@ -51,6 +51,7 @@ final class ListViewModel {
         // | yes reminder, no storage
         // X no reminder, yes storage
 
+        var dupesToDelete: [EKReminder] = []
         var needToInheritListAlarms: [Bethinkery] = []
         for ekcal in calendars {
             let existingLists = sharedModel.bethinkeryLists.filter({ $0.id == ekcal.calendarIdentifier })
@@ -85,7 +86,7 @@ final class ListViewModel {
                     // add it
                     let newReminder = try Bethinkery(reminder: ekrem, list: currentList)
                     if enableDedupe && dedupeRunOnSync && doesDuplicateExist(of: newReminder, in: currentList) {
-                        try sharedModel.eventStore.remove(ekrem, commit: true)
+                        dupesToDelete.append(ekrem)
                     } else {
                         currentList.bethinkeries.append(newReminder)
                         sharedModel.modelContext.insert(newReminder)
@@ -133,8 +134,11 @@ final class ListViewModel {
             defaultSource = defaultCal.source
         }
 
-        if !needToInheritListAlarms.isEmpty {
+        if !dupesToDelete.isEmpty || !needToInheritListAlarms.isEmpty {
             try sharedModel.withTransaction { transaction in
+                for dupe in dupesToDelete {
+                    try transaction.stageRemove(dupe)
+                }
                 for bethinkery in needToInheritListAlarms {
                     let alarms = bethinkery.list.alarmTemplates.compactMap({ $0.toTemplate(newInstance: true) })
                     try sharedModel.replaceAlarms(on: bethinkery,
