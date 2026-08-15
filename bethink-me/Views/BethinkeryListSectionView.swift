@@ -150,8 +150,13 @@ struct BethinkeryListSectionView: View {
                 }
                 .id(list.id)
             })
-            .sensoryFeedback(.success, trigger: flashTrigger)
-            .sensoryFeedback(.impact(weight: .light), trigger: flashTrigger)
+            .sensoryFeedback(trigger: flashTrigger) { _, _ in
+                switch flashedRow?.kind {
+                    case .created: .success
+                    case .deduped: .impact(weight: .light)
+                    case nil: nil
+                }
+            }
         }
     }
 
