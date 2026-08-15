@@ -18,11 +18,45 @@ struct RowView: View {
     var bethinkeryModel: BethinkeryViewModel
     var bethinkery: Bethinkery
 
+    var flashKind: RowFlashKind?
+
     var body: some View {
         VStack(alignment: .trailing) {
             HStack {
                 Group {
-                    if isEditing {
+                    if flashKind == .deduped {
+                        Image(systemName: "circle")
+                            .font(.title2)
+                            .hidden()
+                            .overlay {
+                                Image(systemName: "circle.fill")
+                                    .font(.title2)
+                                    .foregroundColor(.primary)
+                                Image(systemName: "rectangle.on.rectangle.dashed")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .padding(6)
+                                    .foregroundStyle(Color(hex: bethinkery.list.hexColor))
+                                    .accessibilityHidden(true)
+                            }
+                            .accessibilityHidden(true)
+                    } else if flashKind == .created {
+                        Image(systemName: "circle")
+                            .font(.title2)
+                            .hidden()
+                            .overlay {
+                                Image(systemName: "circle.fill")
+                                    .font(.title2)
+                                    .foregroundColor(.primary)
+                                Image(systemName: "plus")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .padding(6)
+                                    .foregroundStyle(Color(hex: bethinkery.list.hexColor))
+                                    .accessibilityHidden(true)
+                            }
+                            .accessibilityHidden(true)
+                    } else if isEditing {
                         Image(systemName: "pencil.line")
                             .font(.title2)
                             .foregroundColor(.gray)
@@ -37,7 +71,7 @@ struct RowView: View {
                         } label: {
                             Image(systemName: bethinkery.isCompleted ? "checkmark.circle.fill" : "circle")
                                 .font(.title2)
-                                .foregroundColor(bethinkery.isCompleted ? .green : .gray)
+                                .foregroundColor(bethinkery.isCompleted ? .green : .primary)
                                 .accessibilityLabel(Text(bethinkery.isCompleted
                                                          ? "Completed"
                                                          : "Not completed"))

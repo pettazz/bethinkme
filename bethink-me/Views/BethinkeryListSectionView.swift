@@ -60,7 +60,7 @@ struct BethinkeryListSectionView: View {
 
                 ForEach(list.visibleBethinkeries(showCompleted: sharedModel.showCompleted)) { bethinkery in
                     let flashKind = flashedRow.flatMap { $0.id == bethinkery.id ? $0.kind : nil }
-                    RowView(bethinkeryModel: bethinkeryModel, bethinkery: bethinkery)
+                    RowView(bethinkeryModel: bethinkeryModel, bethinkery: bethinkery, flashKind: flashKind)
                         .id(bethinkery.id)
                         .background(
                             RoundedRectangle(cornerRadius: 8)
@@ -68,16 +68,6 @@ struct BethinkeryListSectionView: View {
                                 .opacity(flashKind != nil ? 0.3 : 0)
                                 .padding(-16)
                         )
-                        .overlay(alignment: .leading) {
-                            if flashKind == .deduped {
-                                Image(systemName: "rectangle.on.rectangle.dashed")
-                                    .font(.headline)
-                                    .foregroundStyle(Color(hex: list.hexColor))
-                                    .background(Circle().fill(Color(.systemBackground)))
-                                    .overlay(Circle().stroke(Color(.separator).opacity(0.75), lineWidth: 1))
-                                    .accessibilityHidden(true)
-                            }
-                        }
                         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                             Button(role: .destructive) {
                                 withErrorReporter {
@@ -175,7 +165,7 @@ struct BethinkeryListSectionView: View {
             flashedRow = (id, kind)
             flashTrigger += 1
 
-            try? await Task.sleep(for: .milliseconds(100))
+            try? await Task.sleep(for: .milliseconds(150))
             guard flashedRow?.id == id else { return }
             withAnimation(.snappy(duration: 1)) {
                 flashedRow = nil
