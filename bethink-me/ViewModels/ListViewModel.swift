@@ -246,7 +246,7 @@ final class ListViewModel {
                 }
             }
         } catch {
-            throw BethinkMeError("failed to create new BethinkeryList", from: error as NSError)
+            throw BethinkMeError("failed update BethinkeryList", from: error as NSError)
         }
     }
 
