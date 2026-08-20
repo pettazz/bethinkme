@@ -31,12 +31,12 @@ struct RowView: View {
                             .overlay {
                                 Image(systemName: "circle.fill")
                                     .font(.title2)
-                                    .foregroundColor(.primary)
+                                    .foregroundColor(Color(hex: bethinkery.list.hexColor))
                                 Image(systemName: "rectangle.on.rectangle.dashed")
                                     .resizable()
                                     .scaledToFit()
-                                    .padding(6)
-                                    .foregroundStyle(Color(hex: bethinkery.list.hexColor))
+                                    .padding(7)
+                                    .foregroundStyle(Color(hex: bethinkery.list.hexColor).contrastingForeground)
                                     .accessibilityHidden(true)
                             }
                             .accessibilityHidden(true)
@@ -47,12 +47,12 @@ struct RowView: View {
                             .overlay {
                                 Image(systemName: "circle.fill")
                                     .font(.title2)
-                                    .foregroundColor(.primary)
+                                    .foregroundColor(Color(hex: bethinkery.list.hexColor))
                                 Image(systemName: "plus")
                                     .resizable()
                                     .scaledToFit()
                                     .padding(6)
-                                    .foregroundStyle(Color(hex: bethinkery.list.hexColor))
+                                    .foregroundStyle(Color(hex: bethinkery.list.hexColor).contrastingForeground)
                                     .accessibilityHidden(true)
                             }
                             .accessibilityHidden(true)
@@ -71,7 +71,7 @@ struct RowView: View {
                         } label: {
                             Image(systemName: bethinkery.isCompleted ? "checkmark.circle.fill" : "circle")
                                 .font(.title2)
-                                .foregroundColor(bethinkery.isCompleted ? .green : .primary)
+                                .foregroundColor(bethinkery.isCompleted ? .green : .gray)
                                 .accessibilityLabel(Text(bethinkery.isCompleted
                                                          ? "Completed"
                                                          : "Not completed"))

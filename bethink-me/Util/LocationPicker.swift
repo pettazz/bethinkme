@@ -19,7 +19,7 @@ struct LocationPickerView: UIViewControllerRepresentable {
             // .showNavigationBarSaveButton(true)
             // .cancelButtonTitle("Cancel")
             .initialLocation(LocationCoordinates(
-                latitude: lat ?? 37.331711,
+                latitude: lat ?? 37.331711, // TODO: default location?
                 longitude: lng ?? -122.030773))
             .radiusBorderColor(UIColor(Color.accentColor))
             .radiusBorderWidth(3)
