@@ -55,7 +55,6 @@ struct AddBethinkeryRowView: View {
                                         closeAdding()
                                     }
                                 })
-                .id("adding-to-\(list.id)")
                 .onAppear {
                     addInFocus = true
                 }
@@ -65,20 +64,21 @@ struct AddBethinkeryRowView: View {
                         scrollToAdd()
                 }
         }
+        .id("adding-to-\(list.id)")
     }
 
     private func scrollToAdd() {
         guard let scrollProxy else { return }
 
         withAnimation {
-            let visible = list.visibleBethinkeries(showCompleted: sharedModel.showCompleted)
+            let visible = list.liveOrderedBethinkeries
 
             if visible.count >= 2 {
                 scrollProxy.scrollTo(visible[1].id, anchor: .bottom)
             } else if let first = visible.first {
                 scrollProxy.scrollTo(first.id, anchor: .bottom)
             } else {
-                scrollProxy.scrollTo("adding-to-\(list.id)", anchor: .top)
+                scrollProxy.scrollTo("adding-to-\(list.id)", anchor: .bottom)
             }
         }
     }
