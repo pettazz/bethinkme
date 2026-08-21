@@ -70,15 +70,17 @@ struct AddBethinkeryRowView: View {
     private func scrollToAdd() {
         guard let scrollProxy else { return }
 
-        withAnimation {
-            let visible = list.liveOrderedBethinkeries
+        DispatchQueue.main.async {
+            withAnimation {
+                let visible = list.liveOrderedBethinkeries
 
-            if visible.count >= 2 {
-                scrollProxy.scrollTo(visible[1].id, anchor: .bottom)
-            } else if let first = visible.first {
-                scrollProxy.scrollTo(first.id, anchor: .bottom)
-            } else {
-                scrollProxy.scrollTo("adding-to-\(list.id)", anchor: .bottom)
+                if visible.count >= 2 {
+                    scrollProxy.scrollTo(visible[1].id, anchor: .bottom)
+                } else if let first = visible.first {
+                    scrollProxy.scrollTo(first.id, anchor: .bottom)
+                } else {
+                    scrollProxy.scrollTo("adding-to-\(list.id)", anchor: .bottom)
+                }
             }
         }
     }
