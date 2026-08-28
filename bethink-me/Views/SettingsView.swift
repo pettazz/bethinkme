@@ -5,6 +5,8 @@ import UniformTypeIdentifiers
 struct SettingsView: View {
     @AppStorage(SettingsKey.enableAutocorrect.rawValue)
     private var enableAutocorrect: Bool = kEnableAutocorrectDefault
+    @AppStorage(SettingsKey.enableFullRangePriority.rawValue)
+    private var enableFullRangePriority: Bool = kEnableFullRangePriorityDefault
     @AppStorage(SettingsKey.inheritListAlarmsOnImport.rawValue)
     private var inheritListAlarmsOnImport: InheritListAlarmsOnImportOptions = kInheritListAlarmsOnImportDefault
     @AppStorage(SettingsKey.enableDedupe.rawValue)
@@ -32,6 +34,7 @@ struct SettingsView: View {
                 // TODO: rethink the sections and better descriptions once we have a full idea of what goes in here
                 Section {
                     Toggle("Enable autocorrection", isOn: $enableAutocorrect)
+                    Toggle("Use full 1-9 range for priority", isOn: $enableFullRangePriority)
                     Picker(selection: $inheritListAlarmsOnImport) {
                         ForEach(InheritListAlarmsOnImportOptions.allCases, id: \.self) { option in
                             Text(option.title).tag(option)

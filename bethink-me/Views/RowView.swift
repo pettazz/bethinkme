@@ -4,6 +4,8 @@ import SwiftUI
 struct RowView: View {
     @AppStorage(SettingsKey.enableAutocorrect.rawValue)
     private var enableAutocorrectSetting: Bool = kEnableAutocorrectDefault
+    @AppStorage(SettingsKey.enableFullRangePriority.rawValue)
+    private var enableFullRangePriority: Bool = kEnableFullRangePriorityDefault
     @AppStorage(SettingsKey.displayNotes.rawValue)
     private var displayNotes: Bool = kDisplayNotesDefault
     @AppStorage(SettingsKey.displayPriority.rawValue)
@@ -113,12 +115,13 @@ struct RowView: View {
                         HStack {
                             if displayPriority && bethinkery.hasPriority,
                                let priority = BethinkeryPriority(rawValue: bethinkery.priority),
-                               let icon = priority.shortRangeIcon {
+                               let icon = enableFullRangePriority ? priority.icon : priority.shortRangeIcon {
+                                let title = enableFullRangePriority ? priority.title : priority.shortRangeTitle
                                 Image(systemName: icon)
-                                    .font(.footnote)
+                                    .font(enableFullRangePriority ? .headline : .footnote)
                                     .bold()
                                     .foregroundColor(Color(hex: bethinkery.list.hexColor))
-                                    .accessibilityLabel(Text("\(priority.shortRangeTitle) priority"))
+                                    .accessibilityLabel(Text("\(title) priority"))
                             }
                             Text(bethinkery.title)
                                 .frame(maxWidth: .infinity, alignment: .leading)

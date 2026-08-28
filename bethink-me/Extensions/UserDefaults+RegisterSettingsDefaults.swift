@@ -5,6 +5,7 @@ extension UserDefaults {
     static func registerSettingsDefaults() {
         standard.register(defaults: [
             SettingsKey.enableAutocorrect.rawValue: kEnableAutocorrectDefault,
+            SettingsKey.enableFullRangePriority.rawValue: kEnableFullRangePriorityDefault,
             SettingsKey.inheritListAlarmsOnImport.rawValue: kInheritListAlarmsOnImportDefault.rawValue,
             SettingsKey.enableDedupe.rawValue: kEnableDedupeDefault,
             SettingsKey.dedupeCaseSensitive.rawValue: kDedupeCaseSensitiveDefault,

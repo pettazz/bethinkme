@@ -49,7 +49,7 @@ enum BethinkeryPriority: Int, Codable, CaseIterable {
     case eight = 8
     case lowest = 9
 
-    static let shortRangeCases: [BethinkeryPriority] = [.unset, .highest, .medium, .lowest]
+    static let shortRangeCases: [BethinkeryPriority] = [.highest, .medium, .lowest]
 
     var shortened: Int {
         switch self.rawValue {
@@ -122,7 +122,7 @@ enum BethinkeryPriority: Int, Codable, CaseIterable {
     var icon: String? {
         switch self {
             case .unset:
-                return "lane"
+                return nil
             case .highest:
                 return "1.lane"
             case.two:
@@ -153,6 +153,7 @@ enum Env: String {
 
 enum SettingsKey: String {
     case enableAutocorrect = "settings.enableAutocorrect"
+    case enableFullRangePriority = "settings.enableFullRangePriority"
     case inheritListAlarmsOnImport = "settings.inheritListAlarmsOnImport"
     case enableDedupe = "settings.enableDedupe"
     case dedupeCaseSensitive = "settings.dedupeCaseSensitive"

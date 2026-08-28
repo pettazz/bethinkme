@@ -2,6 +2,7 @@ import Foundation
 
 // settings defaults
 let kEnableAutocorrectDefault: Bool = true
+let kEnableFullRangePriorityDefault: Bool = false
 let kInheritListAlarmsOnImportDefault: InheritListAlarmsOnImportOptions = .whenEmpty
 let kEnableDedupeDefault: Bool = true
 let kDedupeCaseSensitiveDefault: Bool = true

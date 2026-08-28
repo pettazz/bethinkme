@@ -4,6 +4,8 @@ import SwiftUI
 struct BethinkeryDetailView: View {
     @AppStorage(SettingsKey.enableAutocorrect.rawValue)
     private var enableAutocorrectSetting: Bool = kEnableAutocorrectDefault
+    @AppStorage(SettingsKey.enableFullRangePriority.rawValue)
+    private var enableFullRangePriority: Bool = kEnableFullRangePriorityDefault
 
     @Environment(\.dismiss)
     private var dismiss
@@ -36,28 +38,40 @@ struct BethinkeryDetailView: View {
             }
 
             Section {
-//                Slider(value: Binding(
-//                           get: { Double(editBethinkeryCommand.priority) },
-//                           set: { editBethinkeryCommand.priority = Int($0) }
-//                       ),
-//                       in: 0...9,
-//                       step: 1)
                 let priority = BethinkeryPriority(rawValue: editBethinkeryCommand.priority) ?? .unset
-                HStack {
-                    if let icon = priority.shortRangeIcon {
-                        Image(systemName: icon)
-                            .font(.footnote)
-                            .bold()
-                            .foregroundColor(Color(hex: bethinkery.list.hexColor))
-                            .accessibilityLabel(Text("\(priority.shortRangeTitle) priority"))
-                    }
-                    Picker("", selection: Binding(
-                        get: { (BethinkeryPriority(rawValue: editBethinkeryCommand.priority) ?? .unset).shortened },
-                        set: { editBethinkeryCommand.priority = $0 }
-                    )) {
-                        ForEach(BethinkeryPriority.shortRangeCases, id: \.self) { option in
-                            Text(option.shortRangeTitle).tag(option.rawValue)
+
+                Toggle("Set priority", isOn: Binding(
+                    get: { editBethinkeryCommand.priority > 0 },
+                    set: { editBethinkeryCommand.priority = $0 ? 5 : 0 }
+                ))
+
+                if editBethinkeryCommand.priority > 0 {
+                    if enableFullRangePriority {
+                        HStack {
+                            Image(systemName: priority.icon ?? "lane")
+                                .font(.title)
+                                .bold()
+                                .foregroundColor(Color(hex: bethinkery.list.hexColor))
+                                .accessibilityLabel(Text("\(priority.title) priority"))
+                            Slider(value: Binding(
+                                // subtract from 10 so we invert, left is lowest right is highest
+                                get: { 10 - Double(editBethinkeryCommand.priority) },
+                                set: { editBethinkeryCommand.priority = 10 - Int($0) }
+                            ),
+                                   in: 1...9,
+                                   step: 1)
                         }
+                        Text(priority.title)
+                    } else {
+                        Picker("", selection: Binding(
+                            get: { (BethinkeryPriority(rawValue: editBethinkeryCommand.priority) ?? .unset).shortened },
+                            set: { editBethinkeryCommand.priority = $0 }
+                        )) {
+                            ForEach(BethinkeryPriority.shortRangeCases, id: \.self) { option in
+                                Text(option.shortRangeTitle).tag(option.rawValue)
+                            }
+                        }
+                        .pickerStyle(.segmented)
                     }
                 }
             } header: {
