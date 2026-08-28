@@ -33,14 +33,35 @@ struct BethinkeryDetailView: View {
                     text: $editBethinkeryCommand.notesText,
                     prompt: Text("Notes"),
                     axis: .vertical)
+            }
 
-                TextField(
-                    "URL",
-                    text: $editBethinkeryCommand.urlText,
-                    prompt: Text("URL"))
-                .keyboardType(.URL)
-                .autocorrectionDisabled(true)
-                .textInputAutocapitalization(.never)
+            Section {
+//                Slider(value: Binding(
+//                           get: { Double(editBethinkeryCommand.priority) },
+//                           set: { editBethinkeryCommand.priority = Int($0) }
+//                       ),
+//                       in: 0...9,
+//                       step: 1)
+                let priority = BethinkeryPriority(rawValue: editBethinkeryCommand.priority) ?? .unset
+                HStack {
+                    if let icon = priority.shortRangeIcon {
+                        Image(systemName: icon)
+                            .font(.footnote)
+                            .bold()
+                            .foregroundColor(Color(hex: bethinkery.list.hexColor))
+                            .accessibilityLabel(Text("\(priority.shortRangeTitle) priority"))
+                    }
+                    Picker("", selection: Binding(
+                        get: { (BethinkeryPriority(rawValue: editBethinkeryCommand.priority) ?? .unset).shortened },
+                        set: { editBethinkeryCommand.priority = $0 }
+                    )) {
+                        ForEach(BethinkeryPriority.shortRangeCases, id: \.self) { option in
+                            Text(option.shortRangeTitle).tag(option.rawValue)
+                        }
+                    }
+                }
+            } header: {
+                Text("Priority")
             }
 
             AlarmsListView(alarmList: $editBethinkeryCommand.alarms)

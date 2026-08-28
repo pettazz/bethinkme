@@ -50,7 +50,7 @@ final class BethinkeryViewModel {
                 bethinkery.isCompleted = updateCommand.isCompleted
                 bethinkery.freshlyCompleted = updateCommand.freshlyCompleted
                 bethinkery.notes = updateCommand.notes
-                bethinkery.url = updateCommand.url
+                bethinkery.priority = updateCommand.priority
 
                 let existingAlarmIDs = Set(bethinkery.alarms.map(\.id))
                 let updatedAlarmIDs = Set(updateCommand.alarms.map(\.id))

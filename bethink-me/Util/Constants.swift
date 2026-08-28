@@ -8,7 +8,7 @@ let kDedupeCaseSensitiveDefault: Bool = true
 let kDedupeRunOnSyncDefault: Bool = true
 let kMaxCompletedAgeDaysDefault: Int = 30
 let kDisplayNotesDefault: Bool = true
-let kDisplayURLsDefault: Bool = false
+let kDisplayPriorityDefault: Bool = true
 let kDisplayAlarmIconsDefault: Bool = true
 
 // sync coordinator timings

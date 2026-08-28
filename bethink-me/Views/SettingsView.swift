@@ -19,8 +19,8 @@ struct SettingsView: View {
     private var maxCompletedAgeDays: Int = kMaxCompletedAgeDaysDefault
     @AppStorage(SettingsKey.displayNotes.rawValue)
     private var displayNotes: Bool = kDisplayNotesDefault
-    @AppStorage(SettingsKey.displayURLs.rawValue)
-    private var displayURLs: Bool = kDisplayURLsDefault
+    @AppStorage(SettingsKey.displayPriority.rawValue)
+    private var displayPriority: Bool = kDisplayPriorityDefault
     @AppStorage(SettingsKey.displayAlarmIcons.rawValue)
     private var displayAlarmIcons: Bool = kDisplayAlarmIconsDefault
 
@@ -113,7 +113,7 @@ struct SettingsView: View {
                         .containerRelativeFrame(.horizontal, count: 4, span: 2, spacing: 0)
                     }
                     Toggle("Show Notes", isOn: $displayNotes)
-                    Toggle("Show URLs", isOn: $displayURLs)
+                    Toggle("Show Priority Indicator", isOn: $displayPriority)
                     Toggle("Show Alarm Icons", isOn: $displayAlarmIcons)
                 } header: {
                     Text("Viewing")

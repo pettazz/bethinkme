@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 
 // because you basically can't put any non-model complex types into SwiftData
@@ -36,6 +37,114 @@ enum BethinkeryAlarmKind: Int, Codable, CaseIterable {
     }
 }
 
+enum BethinkeryPriority: Int, Codable, CaseIterable {
+    case unset = 0
+    case highest = 1
+    case two = 2
+    case three = 3
+    case four = 4
+    case medium = 5
+    case six = 6
+    case seven = 7
+    case eight = 8
+    case lowest = 9
+
+    static let shortRangeCases: [BethinkeryPriority] = [.unset, .highest, .medium, .lowest]
+
+    var shortened: Int {
+        switch self.rawValue {
+            case 1...3:
+                return 1
+            case 4...6:
+                return 5
+            case 7...9:
+                return 9
+            default:
+                return 0
+        }
+    }
+
+    var shortRangeTitle: String {
+        switch self.shortened {
+            case 0:
+                return "None"
+            case 1:
+                return "High"
+            case 5:
+                return "Medium"
+            case 9:
+                return "Low"
+            default:
+                return "Invalid"
+        }
+    }
+
+    var shortRangeIcon: String? {
+        switch self.shortened {
+            case 0:
+                return nil
+            case 1:
+                return "exclamationmark.3"
+            case 5:
+                return "exclamationmark.2"
+            case 9:
+                return "exclamationmark"
+            default:
+                return "exclamationmark.questionmark"
+        }
+    }
+
+    var title: String {
+        switch self {
+            case .unset:
+                return "None"
+            case .highest:
+                return "Highest"
+            case.two:
+                return "High"
+            case .three:
+                return "Medium-High"
+            case .four:
+                return "Higher"
+            case .medium:
+                return "Medium"
+            case .six:
+                return "Lower"
+            case .seven:
+                return "Medium-Low"
+            case .eight:
+                return "Low"
+            case .lowest:
+                return "Lowest"
+        }
+    }
+
+    var icon: String? {
+        switch self {
+            case .unset:
+                return "lane"
+            case .highest:
+                return "1.lane"
+            case.two:
+                return "2.lane"
+            case .three:
+                return "3.lane"
+            case .four:
+                return "4.lane"
+            case .medium:
+                return "5.lane"
+            case .six:
+                return "6.lane"
+            case .seven:
+                return "7.lane"
+            case .eight:
+                return "8.lane"
+            case .lowest:
+                return "9.lane"
+        }
+    }
+}
+
 enum Env: String {
     case debug
     case testFlight
@@ -51,7 +160,7 @@ enum SettingsKey: String {
     case dedupeNow = "settings.dedupeNow"
     case maxCompletedAgeDays = "settings.maxCompletedAgeDays"
     case displayNotes = "settings.displayNotes"
-    case displayURLs = "settings.displayURLs"
+    case displayPriority = "settings.displayPriority"
     case displayAlarmIcons = "settings.displayAlarmIcons"
 }
 

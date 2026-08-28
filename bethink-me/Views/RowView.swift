@@ -6,8 +6,8 @@ struct RowView: View {
     private var enableAutocorrectSetting: Bool = kEnableAutocorrectDefault
     @AppStorage(SettingsKey.displayNotes.rawValue)
     private var displayNotes: Bool = kDisplayNotesDefault
-    @AppStorage(SettingsKey.displayURLs.rawValue)
-    private var displayURLs: Bool = kDisplayURLsDefault
+    @AppStorage(SettingsKey.displayPriority.rawValue)
+    private var displayPriority: Bool = kDisplayPriorityDefault
     @AppStorage(SettingsKey.displayAlarmIcons.rawValue)
     private var displayAlarmIcons: Bool = kDisplayAlarmIconsDefault
 
@@ -110,25 +110,36 @@ struct RowView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
 
                     } else {
-                        Text(bethinkery.title)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .strikethrough(bethinkery.isCompleted)
-                            .foregroundColor(bethinkery.isCompleted ? .gray : .primary)
-                            .onTapGesture {
-                                editedTitle = bethinkery.title
-                                editFocus = true
+                        HStack {
+                            if displayPriority && bethinkery.hasPriority,
+                               let priority = BethinkeryPriority(rawValue: bethinkery.priority),
+                               let icon = priority.shortRangeIcon {
+                                Image(systemName: icon)
+                                    .font(.footnote)
+                                    .bold()
+                                    .foregroundColor(Color(hex: bethinkery.list.hexColor))
+                                    .accessibilityLabel(Text("\(priority.shortRangeTitle) priority"))
+                            }
+                            Text(bethinkery.title)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .strikethrough(bethinkery.isCompleted)
+                                .foregroundColor(bethinkery.isCompleted ? .gray : .primary)
+                                .onTapGesture {
+                                    editedTitle = bethinkery.title
+                                    editFocus = true
 
-                                withAnimation(.snappy(duration: 0.25)) {
-                                    isEditing = true
+                                    withAnimation(.snappy(duration: 0.25)) {
+                                        isEditing = true
+                                    }
                                 }
-                            }
-                            .accessibilityAddTraits(.isButton)
-                            .padding(.trailing, displayAlarmIcons ? 40 : 0)
-                            .overlay(alignment: .topTrailing) {
-                                if displayAlarmIcons {
-                                    alarmIconStack()
+                                .accessibilityAddTraits(.isButton)
+                                .padding(.trailing, displayAlarmIcons ? 40 : 0)
+                                .overlay(alignment: .topTrailing) {
+                                    if displayAlarmIcons {
+                                        alarmIconStack()
+                                    }
                                 }
-                            }
+                        }
                     }
                 }
                 .containerRelativeFrame(.horizontal, count: 10, span: 8, spacing: 5, alignment: .trailing)
@@ -136,24 +147,16 @@ struct RowView: View {
 
 
             if !bethinkery.isCompleted && !isEditing {
-                if (displayNotes && bethinkery.hasNotes) || displayURLs && bethinkery.hasUrl {
-                    HStack {
-                        VStack {
-                            if displayNotes, let notes = bethinkery.notes {
-                                Text(notes)
-                                    .font(.footnote)
-                                    .foregroundColor(.secondary)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                            }
-                            if displayURLs, let url = bethinkery.url {
-                                Link(url.absoluteString, destination: url)
-                                    .font(.footnote)
-                                    .foregroundColor(.blue)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                            }
+                if displayNotes && bethinkery.hasNotes {
+                    VStack {
+                        if displayNotes, let notes = bethinkery.notes {
+                            Text(notes)
+                                .font(.footnote)
+                                .foregroundColor(.secondary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
                         }
-                        .containerRelativeFrame(.horizontal, count: 10, span: 8, spacing: 5, alignment: .trailing)
                     }
+                    .containerRelativeFrame(.horizontal, count: 10, span: 8, spacing: 5, alignment: .trailing)
                 }
             }
         }

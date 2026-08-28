@@ -12,7 +12,7 @@ extension UserDefaults {
             SettingsKey.dedupeNow.rawValue: false,
             SettingsKey.maxCompletedAgeDays.rawValue: kMaxCompletedAgeDaysDefault,
             SettingsKey.displayNotes.rawValue: kDisplayNotesDefault,
-            SettingsKey.displayURLs.rawValue: kDisplayURLsDefault,
+            SettingsKey.displayPriority.rawValue: kDisplayPriorityDefault,
             SettingsKey.displayAlarmIcons.rawValue: kDisplayAlarmIconsDefault
         ])
     }

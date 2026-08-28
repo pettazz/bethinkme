@@ -33,28 +33,24 @@ class EditBethinkery {
     var isCompleted: Bool = false
     var freshlyCompleted: Bool = false
     var notesText: String = ""
-    var urlText: String = ""
+    var priority: Int = 0
     var alarms: [any BethinkeryAlarmTemplate] = []
 
     var notes: String? {
         notesText.isEmpty ? nil : notesText
     }
 
-    var url: URL? {
-        urlText.isEmpty ? nil : URL(string: urlText)
-    }
-
     init(title: String = "",
          isCompleted: Bool = false,
          freshlyCompleted: Bool = false,
          notesText: String = "",
-         urlText: String = "",
+         priority: Int = 0,
          alarms: [any BethinkeryAlarmTemplate] = []) {
         self.title = title
         self.isCompleted = isCompleted
         self.freshlyCompleted = freshlyCompleted
         self.notesText = notesText
-        self.urlText = urlText
+        self.priority = priority
         self.alarms = alarms
     }
 
@@ -64,7 +60,7 @@ class EditBethinkery {
             isCompleted: bethinkery.isCompleted,
             freshlyCompleted: bethinkery.freshlyCompleted,
             notesText: bethinkery.notes ?? "",
-            urlText: bethinkery.url?.absoluteString ?? "",
+            priority: bethinkery.priority,
             alarms: bethinkery.alarms.compactMap({ $0.toTemplate() }))
     }
 }

@@ -13,7 +13,7 @@ final class Bethinkery: Equatable, Identifiable {
     var isCompleted: Bool
     var freshlyCompleted: Bool = false
     var notes: String?
-    var url: URL?
+    var priority: Int = BethinkeryPriority.unset.rawValue
     @Relationship(deleteRule: .cascade)
     var alarms: [BethinkeryAlarm] = []
 
@@ -23,7 +23,9 @@ final class Bethinkery: Equatable, Identifiable {
         }
         return false
     }
-    var hasUrl: Bool { return self.url != nil }
+    var hasPriority: Bool {
+        return priority != EKReminderPriority.none.rawValue // should it be .medium too
+    }
     var hasAlarms: Bool { return !self.alarms.isEmpty }
     var hasAbsoluteTimeAlarm: Bool { return self.alarms.contains(where: { $0.kind == .absoluteTimeAlarm }) }
     var hasRelativeTimeAlarm: Bool { return self.alarms.contains(where: { $0.kind == .relativeTimeAlarm }) }
@@ -35,13 +37,13 @@ final class Bethinkery: Equatable, Identifiable {
          title: String,
          isCompleted: Bool,
          notes: String?,
-         url: URL?) {
+         priority: Int) {
         self.id = id
         self.list = list
         self.title = title
         self.isCompleted = isCompleted
         self.notes = notes
-        self.url = url
+        self.priority = priority
     }
 
     // used when creating a new Bethinkery from an existing EKReminder
@@ -52,7 +54,7 @@ final class Bethinkery: Equatable, Identifiable {
             title: reminder.title ?? "",
             isCompleted: reminder.isCompleted,
             notes: reminder.notes,
-            url: reminder.url)
+            priority: reminder.priority)
 
         try loadAlarms(from: reminder)
     }
@@ -70,7 +72,7 @@ final class Bethinkery: Equatable, Identifiable {
         self.isCompleted = reminder.isCompleted
         self.freshlyCompleted = false
         self.notes = reminder.notes
-        self.url = reminder.url
+        self.priority = reminder.priority
 
         try loadAlarms(from: reminder)
     }
@@ -79,7 +81,7 @@ final class Bethinkery: Equatable, Identifiable {
         reminder.title = self.title
         reminder.isCompleted = self.isCompleted
         reminder.notes = self.notes
-        reminder.url = self.url
+        reminder.priority = self.priority
         if let implicitDueDate = self.alarms.earliestAlarm {
             guard let implicitTime = implicitDueDate.time else {
                 throw BethinkMeError("Bethinkery with implicit Due Date has no Time value")
@@ -112,7 +114,7 @@ final class Bethinkery: Equatable, Identifiable {
 
         guard titleText == compareText &&
               notes == bethinkery.notes &&
-              // TODO: url field is going away, priority will replace it
+              priority == bethinkery.priority &&
               alarms.count == bethinkery.alarms.count
             else { return false }
 
