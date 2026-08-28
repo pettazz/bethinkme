@@ -2,6 +2,9 @@ import SwiftUI
 
 
 struct ListsView: View {
+    @AppStorage(SettingsKey.sortType.rawValue)
+    private var sortType: BethinkerySorting = kSortTypeDefault
+
     var sharedModel: SharedViewModel
     var listModel: ListViewModel
     var bethinkeryModel: BethinkeryViewModel
@@ -92,19 +95,41 @@ struct ListsView: View {
                     }
                 }
                 ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        withAnimation {
-                            listEditMode = listEditMode.isEditing ? .inactive : .active
+                    if listEditMode == .active {
+                        Button {
+                            withAnimation {
+                                listEditMode = .inactive
+                            }
+                        } label: {
+                            Image(systemName: "checkmark.circle.fill")
+                                .accessibilityLabel(Text("Done editing lists"))
                         }
-                    } label: {
-                        Image(systemName: listEditMode == .active
-                              ? "checkmark.circle.fill"
-                              : "arrow.up.arrow.down.square.fill")
-                        .accessibilityLabel(Text(listEditMode == .active
-                                                 ? "Done editing lists"
-                                                 : "Edit lists"))
+                        .disabled(isLoadingAny)
+                    } else {
+                        Menu {
+                            Button {
+                                withAnimation {
+                                    listEditMode = .active
+                                }
+                            } label: {
+                                Text("Edit Lists")
+                            }
+
+                            Menu("Sort by") {
+                                sortMenu([.priorityAsc, .priorityDesc])
+                                sortMenu([.dueDateAsc, .dueDateDesc])
+                                sortMenu([.titleAsc, .titleDesc])
+
+                                Toggle("Custom", isOn: Binding(
+                                    get: { sortType == .custom },
+                                    set: { _ in sortType = .custom }
+                                ))
+                            }
+                        } label: {
+                            Label("Edit Lists and Sorting Menu", systemImage: "arrow.up.arrow.down.square.fill")
+                        }
                     }
-                    .disabled(isLoadingAny)
+
                 }
                 if listEditMode != .active {
                     ToolbarItem(placement: .primaryAction) {
@@ -125,6 +150,29 @@ struct ListsView: View {
                         }
                         .disabled(isLoadingAny)
                     }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func sortMenu(_ types: [BethinkerySorting]) -> some View {
+        Menu {
+            ForEach(types, id: \.self) { sortOption in
+                Toggle(isOn: Binding(
+                    get: { sortType == sortOption },
+                    set: { _ in sortType = sortOption }
+                )) {
+                    Label(sortOption.description, systemImage: sortOption.icon)
+                }
+            }
+        } label: {
+            Label {
+                Text(types[0].title) // should always be a matching pair of the same field asc/desc
+            } icon: {
+                if types.contains(sortType) {
+                    Image(systemName: "checkmark")
+                        .accessibilityLabel(Text("Currently selected"))
                 }
             }
         }

@@ -145,6 +145,59 @@ enum BethinkeryPriority: Int, Codable, CaseIterable {
     }
 }
 
+enum BethinkerySorting: String {
+    case custom
+    case titleAsc
+    case titleDesc
+    case dueDateAsc
+    case dueDateDesc
+    case priorityAsc
+    case priorityDesc
+
+    var title: String {
+        switch self {
+            case .custom:
+                return "Custom"
+            case .titleAsc, .titleDesc:
+                return "Alphabetical"
+            case .dueDateAsc, .dueDateDesc:
+                return "Due Date"
+            case .priorityAsc, .priorityDesc:
+                return "Priority"
+        }
+    }
+
+    var description: String {
+        switch self {
+            case .custom:
+                return "Custom"
+            case .titleAsc:
+                return "A to Z"
+            case .titleDesc:
+                return "Z to A"
+            case .dueDateAsc:
+                return "Soonest to Latest"
+            case .dueDateDesc:
+                return "Latest to Soonest"
+            case .priorityAsc:
+                return "Highest to Lowest"
+            case .priorityDesc:
+                return "Lowest to Highest"
+        }
+    }
+
+    var icon: String {
+        switch self {
+            case .custom:
+                return "arrow.up.arrow.down" // nobody ever uses this anyway
+            case .titleAsc, .dueDateAsc, .priorityAsc:
+                return "arrow.down.to.line.compact"
+            case .titleDesc, .dueDateDesc, .priorityDesc:
+                return "arrow.up.to.line.compact"
+        }
+    }
+}
+
 enum Env: String {
     case debug
     case testFlight
@@ -163,6 +216,8 @@ enum SettingsKey: String {
     case displayNotes = "settings.displayNotes"
     case displayPriority = "settings.displayPriority"
     case displayAlarmIcons = "settings.displayAlarmIcons"
+
+    case sortType = "settings.sortType"
 }
 
 enum InheritListAlarmsOnImportOptions: String, CaseIterable {

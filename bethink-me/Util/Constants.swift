@@ -12,6 +12,8 @@ let kDisplayNotesDefault: Bool = true
 let kDisplayPriorityDefault: Bool = true
 let kDisplayAlarmIconsDefault: Bool = true
 
+let kSortTypeDefault: BethinkerySorting = .custom
+
 // sync coordinator timings
 let kChangeGracePeriodSeconds: TimeInterval = 3.0
 let kForegroundedSyncGracePeriodSeconds: TimeInterval = 60.0
