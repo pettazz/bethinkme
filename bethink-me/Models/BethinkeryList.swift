@@ -47,8 +47,40 @@ final class BethinkeryList: Equatable, Identifiable {
         return lhs.id == rhs.id
     }
 
-    func visibleBethinkeries(showCompleted: Bool) -> [Bethinkery] {
-        showCompleted ? orderedBethinkeries : liveOrderedBethinkeries
+    func visibleBethinkeries(showCompleted: Bool, sortedBy: BethinkerySorting = .custom) -> [Bethinkery] {
+        let availableBethinkeries = showCompleted ? orderedBethinkeries : liveOrderedBethinkeries
+        switch sortedBy {
+            case .custom:
+                return availableBethinkeries
+            case .dueDateAsc:
+                return availableBethinkeries.sorted(by: { one, two in
+                    (one.impliedDueDate ?? .distantFuture) < (two.impliedDueDate ?? .distantFuture)
+                })
+            case .dueDateDesc:
+                return availableBethinkeries.sorted(by: { one, two in
+                    (one.impliedDueDate ?? .distantPast) > (two.impliedDueDate ?? .distantPast)
+                })
+            case .titleAsc:
+                return availableBethinkeries.sorted(by: { one, two in
+                    one.title.localizedStandardCompare(two.title) == .orderedAscending
+                })
+            case .titleDesc:
+                return availableBethinkeries.sorted(by: { one, two in
+                    one.title.localizedStandardCompare(two.title) == .orderedDescending
+                })
+            case .priorityAsc:
+                return availableBethinkeries.sorted(by: { one, two in
+                    if one.priority == 0 {
+                        return false
+                    }
+                    if two.priority == 0 {
+                        return true
+                    }
+                    return one.priority < two.priority
+                })
+            case .priorityDesc:
+                return availableBethinkeries.sorted(by: { $0.priority > $1.priority })
+        }
     }
 
     func load(from calendar: EKCalendar) {

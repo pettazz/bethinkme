@@ -45,11 +45,15 @@ final class SharedViewModel {
         return (try? await eventStore.requestFullAccessToReminders()) ?? false
     }
 
-    func resetOrdinals() {
-        for (idx, list) in bethinkeryLists.enumerated() {
+    func resetOrdinals(except: BethinkeryList? = nil, sortedBy: BethinkerySorting = .custom) {
+        for (idx, list) in bethinkeryLists.enumerated() where list != except {
             list.ordinal = idx
 
-            for (iidx, bethinkery) in list.orderedBethinkeries.enumerated() {
+            let bethinkeries = sortedBy == .custom ?
+                                list.orderedBethinkeries :
+                                list.visibleBethinkeries(showCompleted: showCompleted,
+                                                         sortedBy: sortedBy)
+            for (iidx, bethinkery) in bethinkeries.enumerated() {
                 bethinkery.ordinal = iidx
                 bethinkery.freshlyCompleted = false // hehehehe side effects
             }

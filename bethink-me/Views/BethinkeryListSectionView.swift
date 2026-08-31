@@ -7,6 +7,9 @@ enum RowFlashKind: Equatable {
 }
 
 struct BethinkeryListSectionView: View {
+    @AppStorage(SettingsKey.sortType.rawValue)
+    private var sortType: BethinkerySorting = kSortTypeDefault
+
     @Environment(\.editMode)
     private var editMode
 
@@ -58,7 +61,8 @@ struct BethinkeryListSectionView: View {
                         onFlash: flash)
                 }
 
-                ForEach(list.visibleBethinkeries(showCompleted: sharedModel.showCompleted)) { bethinkery in
+                ForEach(list.visibleBethinkeries(showCompleted: sharedModel.showCompleted,
+                                                 sortedBy: sortType)) { bethinkery in
                     let flashKind = flashedRow.flatMap { $0.id == bethinkery.id ? $0.kind : nil }
                     RowView(bethinkeryModel: bethinkeryModel, bethinkery: bethinkery, flashKind: flashKind)
                         .id(bethinkery.id)
@@ -104,8 +108,14 @@ struct BethinkeryListSectionView: View {
                         }
                 }
                 .onMove { from, to in
-                    withErrorReporter {
-                        try bethinkeryModel.moveBethinkeryPosition(from: from, to: to, list: list)
+                    let moved: ()? = withErrorReporter {
+                        try bethinkeryModel.moveBethinkeryPosition(from: from,
+                                                                   to: to,
+                                                                   list: list,
+                                                                   currentSorting: sortType)
+                    }
+                    if moved != nil {
+                        sortType = .custom
                     }
                 }
             },

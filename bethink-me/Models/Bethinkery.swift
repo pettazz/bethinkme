@@ -27,6 +27,7 @@ final class Bethinkery: Equatable, Identifiable {
         return priority != EKReminderPriority.none.rawValue // should it be .medium too
     }
     var hasAlarms: Bool { return !self.alarms.isEmpty }
+    var impliedDueDate: Date? { alarms.earliestAlarm?.time }
     var hasAbsoluteTimeAlarm: Bool { return self.alarms.contains(where: { $0.kind == .absoluteTimeAlarm }) }
     var hasRelativeTimeAlarm: Bool { return self.alarms.contains(where: { $0.kind == .relativeTimeAlarm }) }
     var hasProximityAlarm: Bool { return self.alarms.contains(where: { $0.kind == .proximityAlarm }) }

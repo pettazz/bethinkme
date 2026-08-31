@@ -111,17 +111,22 @@ final class BethinkeryViewModel {
         }
     }
 
-    func moveBethinkeryPosition(from: IndexSet, to: Int, list: BethinkeryList) throws {
+    func moveBethinkeryPosition(from: IndexSet,
+                                to: Int,
+                                list: BethinkeryList,
+                                currentSorting: BethinkerySorting = .custom) throws {
         guard from.count == 1 else {
             throw BethinkMeError("invalid number of items sent to move: \(from.count)")
         }
         try sharedModel.withTransaction { _ in
-            var tmpBethinkeries = list.visibleBethinkeries(showCompleted: sharedModel.showCompleted)
+            var tmpBethinkeries = list.visibleBethinkeries(showCompleted: sharedModel.showCompleted,
+                                                           sortedBy: currentSorting)
             tmpBethinkeries.move(fromOffsets: from, toOffset: to)
 
             for (idx, bethinkery) in tmpBethinkeries.enumerated() {
                 bethinkery.ordinal = idx
             }
+            sharedModel.resetOrdinals(except: list, sortedBy: currentSorting)
         }
     }
 

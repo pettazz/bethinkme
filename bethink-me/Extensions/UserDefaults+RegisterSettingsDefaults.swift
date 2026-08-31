@@ -15,7 +15,7 @@ extension UserDefaults {
             SettingsKey.displayNotes.rawValue: kDisplayNotesDefault,
             SettingsKey.displayPriority.rawValue: kDisplayPriorityDefault,
             SettingsKey.displayAlarmIcons.rawValue: kDisplayAlarmIconsDefault,
-            SettingsKey.sortType.rawValue: kSortTypeDefault
+            SettingsKey.sortType.rawValue: kSortTypeDefault.rawValue
         ])
     }
 }
