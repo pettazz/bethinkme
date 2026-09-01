@@ -148,6 +148,7 @@ struct RowView: View {
                     }
                 }
                 .containerRelativeFrame(.horizontal, count: 10, span: 8, spacing: 5, alignment: .trailing)
+                .alignmentGuide(.listRowSeparatorLeading) { $0[.leading] }
             }
 
 
