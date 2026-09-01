@@ -15,6 +15,9 @@ struct AddBethinkeryRowView: View {
     @State private var newTitle: String = ""
     @State private var lastDuplicatedTitle: String = ""
 
+    @State private var shouldDisplayDupePopover = false
+    @State private var dupePopoverTimeout: Task<Void, Never>?
+
     var list: BethinkeryList
 
     var sharedModel: SharedViewModel
@@ -67,6 +70,12 @@ struct AddBethinkeryRowView: View {
                 }
         }
         .id("adding-to-\(list.id)")
+        .popover(isPresented: $shouldDisplayDupePopover) {
+            Text("Already on list, type again to add another")
+                .font(.footnote)
+                .padding()
+                .presentationCompactAdaptation(.popover)
+        }
     }
 
     private func scrollToAdd() {
@@ -102,9 +111,20 @@ struct AddBethinkeryRowView: View {
                         titleText == newText &&
                         titleText != lastText
             }) {
-                // dupe found, pop it to the top and ignore the new one
+                // dupe found, pop it to the top (if custom sorted) and ignore the new one
                 let dupeID = bethinkeries[dupeIdx].id
-                try bethinkeryModel.moveBethinkeryPosition(from: IndexSet(integer: dupeIdx), to: 0, list: list)
+                if sortType != .custom {
+                    dupePopoverTimeout?.cancel()
+                    shouldDisplayDupePopover = true
+                    dupePopoverTimeout = Task { @MainActor in
+                        try? await Task.sleep(for: .seconds(20))
+                        guard !Task.isCancelled else { return }
+                        shouldDisplayDupePopover = false
+                    }
+
+                } else {
+                    try bethinkeryModel.moveBethinkeryPosition(from: IndexSet(integer: dupeIdx), to: 0, list: list)
+                }
                 lastDuplicatedTitle = cleanTitle
                 onFlash(dupeID, .deduped)
             } else {

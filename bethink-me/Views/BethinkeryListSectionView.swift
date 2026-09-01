@@ -183,7 +183,9 @@ struct BethinkeryListSectionView: View {
         }
         if kind == .deduped {
             // TODO: accessibility review
-            AccessibilityNotification.Announcement("Already on list, moved to top").post()
+            AccessibilityNotification.Announcement(sortType == .custom ?
+                                                    "Already on list, moved to top" :
+                                                    "Already on list").post()
         }
     }
 
