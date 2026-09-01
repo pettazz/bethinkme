@@ -110,7 +110,7 @@ struct AddBethinkeryRowView: View {
             let cleanTitle = newTitle.trimmingCharacters(in: .whitespaces)
             guard !cleanTitle.isEmpty else { return }
 
-            let bethinkeries = list.visibleBethinkeries(showCompleted: sharedModel.showCompleted)
+            let bethinkeries = list.visibleBethinkeries(showCompleted: sharedModel.showCompleted, sortedBy: sortType)
             if enableDedupe, let dupeIdx = bethinkeries.firstIndex(where: { bethinkery in
                 let titleText = dedupeCaseSensitive ? bethinkery.title : bethinkery.title.lowercased()
                 let newText = dedupeCaseSensitive ? cleanTitle : cleanTitle.lowercased()
@@ -147,7 +147,7 @@ struct AddBethinkeryRowView: View {
                 // no existing dupe, continue adding new
                 lastDuplicatedTitle = ""
                 let newBethinkery = EditBethinkery(title: cleanTitle, isCompleted: false)
-                let createdBethinkery = try bethinkeryModel.create(from: newBethinkery, list: list)
+                let createdBethinkery = try bethinkeryModel.create(from: newBethinkery, list: list, sortedBy: sortType)
 
                 if next == .close {
                     scrollTo(id: createdBethinkery.id) {

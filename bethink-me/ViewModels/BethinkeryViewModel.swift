@@ -13,7 +13,9 @@ final class BethinkeryViewModel {
         self.sharedModel = sharedModel
     }
 
-    func create(from createCommand: EditBethinkery, list: BethinkeryList) throws -> Bethinkery {
+    func create(from createCommand: EditBethinkery,
+                list: BethinkeryList,
+                sortedBy: BethinkerySorting = .custom) throws -> Bethinkery {
         do {
             return try sharedModel.withTransaction { transaction in
                 let reminder = try transaction.newReminder(on: try transaction.liveCalendar(for: list))
@@ -29,7 +31,7 @@ final class BethinkeryViewModel {
                 }
 
                 list.bethinkeries.append(newBethinkery)
-                sharedModel.resetOrdinals()
+                sharedModel.resetOrdinals(sortedBy: sortedBy)
 
                 try transaction.stage(transaction.liveReminder(for: newBethinkery))
 
