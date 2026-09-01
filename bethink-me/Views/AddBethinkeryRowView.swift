@@ -1,5 +1,9 @@
 import SwiftUI
 
+enum SaveAndThen {
+    case keepEditing
+    case close
+}
 
 struct AddBethinkeryRowView: View {
     @AppStorage(SettingsKey.enableAutocorrect.rawValue)
@@ -43,11 +47,10 @@ struct AddBethinkeryRowView: View {
                                 isFocused: $addInFocus,
                                 enableAutocorrect: enableAutocorrectSetting,
                                 onSubmit: {
-                                    saveNew()
-                                    scrollToAdd()
+                                    save(next: .keepEditing)
                                 },
                                 onDone: {
-                                    saveNew()
+                                    save(next: .close)
                                     closeAdding()
                                 },
                                 onCancel: {
@@ -72,31 +75,37 @@ struct AddBethinkeryRowView: View {
         .id("adding-to-\(list.id)")
         .popover(isPresented: $shouldDisplayDupePopover) {
             Text("Already on list, type again to add another")
-                .font(.footnote)
+//                .font(.footnote)
                 .padding()
                 .presentationCompactAdaptation(.popover)
         }
     }
 
-    private func scrollToAdd() {
+    private func scrollToAdd(completion: (() -> Void)? = nil) {
+        let visible = list.visibleBethinkeries(showCompleted: sharedModel.showCompleted, sortedBy: sortType)
+
+        if visible.count >= 2 {
+            scrollTo(id: visible[1].id, completion: completion)
+        } else if let first = visible.first {
+            scrollTo(id: first.id, completion: completion)
+        } else {
+            scrollTo(id: "adding-to-\(list.id)", completion: completion)
+        }
+    }
+
+    private func scrollTo(id: String, completion: (() -> Void)? = nil) {
         guard let scrollProxy else { return }
 
         DispatchQueue.main.async {
-            withAnimation {
-                let visible = list.visibleBethinkeries(showCompleted: sharedModel.showCompleted, sortedBy: sortType)
-
-                if visible.count >= 2 {
-                    scrollProxy.scrollTo(visible[1].id, anchor: .bottom)
-                } else if let first = visible.first {
-                    scrollProxy.scrollTo(first.id, anchor: .bottom)
-                } else {
-                    scrollProxy.scrollTo("adding-to-\(list.id)", anchor: .bottom)
-                }
+            withAnimation(.default, completionCriteria: .removed) {
+                scrollProxy.scrollTo(id, anchor: .bottom)
+            } completion: {
+                completion?()
             }
         }
     }
 
-    private func saveNew() {
+    private func save(next: SaveAndThen) {
         withErrorReporter {
             let cleanTitle = newTitle.trimmingCharacters(in: .whitespaces)
             guard !cleanTitle.isEmpty else { return }
@@ -113,7 +122,7 @@ struct AddBethinkeryRowView: View {
             }) {
                 // dupe found, pop it to the top (if custom sorted) and ignore the new one
                 let dupeID = bethinkeries[dupeIdx].id
-                if sortType != .custom {
+                if sortType != .custom && next == .keepEditing {
                     dupePopoverTimeout?.cancel()
                     shouldDisplayDupePopover = true
                     dupePopoverTimeout = Task { @MainActor in
@@ -121,28 +130,47 @@ struct AddBethinkeryRowView: View {
                         guard !Task.isCancelled else { return }
                         shouldDisplayDupePopover = false
                     }
-
                 } else {
                     try bethinkeryModel.moveBethinkeryPosition(from: IndexSet(integer: dupeIdx), to: 0, list: list)
                 }
                 lastDuplicatedTitle = cleanTitle
-                onFlash(dupeID, .deduped)
+                if next == .close {
+                    scrollTo(id: dupeID) {
+                        onFlash(dupeID, .deduped)
+                    }
+                } else {
+                    scrollToAdd {
+                        onFlash(dupeID, .deduped)
+                    }
+                }
             } else {
                 // no existing dupe, continue adding new
                 lastDuplicatedTitle = ""
                 let newBethinkery = EditBethinkery(title: cleanTitle, isCompleted: false)
                 let createdBethinkery = try bethinkeryModel.create(from: newBethinkery, list: list)
-                onFlash(createdBethinkery.id, .created)
+
+                if next == .close {
+                    scrollTo(id: createdBethinkery.id) {
+                        onFlash(createdBethinkery.id, .created)
+                    }
+                } else {
+                    scrollToAdd {
+                        onFlash(createdBethinkery.id, .created)
+                    }
+                }
             }
         }
+
         newTitle = ""
     }
 
     private func closeAdding() {
+        addInFocus = false
         newTitle = ""
         if addingToListID == list.id {
             addingToListID = nil
         }
-        addInFocus = false
+        dupePopoverTimeout?.cancel()
+        shouldDisplayDupePopover = false
     }
 }
