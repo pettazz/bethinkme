@@ -8,6 +8,8 @@ struct AddBethinkeryRowView: View {
     private var enableDedupe: Bool = kEnableDedupeDefault
     @AppStorage(SettingsKey.dedupeCaseSensitive.rawValue)
     private var dedupeCaseSensitive: Bool = kDedupeCaseSensitiveDefault
+    @AppStorage(SettingsKey.sortType.rawValue)
+    private var sortType: BethinkerySorting = kSortTypeDefault
 
     @State private var addInFocus: Bool = true
     @State private var newTitle: String = ""
@@ -72,7 +74,7 @@ struct AddBethinkeryRowView: View {
 
         DispatchQueue.main.async {
             withAnimation {
-                let visible = list.liveOrderedBethinkeries
+                let visible = list.visibleBethinkeries(showCompleted: sharedModel.showCompleted, sortedBy: sortType)
 
                 if visible.count >= 2 {
                     scrollProxy.scrollTo(visible[1].id, anchor: .bottom)
