@@ -23,6 +23,8 @@ struct SettingsView: View {
     private var displayNotes: Bool = kDisplayNotesDefault
     @AppStorage(SettingsKey.displayPriority.rawValue)
     private var displayPriority: Bool = kDisplayPriorityDefault
+    @AppStorage(SettingsKey.displayDueDate.rawValue)
+    private var displayDueDate: Bool = kDisplayDueDateDefault
     @AppStorage(SettingsKey.displayAlarmIcons.rawValue)
     private var displayAlarmIcons: Bool = kDisplayAlarmIconsDefault
 
@@ -117,6 +119,7 @@ struct SettingsView: View {
                     }
                     Toggle("Show Notes", isOn: $displayNotes)
                     Toggle("Show Priority Indicator", isOn: $displayPriority)
+                    Toggle("Show Due Date", isOn: $displayDueDate)
                     Toggle("Show Alarm Icons", isOn: $displayAlarmIcons)
                 } header: {
                     Text("Viewing")

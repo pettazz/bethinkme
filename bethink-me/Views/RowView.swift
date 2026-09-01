@@ -10,6 +10,8 @@ struct RowView: View {
     private var displayNotes: Bool = kDisplayNotesDefault
     @AppStorage(SettingsKey.displayPriority.rawValue)
     private var displayPriority: Bool = kDisplayPriorityDefault
+    @AppStorage(SettingsKey.displayDueDate.rawValue)
+    private var displayDueDate: Bool = kDisplayDueDateDefault
     @AppStorage(SettingsKey.displayAlarmIcons.rawValue)
     private var displayAlarmIcons: Bool = kDisplayAlarmIconsDefault
 
@@ -150,13 +152,26 @@ struct RowView: View {
 
 
             if !bethinkery.isCompleted && !isEditing {
-                if displayNotes && bethinkery.hasNotes {
+                if (displayNotes && bethinkery.hasNotes) || (displayDueDate && bethinkery.impliedDueDate != nil) {
                     VStack {
                         if displayNotes, let notes = bethinkery.notes {
                             Text(notes)
                                 .font(.footnote)
                                 .foregroundColor(.secondary)
                                 .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        if displayDueDate, let dueDate = bethinkery.impliedDueDate {
+                            let color: Color = dueDate < Date() ? .red : .primary
+                            HStack {
+                                Image(systemName: "calendar.badge.clock")
+                                    .font(.caption)
+                                    .foregroundColor(color)
+                                    .accessibilityHidden(true)
+                                Text(Formatters.dateFormatter.string(from: dueDate))
+                                    .font(.caption)
+                                    .foregroundColor(color)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
                         }
                     }
                     .containerRelativeFrame(.horizontal, count: 10, span: 8, spacing: 5, alignment: .trailing)

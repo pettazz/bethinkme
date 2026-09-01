@@ -215,6 +215,7 @@ enum SettingsKey: String {
     case maxCompletedAgeDays = "settings.maxCompletedAgeDays"
     case displayNotes = "settings.displayNotes"
     case displayPriority = "settings.displayPriority"
+    case displayDueDate = "settings.displayDueDate"
     case displayAlarmIcons = "settings.displayAlarmIcons"
 
     case sortType = "settings.sortType"

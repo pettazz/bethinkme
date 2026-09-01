@@ -14,6 +14,7 @@ extension UserDefaults {
             SettingsKey.maxCompletedAgeDays.rawValue: kMaxCompletedAgeDaysDefault,
             SettingsKey.displayNotes.rawValue: kDisplayNotesDefault,
             SettingsKey.displayPriority.rawValue: kDisplayPriorityDefault,
+            SettingsKey.displayDueDate.rawValue: kDisplayDueDateDefault,
             SettingsKey.displayAlarmIcons.rawValue: kDisplayAlarmIconsDefault,
             SettingsKey.sortType.rawValue: kSortTypeDefault.rawValue
         ])

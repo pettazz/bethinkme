@@ -10,6 +10,7 @@ let kDedupeRunOnSyncDefault: Bool = true
 let kMaxCompletedAgeDaysDefault: Int = 30
 let kDisplayNotesDefault: Bool = true
 let kDisplayPriorityDefault: Bool = true
+let kDisplayDueDateDefault: Bool = true
 let kDisplayAlarmIconsDefault: Bool = true
 
 let kSortTypeDefault: BethinkerySorting = .custom
