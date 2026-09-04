@@ -5,6 +5,10 @@ import UniformTypeIdentifiers
 struct SettingsView: View {
     @AppStorage(SettingsKey.enableAutocorrect.rawValue)
     private var enableAutocorrect: Bool = kEnableAutocorrectDefault
+    @AppStorage(SettingsKey.enableAutoCleanup.rawValue)
+    private var enableAutoCleanup: Bool = kEnableAutoCleanupDefault
+    @AppStorage(SettingsKey.autoCleanupThresholdDays.rawValue)
+    private var autoCleanupThresholdDays: Int = kAutoCleanupThresholdDaysDefault
     @AppStorage(SettingsKey.enableFullRangePriority.rawValue)
     private var enableFullRangePriority: Bool = kEnableFullRangePriorityDefault
     @AppStorage(SettingsKey.inheritListAlarmsOnImport.rawValue)
@@ -49,6 +53,32 @@ struct SettingsView: View {
                                 .font(.caption)
                         }
                         .containerRelativeFrame(.horizontal, count: 4, span: 2, spacing: 0)
+                    }
+                    Toggle(isOn: $enableAutoCleanup) {
+                        VStack(alignment: .leading) {
+                            Text("Enable auto cleanup")
+                            Text("*Permanently delete* completed reminders older than a certain age")
+                                .font(.caption)
+                        }
+                        .containerRelativeFrame(.horizontal, count: 4, span: 2, spacing: 0)
+                    }
+                    if enableAutoCleanup {
+                        Picker(selection: $autoCleanupThresholdDays) {
+                            Text("1 year").tag(365)
+                            Text("6 months").tag(180)
+                            Text("60 days").tag(60)
+                            Text("30 days").tag(30)
+                            Text("7 days").tag(7)
+                            Text("1 day").tag(1)
+                        } label: {
+                            VStack(alignment: .leading) {
+                                Text("Auto cleanup age")
+                                Text("*Permanently delete* any completed reminders older than this age")
+                                    .font(.caption)
+                                    .foregroundStyle(.red)
+                            }
+                            .containerRelativeFrame(.horizontal, count: 4, span: 2, spacing: 0)
+                        }
                     }
                     Toggle(isOn: $enableDedupe) {
                         VStack(alignment: .leading) {
@@ -108,7 +138,7 @@ struct SettingsView: View {
                         Text("60 days").tag(60)
                         Text("30 days").tag(30)
                         Text("7 days").tag(7)
-                        Text("1 day").tag(1) // TODO: remove dumb options for release
+                        Text("1 day").tag(1) // TODO: remove dumb options for release, also autoCleanupThresholdDays
                     } label: {
                         VStack(alignment: .leading) {
                             Text("Max completed age")

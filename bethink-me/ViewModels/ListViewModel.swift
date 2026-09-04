@@ -8,6 +8,10 @@ import SwiftUI
 final class ListViewModel {
     @AppStorage(SettingsKey.enableDedupe.rawValue)
     @ObservationIgnored private var enableDedupe: Bool = kEnableDedupeDefault
+    @AppStorage(SettingsKey.enableAutoCleanup.rawValue)
+    @ObservationIgnored private var enableAutoCleanup: Bool = kEnableAutoCleanupDefault
+    @AppStorage(SettingsKey.autoCleanupThresholdDays.rawValue)
+    @ObservationIgnored private var autoCleanupThresholdDays: Int = kAutoCleanupThresholdDaysDefault
     @AppStorage(SettingsKey.dedupeCaseSensitive.rawValue)
     @ObservationIgnored private var dedupeCaseSensitive: Bool = kDedupeCaseSensitiveDefault
     @AppStorage(SettingsKey.dedupeRunOnSync.rawValue)
@@ -52,6 +56,7 @@ final class ListViewModel {
         // X no reminder, yes storage
 
         var dupesToDelete: [EKReminder] = []
+        var oldsToDelete: [EKReminder] = []
         var needToInheritListAlarms: [Bethinkery] = []
         for ekcal in calendars {
             let existingLists = sharedModel.bethinkeryLists.filter({ $0.id == ekcal.calendarIdentifier })
@@ -73,6 +78,10 @@ final class ListViewModel {
 
             guard let loadedReminders = await loadRemindersForCalendar(ekcal) else {
                 throw BethinkMeError("failed to load reminders for calendar \(ekcal.calendarIdentifier)")
+            }
+            if enableAutoCleanup,
+               let oldReminders = await loadOldRemindersForCalendar(ekcal) {
+                oldsToDelete.append(contentsOf: oldReminders)
             }
             for ekrem in loadedReminders {
                 let existingBethinkeries = currentList.bethinkeries.filter({ $0.id == ekrem.calendarItemIdentifier })
@@ -134,10 +143,13 @@ final class ListViewModel {
             defaultSource = defaultCal.source
         }
 
-        if !dupesToDelete.isEmpty || !needToInheritListAlarms.isEmpty {
+        if !dupesToDelete.isEmpty || !oldsToDelete.isEmpty || !needToInheritListAlarms.isEmpty {
             try sharedModel.withTransaction { transaction in
                 for dupe in dupesToDelete {
                     try transaction.stageRemove(dupe)
+                }
+                for old in oldsToDelete {
+                    try transaction.stageRemove(old)
                 }
                 for bethinkery in needToInheritListAlarms {
                     let alarms = bethinkery.list.alarmTemplates.compactMap({ $0.toTemplate(newInstance: true) })
@@ -269,6 +281,42 @@ final class ListViewModel {
             for (idx, list) in tmpLists.enumerated() {
                 list.ordinal = idx
             }
+        }
+    }
+
+    private func loadOldRemindersForCalendar(_ calendar: EKCalendar) async -> [EKReminder]? {
+        if enableAutoCleanup { // yes its redundant but i really want to be sure
+            do {
+                var cleanupThresholdDateComponents = DateComponents()
+                cleanupThresholdDateComponents.day = -1 * autoCleanupThresholdDays
+                guard let cleanupThresholdDate = Calendar.current.date(
+                    byAdding: cleanupThresholdDateComponents,
+                    to: Date.now,
+                    wrappingComponents: false
+                ) else {
+                    throw BethinkMeError("Couldn't set cleanup threshold date, bailing out")
+                }
+
+                async let olds = withCheckedContinuation { continuation in
+                    sharedModel.eventStore.fetchReminders(
+                        matching: sharedModel.eventStore.predicateForCompletedReminders(
+                            withCompletionDateStarting: .distantPast,
+                            ending: cleanupThresholdDate,
+                            calendars: [calendar])) { reminders in
+                                continuation.resume(returning: reminders)
+                    }
+                }
+                guard let fetchedOlds = await olds else {
+                    throw BethinkMeError("Fetching old reminders for cleanup failed")
+                }
+
+                return fetchedOlds
+            } catch {
+                ErrorReporter().report(error)
+                return nil
+            }
+        } else {
+            return nil
         }
     }
 

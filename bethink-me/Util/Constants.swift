@@ -2,6 +2,8 @@ import Foundation
 
 // settings defaults
 let kEnableAutocorrectDefault: Bool = true
+let kEnableAutoCleanupDefault: Bool = false
+let kAutoCleanupThresholdDaysDefault: Int = 30
 let kEnableFullRangePriorityDefault: Bool = false
 let kInheritListAlarmsOnImportDefault: InheritListAlarmsOnImportOptions = .whenEmpty
 let kEnableDedupeDefault: Bool = true

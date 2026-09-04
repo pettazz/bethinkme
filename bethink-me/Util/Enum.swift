@@ -206,6 +206,8 @@ enum Env: String {
 
 enum SettingsKey: String {
     case enableAutocorrect = "settings.enableAutocorrect"
+    case enableAutoCleanup = "settings.enableAutoCleanup"
+    case autoCleanupThresholdDays = "settings.autoCleanupThresholdDays"
     case enableFullRangePriority = "settings.enableFullRangePriority"
     case inheritListAlarmsOnImport = "settings.inheritListAlarmsOnImport"
     case enableDedupe = "settings.enableDedupe"
