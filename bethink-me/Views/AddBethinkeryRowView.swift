@@ -74,10 +74,14 @@ struct AddBethinkeryRowView: View {
         }
         .id("adding-to-\(list.id)")
         .popover(isPresented: $shouldDisplayDupePopover) {
-            Text("Already on list, type again to add another")
-//                .font(.footnote)
-                .padding()
-                .presentationCompactAdaptation(.popover)
+            VStack(spacing: 0) {
+                Text("**\(lastDuplicatedTitle)**")
+                    .lineLimit(1)
+                Text("is already on this list.")
+                Text("Type it again to add another entry.")
+            }
+            .padding()
+            .presentationCompactAdaptation(.popover)
         }
     }
 
